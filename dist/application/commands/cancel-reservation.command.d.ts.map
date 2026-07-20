@@ -1,0 +1,1 @@
+{"version":3,"file":"cancel-reservation.command.d.ts","sourceRoot":"","sources":["../../../src/application/commands/cancel-reservation.command.ts"],"names":[],"mappings":"AAAA;;;;GAIG;AACH,qBAAa,wBAAwB;IAEjC,QAAQ,CAAC,aAAa,EAAE,MAAM;IAC9B,QAAQ,CAAC,MAAM,EAAE,MAAM;gBADd,aAAa,EAAE,MAAM,EACrB,MAAM,EAAE,MAAM;CAE1B"}

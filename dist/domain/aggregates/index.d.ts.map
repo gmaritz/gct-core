@@ -1,0 +1,1 @@
+{"version":3,"file":"index.d.ts","sourceRoot":"","sources":["../../../src/domain/aggregates/index.ts"],"names":[],"mappings":"AAAA;;;;GAIG;AACH,OAAO,EAAE,SAAS,EAAE,MAAM,uBAAuB,CAAC;AAClD,OAAO,EAAE,WAAW,EAAE,iBAAiB,EAAE,MAAM,yBAAyB,CAAC;AACzE,OAAO,EAAE,OAAO,EAAE,aAAa,EAAE,MAAM,qBAAqB,CAAC"}
