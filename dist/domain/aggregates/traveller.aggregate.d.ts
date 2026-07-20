@@ -20,6 +20,7 @@ export declare class Traveller extends AggregateRoot {
     getFullName(): string;
     getEmail(): string;
     getPreferences(): Record<string, any>;
+    updateProfile(firstName: string, lastName: string): void;
     updatePreferences(preferences: Record<string, any>): void;
     getCreatedAt(): Date;
     getUpdatedAt(): Date;

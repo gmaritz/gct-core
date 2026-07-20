@@ -53,6 +53,18 @@ class Traveller extends aggregate_root_1.AggregateRoot {
     getPreferences() {
         return { ...this.preferences };
     }
+    updateProfile(firstName, lastName) {
+        if (!firstName || firstName.trim().length === 0) {
+            throw new Error('First name is required');
+        }
+        if (!lastName || lastName.trim().length === 0) {
+            throw new Error('Last name is required');
+        }
+        this.firstName = firstName.trim();
+        this.lastName = lastName.trim();
+        this.updatedAt = new Date();
+        this.addDomainEvent(new traveller_event_1.TravellerProfileUpdatedEvent(this.id, this.firstName, this.lastName));
+    }
     updatePreferences(preferences) {
         this.preferences = { ...preferences };
         this.updatedAt = new Date();

@@ -1,9 +1,24 @@
 "use strict";
-/**
- * Application Handlers Index
- *
- * Reserving for future handler implementations.
- * Handlers process commands and queries, coordinating use cases.
- */
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.FindJourneyHandler = exports.CompleteJourneyHandler = exports.CreateJourneyHandler = exports.FindReservationHandler = exports.CancelReservationHandler = exports.ConfirmReservationHandler = exports.CreateReservationHandler = exports.FindTravellerHandler = exports.UpdateTravellerHandler = exports.CreateTravellerHandler = void 0;
+var create_traveller_handler_1 = require("./create-traveller.handler");
+Object.defineProperty(exports, "CreateTravellerHandler", { enumerable: true, get: function () { return create_traveller_handler_1.CreateTravellerHandler; } });
+var update_traveller_handler_1 = require("./update-traveller.handler");
+Object.defineProperty(exports, "UpdateTravellerHandler", { enumerable: true, get: function () { return update_traveller_handler_1.UpdateTravellerHandler; } });
+var find_traveller_handler_1 = require("./find-traveller.handler");
+Object.defineProperty(exports, "FindTravellerHandler", { enumerable: true, get: function () { return find_traveller_handler_1.FindTravellerHandler; } });
+var create_reservation_handler_1 = require("./create-reservation.handler");
+Object.defineProperty(exports, "CreateReservationHandler", { enumerable: true, get: function () { return create_reservation_handler_1.CreateReservationHandler; } });
+var confirm_reservation_handler_1 = require("./confirm-reservation.handler");
+Object.defineProperty(exports, "ConfirmReservationHandler", { enumerable: true, get: function () { return confirm_reservation_handler_1.ConfirmReservationHandler; } });
+var cancel_reservation_handler_1 = require("./cancel-reservation.handler");
+Object.defineProperty(exports, "CancelReservationHandler", { enumerable: true, get: function () { return cancel_reservation_handler_1.CancelReservationHandler; } });
+var find_reservation_handler_1 = require("./find-reservation.handler");
+Object.defineProperty(exports, "FindReservationHandler", { enumerable: true, get: function () { return find_reservation_handler_1.FindReservationHandler; } });
+var create_journey_handler_1 = require("./create-journey.handler");
+Object.defineProperty(exports, "CreateJourneyHandler", { enumerable: true, get: function () { return create_journey_handler_1.CreateJourneyHandler; } });
+var complete_journey_handler_1 = require("./complete-journey.handler");
+Object.defineProperty(exports, "CompleteJourneyHandler", { enumerable: true, get: function () { return complete_journey_handler_1.CompleteJourneyHandler; } });
+var find_journey_handler_1 = require("./find-journey.handler");
+Object.defineProperty(exports, "FindJourneyHandler", { enumerable: true, get: function () { return find_journey_handler_1.FindJourneyHandler; } });
 //# sourceMappingURL=index.js.map

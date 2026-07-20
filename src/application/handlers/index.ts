@@ -1,9 +1,10 @@
-/**
- * Application Handlers Index
- * 
- * Reserving for future handler implementations.
- * Handlers process commands and queries, coordinating use cases.
- */
-
-// Export placeholder
-export {}
+export { CreateTravellerHandler } from './create-traveller.handler';
+export { UpdateTravellerHandler } from './update-traveller.handler';
+export { FindTravellerHandler } from './find-traveller.handler';
+export { CreateReservationHandler } from './create-reservation.handler';
+export { ConfirmReservationHandler } from './confirm-reservation.handler';
+export { CancelReservationHandler } from './cancel-reservation.handler';
+export { FindReservationHandler } from './find-reservation.handler';
+export { CreateJourneyHandler } from './create-journey.handler';
+export { CompleteJourneyHandler } from './complete-journey.handler';
+export { FindJourneyHandler } from './find-journey.handler';

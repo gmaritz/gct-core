@@ -20,6 +20,24 @@ export class TravellerCreatedEvent extends DomainEvent {
 }
 
 /**
+ * Event raised when a traveller's profile (name) is updated
+ */
+export class TravellerProfileUpdatedEvent extends DomainEvent {
+  constructor(
+    aggregateId: string,
+    readonly firstName: string,
+    readonly lastName: string,
+    occurredAt?: Date
+  ) {
+    super(aggregateId, occurredAt);
+  }
+
+  getEventType(): string {
+    return 'TravellerProfileUpdated';
+  }
+}
+
+/**
  * Event raised when a traveller's preferences are updated
  */
 export class TravellerPreferencesUpdatedEvent extends DomainEvent {

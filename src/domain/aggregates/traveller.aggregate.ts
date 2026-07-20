@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AggregateRoot } from '../shared/aggregate-root';
 import { EmailAddress } from '../value-objects/email-address.vo';
-import { TravellerCreatedEvent } from '../events/traveller.event';
+import { TravellerCreatedEvent, TravellerProfileUpdatedEvent } from '../events/traveller.event';
 
 /**
  * Traveller Aggregate Root
@@ -94,6 +94,22 @@ export class Traveller extends AggregateRoot {
 
   getPreferences(): Record<string, any> {
     return { ...this.preferences };
+  }
+
+  updateProfile(firstName: string, lastName: string): void {
+    if (!firstName || firstName.trim().length === 0) {
+      throw new Error('First name is required');
+    }
+    if (!lastName || lastName.trim().length === 0) {
+      throw new Error('Last name is required');
+    }
+    this.firstName = firstName.trim();
+    this.lastName = lastName.trim();
+    this.updatedAt = new Date();
+
+    this.addDomainEvent(
+      new TravellerProfileUpdatedEvent(this.id, this.firstName, this.lastName)
+    );
   }
 
   updatePreferences(preferences: Record<string, any>): void {

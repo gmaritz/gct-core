@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.JourneyFinalizedEvent = exports.JourneyCreatedEvent = exports.ReservationCancelledEvent = exports.ReservationConfirmedEvent = exports.ReservationCreatedEvent = exports.TravellerPreferencesUpdatedEvent = exports.TravellerCreatedEvent = void 0;
+exports.JourneyFinalizedEvent = exports.JourneyCreatedEvent = exports.ReservationCancelledEvent = exports.ReservationConfirmedEvent = exports.ReservationCreatedEvent = exports.TravellerPreferencesUpdatedEvent = exports.TravellerProfileUpdatedEvent = exports.TravellerCreatedEvent = void 0;
 /**
  * Domain Events Index
  *
@@ -8,6 +8,7 @@ exports.JourneyFinalizedEvent = exports.JourneyCreatedEvent = exports.Reservatio
  */
 var traveller_event_1 = require("./traveller.event");
 Object.defineProperty(exports, "TravellerCreatedEvent", { enumerable: true, get: function () { return traveller_event_1.TravellerCreatedEvent; } });
+Object.defineProperty(exports, "TravellerProfileUpdatedEvent", { enumerable: true, get: function () { return traveller_event_1.TravellerProfileUpdatedEvent; } });
 Object.defineProperty(exports, "TravellerPreferencesUpdatedEvent", { enumerable: true, get: function () { return traveller_event_1.TravellerPreferencesUpdatedEvent; } });
 var reservation_event_1 = require("./reservation.event");
 Object.defineProperty(exports, "ReservationCreatedEvent", { enumerable: true, get: function () { return reservation_event_1.ReservationCreatedEvent; } });

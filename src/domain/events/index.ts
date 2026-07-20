@@ -3,7 +3,7 @@
  * 
  * Exports all domain events.
  */
-export { TravellerCreatedEvent, TravellerPreferencesUpdatedEvent } from './traveller.event';
+export { TravellerCreatedEvent, TravellerProfileUpdatedEvent, TravellerPreferencesUpdatedEvent } from './traveller.event';
 export {
   ReservationCreatedEvent,
   ReservationConfirmedEvent,
