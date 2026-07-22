@@ -398,3 +398,11 @@ This phased approach lets implementation begin with a solid architectural founda
 SPEC-017 — Capability defines what the Platform provides.
 SPEC-018 — Service defines who (architecturally) is responsible for providing those capabilities.
 SPEC-019 — Process defines how work is governed at the business and architectural level to realise those capabilities through services.
+
+
+Specification	Purpose
+SPEC-021 – Canonical State Model	Defines canonical lifecycle and state concepts used consistently across all canonical artefacts.
+SPEC-022 – Canonical Dependency Model	Defines dependency relationships, coupling principles, ownership boundaries, and impact analysis across the Platform.
+SPEC-023 – Canonical Composition Model	Defines aggregation, composition, containment, modularity, and structural assembly of capabilities, services, processes, and other artefacts.
+SPEC-024 – Canonical Governance Model	Defines governance hierarchy, approvals, authorities, ownership, review processes, and decision accountability across the Platform.
+SPEC-025 – Canonical Traceability Model	Consolidates end-to-end traceability principles across all specifications into a single authoritative engineering standard.
