@@ -392,3 +392,9 @@ Phase 2 – Engineering Standards: SPEC-011 to SPEC-020
 Phase 3 – Platform Implementation: Build GCT Core against the approved specification library.
 
 This phased approach lets implementation begin with a solid architectural foundation while still allowing the supporting engineering standards to mature alongside development.
+
+
+
+SPEC-017 — Capability defines what the Platform provides.
+SPEC-018 — Service defines who (architecturally) is responsible for providing those capabilities.
+SPEC-019 — Process defines how work is governed at the business and architectural level to realise those capabilities through services.
