@@ -406,3 +406,71 @@ SPEC-022 – Canonical Dependency Model	Defines dependency relationships, coupli
 SPEC-023 – Canonical Composition Model	Defines aggregation, composition, containment, modularity, and structural assembly of capabilities, services, processes, and other artefacts.
 SPEC-024 – Canonical Governance Model	Defines governance hierarchy, approvals, authorities, ownership, review processes, and decision accountability across the Platform.
 SPEC-025 – Canonical Traceability Model	Consolidates end-to-end traceability principles across all specifications into a single authoritative engineering standard.
+
+
+I would begin a new series immediately after the specifications.
+
+Phase A — Business Architecture (recommended next)
+Business Capability Catalogue
+Business Entity Catalogue
+Business Relationship Catalogue
+Business Rules Catalogue
+Business Event Catalogue
+Business State Catalogue
+Business Lifecycle Catalogue
+
+Once these are complete, we move to:
+
+Phase B — Database Engineering
+Canonical Data Model
+Logical Data Model
+PostgreSQL Physical Model
+Index Strategy
+Partition Strategy
+Performance Standards
+Migration Standards
+
+    ├── BUS-001-business-capability-catalogue.md
+    ├── BUS-002-business-entity-catalogue.md
+    ├── BUS-003-business-process-catalogue.md
+    ├── BUS-004-business-rule-catalogue.md
+    ├── BUS-005-business-event-catalogue.md
+    ├── BUS-006-business-state-catalogue.md
+    ├── BUS-007-business-service-catalogue.md
+    ├── BUS-008-business-interaction-model.md
+    ├── BUS-009-business-information-model.md
+    └── BUS-010-business-glossary.md
+
+    ✅	BUS-000	Business Architecture Specification Standard	Complete
+▶️	BUS-001	Business Capability Catalogue	Next
+⏳	CAP-008	Booking Management	After BUS-001
+⏳	PRC-001	Search & Build Package	After CAP-008
+
+Phase 1 – Commercial Domain
+CAP-001 – Sales Management
+CAP-002 – Customer Management
+CAP-003 – Product Management
+CAP-004 – Pricing Management
+CAP-005 – Quotation Management
+CAP-006 – Booking Management
+Phase 2 – Operations Domain
+CAP-007 – Accommodation Management
+CAP-008 – Tour Management
+CAP-009 – Activity Management
+CAP-010 – Transport Management
+CAP-011 – Guide Management
+CAP-012 – Itinerary Management
+CAP-013 – Supplier Management
+CAP-014 – Availability Management
+
+Order	Document	Purpose
+✅	CAP-000	Specification standard
+1	BUS-001	Business Capability Model
+2	BUS-002	Business Domain Model
+3	ENT-000	Business Entity Catalogue
+4	PRC-000	Business Process Catalogue
+5	RUL-000	Business Rule Catalogue
+6	EVT-000	Business Event Catalogue
+7	INF-000	Business Information Catalogue
+8	SRV-000	Business Service Catalogue
+9	USE-000	Use Case Catalogue

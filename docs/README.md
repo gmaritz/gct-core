@@ -119,3 +119,17 @@ These templates ensure consistent engineering documentation across all platform 
 Platform Engineering Governance Framework
 
 Version 1.0
+
+The complete identifier catalogue
+Prefix	Purpose	Example
+SPEC	Engineering Specifications	SPEC-025
+BUS	Business Architecture Documents	BUS-001
+CAP	Business Capabilities	CAP-008
+ENT	Business Entities	ENT-003
+PRC	Business Processes	PRC-003
+RUL	Business Rules	RUL-001
+EVT	Business Events	EVT-001
+STA	Business States	STA-003
+SRV	Business Services	SRV-002
+USE	Business Use Cases	USE-001
+ADR	Architecture Decision Records	ADR-001

@@ -1,3 +1,17 @@
+# Deprecated
+
+This document has been superseded by the Platform Engineering Specification Library.
+
+The authoritative standards are now defined in:
+
+- SPEC-000
+- SPEC-001
+- SPEC-002
+...
+- SPEC-025
+
+This document is retained for historical reference only.
+
 # SPEC-002 – Canonical Physical Data Model
 
 > **Section 1 of 7 — Global Database Standards**
