@@ -1,0 +1,365 @@
+# SPEC-002 – Canonical Physical Data Model
+
+> **Section 1 of 7 — Global Database Standards**
+
+## Document Control
+
+| Property | Value |
+|---|---|
+| Specification ID | SPEC-002 |
+| Version | 1.1.0 |
+| Status | Approved Implementation Specification |
+
+## Purpose
+
+This specification establishes the global standards governing the physical persistence layer of GCT Core. These standards apply to every persistence model, migration, repository implementation and future module.
+
+## Authority
+
+1. Architecture Manifest
+2. Architecture Documents
+3. Approved Specifications
+4. Source Code
+
+Where conflicts exist, the higher authority prevails.
+
+## Architectural Principles
+
+- Domain First
+- Persistence Ignorance
+- Infrastructure Isolation
+- Aggregate Persistence
+- Stable Data Model
+
+## Canonical Platform
+
+- PostgreSQL
+- Prisma ORM
+- Prisma Migrate
+- Prisma Studio
+
+## Naming Standards
+
+### Tables
+- snake_case
+- singular nouns
+
+### Columns
+- snake_case
+
+### Primary Keys
+- UUID
+- Immutable
+- Technical identifiers
+
+### Technical Identity vs Business Identity
+
+UUIDs are internal technical identifiers.
+
+Business identifiers (Reservation Number, Payment Reference, Supplier Booking Reference) are separate and may evolve independently.
+
+### Foreign Keys
+
+<aggregate>_id
+
+### Indexes
+
+idx_<table>_<field>
+
+### Constraints
+
+uk_<table>_<field>
+
+fk_<table>_<referenced_table>
+
+chk_<table>_<rule>
+
+## Standard Aggregate Fields
+
+Identity:
+- id
+
+Audit:
+- created_at
+- created_by
+- updated_at
+- updated_by
+
+### Audit Field Population
+
+Repositories populate audit fields.
+
+Authenticated user UUIDs are stored.
+
+System processes use a configured system identity.
+
+Lifecycle:
+- is_active
+- deleted_at
+- deleted_by
+
+### Soft Delete Visibility
+
+Repositories exclude soft deleted records by default.
+
+Administrative queries explicitly include deleted records.
+
+Optimistic Concurrency:
+- version
+
+Version starts at 1 and increments on every successful update.
+
+## Nullability Policy
+
+Business fields default to NOT NULL unless a documented business reason exists.
+
+## Canonical Data Types
+
+- UUID
+- VARCHAR
+- TEXT
+- BOOLEAN
+- INTEGER
+- NUMERIC(19,4)
+- TIMESTAMPTZ
+- DateTime
+
+## Date & Time
+
+UTC only.
+
+## Monetary Standards
+
+NUMERIC(19,4)
+
+No floating point values.
+
+## Enumerations
+
+Canonical enums are defined in Section 2.
+
+## Referential Integrity
+
+Foreign keys mandatory.
+
+Default delete behaviour: RESTRICT.
+
+SQL cascade deletes only for true composition relationships.
+
+## Transactions
+
+Aggregate modifications occur within transactions.
+
+Default isolation: READ COMMITTED.
+
+Optimistic concurrency uses the version field.
+
+## Baseline Indexing Principles
+
+Every table includes:
+
+- Primary key index
+- Foreign key indexes
+- Unique indexes
+
+Business-specific indexes are defined with each aggregate.
+
+## Database Migrations
+
+Prisma Migrate only.
+
+## Seed Data Standards
+
+Idempotent, version controlled.
+
+Only reference data may be seeded.
+
+## Environment Standards
+
+Separate Development, Testing, Staging and Production databases.
+
+## Performance Standards
+
+Indexes follow business access patterns.
+
+## Security Standards
+
+Credentials outside source control.
+
+## Backup & Recovery
+
+- Daily backups
+- Point-in-time recovery
+- Restoration testing
+
+## Monitoring
+
+- Migration history
+- Slow query logging
+- Transaction monitoring
+
+## Prohibited Practices
+
+- Business logic in SQL
+- Business logic in triggers
+- Direct controller database access
+- Exposing Prisma models outside Infrastructure
+- Floating point monetary values
+- Manual production schema changes
+
+## Acceptance Criteria
+
+This section establishes the baseline standards inherited by all future persistence models.
+
+## Copilot Implementation Instructions
+
+Implement these standards exactly. Report deviations rather than introducing new conventions.
+
+## Revision History
+
+| Version | Description |
+|---|---|
+|1.0.0|Initial specification|
+|1.1.0|Governance review recommendations incorporated|
+
+
+---
+
+# 8. Canonical Persistence Model
+
+## 8.1 Overview
+
+The Canonical Persistence Model defines how approved Domain Model concepts SHALL be represented within persistent storage.
+
+The persistence model SHALL preserve the integrity of the approved Canonical Domain Model.
+
+Persistence SHALL support the Domain Model.
+
+Persistence SHALL NOT redefine the Domain Model.
+
+The persistence model SHALL remain independent of implementation technologies.
+
+---
+
+## 8.2 Aggregate Root Persistence
+
+Aggregate Roots SHALL constitute the authoritative persistence boundary for every Aggregate.
+
+Each Aggregate Root SHALL:
+
+- possess a unique identity;
+- define the persistence boundary of the Aggregate;
+- control the lifecycle of all owned Entities and Value Objects;
+- maintain Aggregate consistency;
+- represent the single authoritative point through which Aggregate state is modified.
+
+Persistent storage SHALL preserve Aggregate ownership.
+
+Objects external to the Aggregate SHALL NOT modify internal Aggregate state directly.
+
+Aggregate persistence SHALL preserve transactional consistency within the Aggregate boundary.
+
+---
+
+## 8.3 Entity Persistence
+
+Entities SHALL exist only within the lifecycle of an Aggregate.
+
+Each Entity SHALL:
+
+- possess identity;
+- belong to exactly one Aggregate;
+- be owned by an Aggregate Root;
+- exist only while permitted by its owning Aggregate.
+
+Entities SHALL NOT be persisted independently unless explicitly authorised by the approved Domain Model.
+
+Entity persistence SHALL preserve ownership relationships throughout the lifecycle of the Aggregate.
+
+---
+
+## 8.4 Value Object Persistence
+
+Value Objects SHALL be persisted as part of their owning Aggregate or Entity.
+
+Value Objects:
+
+- SHALL NOT possess independent identity;
+- SHALL NOT define an independent lifecycle;
+- SHALL derive their existence from their owner;
+- SHOULD be treated as immutable.
+
+Persistence implementations SHOULD replace Value Objects rather than modify them in place whenever practical.
+
+---
+
+## 8.5 Enumeration Persistence
+
+Enumerations represent finite, controlled sets of approved values.
+
+Enumeration persistence SHALL preserve:
+
+- semantic clarity;
+- consistency;
+- validation;
+- business meaning.
+
+The physical implementation of Enumerations is an implementation concern and is therefore outside the scope of this specification.
+
+---
+
+## 8.6 Reference Data Persistence
+
+Reference Data represents relatively stable business information shared across the Platform.
+
+Reference Data SHALL:
+
+- possess clear ownership;
+- be centrally governed;
+- remain consistent across all bounded contexts;
+- support reuse throughout the Platform.
+
+Reference Data SHALL NOT be duplicated without explicit architectural approval.
+
+---
+
+## 8.7 Aggregate Ownership
+
+Aggregate ownership SHALL define:
+
+- lifecycle responsibility;
+- modification authority;
+- persistence responsibility;
+- consistency boundaries.
+
+Ownership relationships SHALL remain explicit throughout the persistence model.
+
+Persistence implementations SHALL preserve approved ownership boundaries.
+
+---
+
+## 8.8 Persistence Boundaries
+
+Persistent storage SHALL preserve the Aggregate boundaries defined by the approved Canonical Domain Model.
+
+Cross-Aggregate consistency SHALL be coordinated by application workflows rather than direct persistence coupling.
+
+Persistence implementations SHALL minimise unnecessary dependencies between Aggregates.
+
+Aggregate boundaries SHALL remain the primary mechanism for maintaining consistency within the persistence model.
+
+---
+
+## 8.9 Traceability Requirements
+
+Every persistent representation SHALL be traceable to:
+
+- an approved Domain Concept;
+- an approved Aggregate;
+- the Canonical Domain Model;
+- the governing Architecture Documents;
+- the governing Engineering Specifications where applicable.
+
+Persistent structures SHALL NOT exist without authoritative traceability.
+
+Traceability SHALL be maintained throughout the lifecycle of the Platform.
