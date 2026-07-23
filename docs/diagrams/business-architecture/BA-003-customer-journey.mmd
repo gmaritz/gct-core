@@ -1,0 +1,142 @@
+# BA-003 – Customer Journey
+
+| **Diagram ID** | BA-003 |
+|----------------|---------|
+| **Supports** | BUS-003 – Business Process Model |
+| **Version** | 1.0.0 |
+| **Status** | Draft |
+
+## Purpose
+
+This diagram illustrates the end-to-end customer journey from initial enquiry through to a confirmed booking.
+
+The objective is to show the interaction between the customer and the Go Cape Tours platform, together with the key business entities created during the process.
+
+The diagram represents the business process only and is independent of technical implementation.
+
+---
+
+## Mermaid Diagram
+
+```mermaid
+flowchart LR
+
+%%====================================================
+%% Customer
+%%====================================================
+
+subgraph CUSTOMER["Customer"]
+
+C1["Browse Tours"]
+C2["Submit Enquiry"]
+C3["Review Quote"]
+C4["Accept Quote"]
+C5["Make Payment"]
+C6["Receive Confirmation"]
+
+end
+
+%%====================================================
+%% Sales
+%%====================================================
+
+subgraph SALES["Sales & Reservations"]
+
+S1["Create Enquiry"]
+S2["Prepare Quote"]
+S3["Check Availability"]
+S4["Create Booking"]
+
+end
+
+%%====================================================
+%%Operations
+%%====================================================
+
+subgraph OPERATIONS["Operations"]
+
+O1["Build Itinerary"]
+O2["Allocate Resources"]
+
+end
+
+%%====================================================
+%%Financial
+%%====================================================
+
+subgraph FINANCIAL["Financial"]
+
+F1["Receive Payment"]
+F2["Issue Invoice"]
+
+end
+
+%%====================================================
+%%Platform
+%%====================================================
+
+subgraph PLATFORM["Platform"]
+
+P1["Generate Documents"]
+P2["Send Notifications"]
+
+end
+
+%%====================================================
+%% Primary Journey
+%%====================================================
+
+C1 --> C2
+
+C2 --> S1
+
+S1 --> S2
+
+S2 --> S3
+
+S3 --> C3
+
+C3 --> C4
+
+C4 --> S4
+
+S4 --> O1
+
+O1 --> O2
+
+O2 --> C5
+
+C5 --> F1
+
+F1 --> F2
+
+F2 --> P1
+
+P1 --> P2
+
+P2 --> C6
+```
+
+---
+
+## Business Entities Created
+
+| Step | Business Entity |
+|------|-----------------|
+| Submit Enquiry | Enquiry |
+| Prepare Quote | Quote |
+| Confirm Booking | Booking |
+| Build Itinerary | Itinerary |
+| Receive Payment | Payment |
+| Issue Invoice | Invoice |
+| Generate Documents | Document |
+| Send Notifications | Notification |
+
+---
+
+## Notes
+
+- The process follows the primary commercial journey.
+- Supporting supplier synchronisation is covered in BA-005.
+- Operational delivery is covered in BA-006.
+- Exception paths (declined quotes, failed payments, cancellations, refunds) are intentionally excluded and documented separately within the Business Process Model.

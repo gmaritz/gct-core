@@ -474,3 +474,29 @@ Order	Document	Purpose
 7	INF-000	Business Information Catalogue
 8	SRV-000	Business Service Catalogue
 9	USE-000	Use Case Catalogue
+
+
+docs/
+└── diagrams/
+    ├── business-architecture/
+    │   ├── BA-001-business-capability-map.mmd
+    │   ├── BA-002-business-entity-relationship.mmd
+    │   ├── BA-003-customer-journey.mmd
+    │   ├── BA-004-booking-lifecycle.mmd
+    │   ├── BA-005-supplier-synchronisation.mmd
+    │   └── BA-006-tour-delivery.mmd
+    └── engineering/
+        ├── ENG-001-bounded-contexts.mmd
+        ├── ENG-002-domain-model.mmd
+        ├── ENG-003-aggregate-model.mmd
+
+
+My recommendation
+
+I would finish with approximately 8–10 more specifications.
+
+✅ SPEC-045 – Customer Experience, Engagement & Communication Architecture (4 Parts)
+✅ SPEC-046 – Operational Administration & Back Office Architecture (4 Parts)
+✅ SPEC-047 – Release Governance & Development Standards (3 Parts)
+✅ SPEC-048 – Production Operations Handbook (4–5 Parts)
+✅ SPEC-000 – Architecture Index & Traceability Matrix

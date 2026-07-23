@@ -1,0 +1,176 @@
+# BA-005 – Supplier Synchronisation
+
+| **Diagram ID** | BA-005 |
+|----------------|---------|
+| **Name** | Supplier Synchronisation |
+| **Supports** | BUS-003 – Business Process Model |
+| **Related Capabilities** | Supplier Management, Availability Management, Tour Management |
+| **Version** | 1.0.0 |
+| **Status** | Draft |
+
+## Purpose
+
+This diagram illustrates how external supplier products are transformed into bookable products within the Go Cape Tours platform.
+
+The focus is on the business flow rather than technical implementation. It shows how supplier information is validated, enriched and made available for quotation and booking.
+
+---
+
+## Mermaid Diagram
+
+```mermaid
+flowchart LR
+
+%%====================================================
+%% External Suppliers
+%%====================================================
+
+subgraph EXTERNAL["External Supplier"]
+
+Supplier["Supplier"]
+
+Supplier --> Product["Supplier Product"]
+
+Product --> Availability["Availability"]
+
+Availability --> Rate["Rate"]
+
+Rate --> Offer["Offer"]
+
+end
+
+%%====================================================
+%% Go Cape Tours Platform
+%%====================================================
+
+subgraph PLATFORM["Go Cape Tours Platform"]
+
+Import["Synchronise Supplier Data"]
+
+Validate["Validate Business Rules"]
+
+Catalogue["Build Internal Catalogue"]
+
+Accommodation["Accommodation"]
+
+Activity["Activity"]
+
+Package["Tour Package"]
+
+AvailabilityStore["Current Availability"]
+
+Pricing["Current Pricing"]
+
+end
+
+%%====================================================
+%% Sales
+%%====================================================
+
+subgraph SALES["Sales & Reservations"]
+
+Quote["Prepare Quote"]
+
+Booking["Confirm Booking"]
+
+end
+
+%%====================================================
+%% Primary Business Flow
+%%====================================================
+
+Offer --> Import
+
+Import --> Validate
+
+Validate --> Catalogue
+
+Catalogue --> Accommodation
+
+Catalogue --> Activity
+
+Accommodation --> Package
+
+Activity --> Package
+
+Package --> Quote
+
+Quote --> Booking
+
+%%====================================================
+%% Supporting Relationships
+%%====================================================
+
+Validate -.-> AvailabilityStore
+
+Validate -.-> Pricing
+
+AvailabilityStore -.-> Quote
+
+Pricing -.-> Quote
+```
+
+---
+
+## Business Flow
+
+### 1. Supplier Data
+
+Suppliers provide:
+
+- Products
+- Availability
+- Rates
+- Offers
+
+---
+
+### 2. Synchronisation
+
+The platform synchronises supplier information.
+
+---
+
+### 3. Validation
+
+Business rules validate:
+
+- Product quality
+- Availability
+- Pricing
+- Business eligibility
+
+---
+
+### 4. Internal Catalogue
+
+Validated supplier content becomes part of the Go Cape Tours catalogue.
+
+This includes:
+
+- Accommodation
+- Activities
+
+---
+
+### 5. Tour Composition
+
+Accommodation and Activities are assembled into curated Tour Packages.
+
+---
+
+### 6. Sales
+
+The catalogue supports:
+
+- Quotations
+- Confirmed Bookings
+
+---
+
+## Notes
+
+- The synchronisation process is business-focused and technology independent.
+- API integrations, scheduling and error handling are defined within the Engineering Architecture.
+- Only validated supplier content becomes available for sale.
+- Internal business rules remain authoritative over supplier data.

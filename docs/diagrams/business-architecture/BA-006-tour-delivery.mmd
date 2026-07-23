@@ -1,0 +1,184 @@
+# BA-006 – Tour Delivery
+
+| **Diagram ID** | BA-006 |
+|----------------|---------|
+| **Name** | Tour Delivery |
+| **Supports** | BUS-003 – Business Process Model |
+| **Related Capability** | Tour Management |
+| **Version** | 1.0.0 |
+| **Status** | Draft |
+
+## Purpose
+
+This diagram illustrates the operational delivery of a confirmed booking.
+
+It shows how operational planning, supplier coordination, customer communication and tour execution work together to deliver the customer's experience.
+
+The diagram is business-focused and implementation independent.
+
+---
+
+## Mermaid Diagram
+
+```mermaid
+flowchart LR
+
+%%====================================================
+%% Commercial
+%%====================================================
+
+subgraph COMMERCIAL["Commercial"]
+
+Booking["Confirmed Booking"]
+
+Travellers["Confirmed Travellers"]
+
+Booking --> Travellers
+
+end
+
+%%====================================================
+%% Planning
+%%====================================================
+
+subgraph PLANNING["Planning"]
+
+Itinerary["Finalise Itinerary"]
+
+Resources["Allocate Resources"]
+
+SupplierConfirm["Confirm Supplier Services"]
+
+end
+
+%%====================================================
+%% Operations
+%%====================================================
+
+subgraph OPERATIONS["Operations"]
+
+Vehicle["Vehicle"]
+
+Driver["Driver"]
+
+Guide["Guide"]
+
+Trailer["Trailer (If Required)"]
+
+Pickup["Pickup Location"]
+
+Meeting["Meeting Point"]
+
+end
+
+%%====================================================
+%% Customer Experience
+%%====================================================
+
+subgraph EXPERIENCE["Customer Experience"]
+
+TravelPack["Travel Documentation"]
+
+Tour["Deliver Tour"]
+
+Complete["Booking Completed"]
+
+end
+
+%%====================================================
+%% Primary Operational Flow
+%%====================================================
+
+Travellers --> Itinerary
+
+Itinerary --> Resources
+
+Resources --> SupplierConfirm
+
+SupplierConfirm --> TravelPack
+
+TravelPack --> Tour
+
+Tour --> Complete
+
+%%====================================================
+%% Supporting Relationships
+%%====================================================
+
+Resources -.-> Vehicle
+
+Resources -.-> Driver
+
+Resources -.-> Guide
+
+Resources -.-> Trailer
+
+Itinerary -.-> Pickup
+
+Tour -.-> Meeting
+```
+
+---
+
+## Operational Stages
+
+### 1. Booking Confirmation
+
+A confirmed booking initiates operational planning.
+
+---
+
+### 2. Journey Planning
+
+The itinerary is reviewed and finalised.
+
+---
+
+### 3. Resource Allocation
+
+Operational resources are assigned, including:
+
+- Vehicle
+- Driver
+- Guide
+- Trailer (when required)
+
+---
+
+### 4. Supplier Confirmation
+
+Required supplier services are confirmed.
+
+Examples include:
+
+- Accommodation
+- Activities
+- Attractions
+
+---
+
+### 5. Customer Preparation
+
+Travel documentation and confirmations are issued.
+
+---
+
+### 6. Tour Delivery
+
+The itinerary is delivered according to plan.
+
+---
+
+### 7. Completion
+
+The booking is completed and the customer journey concludes.
+
+---
+
+## Notes
+
+- Operational planning begins only after a booking has been confirmed.
+- Supplier confirmation ensures external services are available before travel.
+- Resource allocation is dependent upon itinerary requirements.
+- Trailer allocation is optional and based on operational needs.
+- Operational execution is independent of payment processing, which is completed earlier in the booking lifecycle.

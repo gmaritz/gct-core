@@ -1,0 +1,159 @@
+# BA-001 – Business Capability Map
+
+| **Diagram ID** | BA-001 |
+|----------------|---------|
+| **Supports** | BUS-001 – Business Capability Model |
+| **Version** | 1.0.0 |
+| **Status** | Draft |
+
+## Purpose
+
+This diagram provides a layered view of the core business capabilities of the Go Cape Tours platform.
+
+It illustrates how capabilities are organised within the business and highlights the primary dependencies between capability groups.
+
+---
+
+```mermaid
+flowchart TB
+
+%% ----------------------------------------------------
+%% Customer Services
+%% ----------------------------------------------------
+
+subgraph CUSTOMER["Customer Services"]
+
+BC001["BC-001
+Customer Management"]
+
+BC003["BC-003
+Booking Management"]
+
+BC004["BC-004
+Pricing & Quotations"]
+
+end
+
+%% ----------------------------------------------------
+%% Products & Operations
+%% ----------------------------------------------------
+
+subgraph OPERATIONS["Products & Operations"]
+
+BC006["BC-006
+Tour Management"]
+
+BC005["BC-005
+Accommodation Management"]
+
+BC007["BC-007
+Supplier Management"]
+
+BC008["BC-008
+Availability Management"]
+
+BC009["BC-009
+Itinerary Management"]
+
+end
+
+%% ----------------------------------------------------
+%% Business Support
+%% ----------------------------------------------------
+
+subgraph SUPPORT["Business Support"]
+
+BC010["BC-010
+Payment Management"]
+
+BC011["BC-011
+Invoicing & Refunds"]
+
+BC013["BC-013
+Document Management"]
+
+BC018["BC-018
+Notifications"]
+
+BC015["BC-015
+Security & Identity"]
+
+end
+
+%% ----------------------------------------------------
+%% Primary Relationships
+%% ----------------------------------------------------
+
+BC001 --> BC003
+
+BC003 --> BC004
+
+BC003 --> BC009
+
+BC004 --> BC008
+
+BC008 --> BC007
+
+BC007 --> BC005
+
+BC009 --> BC006
+
+BC006 --> BC010
+
+BC010 --> BC011
+
+%% ----------------------------------------------------
+%% Supporting Relationships
+%% ----------------------------------------------------
+
+BC011 -.-> BC013
+
+BC015 -.-> BC013
+
+BC013 -.-> BC018
+```
+
+---
+
+## Capability Layers
+
+### Customer Services
+
+Responsible for customer engagement and sales.
+
+- Customer Management
+- Booking Management
+- Pricing & Quotations
+
+---
+
+### Products & Operations
+
+Responsible for delivering tourism products and services.
+
+- Tour Management
+- Accommodation Management
+- Supplier Management
+- Availability Management
+- Itinerary Management
+
+---
+
+### Business Support
+
+Provides financial, operational and platform support services.
+
+- Payment Management
+- Invoicing & Refunds
+- Document Management
+- Notifications
+- Security & Identity
+
+---
+
+## Notes
+
+- Layers represent logical business groupings.
+- Solid arrows indicate primary business dependencies.
+- Dashed arrows indicate supporting capabilities.
+- The diagram is conceptual and does not represent business processes or system architecture.

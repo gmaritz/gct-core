@@ -1,0 +1,199 @@
+# BA-002 – Business Entity Relationship Model
+
+| **Diagram ID** | BA-002 |
+|----------------|---------|
+| **Supports** | BUS-002 – Business Entity Model |
+| **Version** | 1.1.0 |
+| **Status** | Draft |
+
+## Purpose
+
+This diagram provides a conceptual view of the core business entities of the Go Cape Tours platform and the primary relationships between them.
+
+It represents the business architecture and is independent of any database or implementation technology.
+
+---
+
+```mermaid
+flowchart TB
+
+%%====================================================
+%% Commercial
+%%====================================================
+
+subgraph COMMERCIAL["Commercial"]
+
+Customer["Customer"]
+Enquiry["Enquiry"]
+Quote["Quote"]
+Booking["Booking"]
+Traveller["Traveller"]
+
+end
+
+%%====================================================
+%% Products & Services
+%%====================================================
+
+subgraph PRODUCTS["Products & Services"]
+
+TourPackage["Tour Package"]
+Tour["Tour"]
+Accommodation["Accommodation"]
+Activity["Activity"]
+Destination["Destination"]
+Attraction["Attraction"]
+
+end
+
+%%====================================================
+%% Itinerary
+%%====================================================
+
+subgraph ITINERARY["Itinerary"]
+
+Itinerary["Itinerary"]
+ItineraryDay["Itinerary Day"]
+ItineraryItem["Itinerary Item"]
+
+end
+
+%%====================================================
+%% Suppliers
+%%====================================================
+
+subgraph SUPPLIERS["Suppliers"]
+
+Supplier["Supplier"]
+SupplierAgreement["Supplier Agreement"]
+SupplierProduct["Supplier Product"]
+
+Availability["Availability"]
+Rate["Rate"]
+Offer["Offer"]
+Season["Season"]
+
+end
+
+%%====================================================
+%% Financial
+%%====================================================
+
+subgraph FINANCIAL["Financial"]
+
+Payment["Payment"]
+Invoice["Invoice"]
+Refund["Refund"]
+Commission["Commission"]
+Currency["Currency"]
+Tax["Tax"]
+
+end
+
+%%====================================================
+%% Operations
+%%====================================================
+
+subgraph OPERATIONS["Operations"]
+
+Vehicle["Vehicle"]
+Trailer["Trailer"]
+Driver["Driver"]
+Guide["Guide"]
+
+Pickup["Pickup Location"]
+Meeting["Meeting Point"]
+
+end
+
+%%====================================================
+%% Platform
+%%====================================================
+
+subgraph PLATFORM["Platform"]
+
+User["User"]
+Role["Role"]
+Permission["Permission"]
+Document["Document"]
+Notification["Notification"]
+Media["Media Asset"]
+
+end
+
+%%====================================================
+%% PRIMARY BUSINESS FLOW
+%%====================================================
+
+Customer --> Enquiry
+Enquiry --> Quote
+Quote --> Booking
+
+Booking --> Traveller
+Booking --> Itinerary
+Booking --> Payment
+Payment --> Invoice
+
+Itinerary --> ItineraryDay
+ItineraryDay --> ItineraryItem
+ItineraryItem --> Activity
+
+Activity --> Attraction
+Attraction --> Destination
+
+%%====================================================
+%% PRODUCT STRUCTURE
+%%====================================================
+
+TourPackage -.-> Tour
+TourPackage -.-> Accommodation
+TourPackage -.-> Activity
+
+%%====================================================
+%% SUPPLIER SUPPORT
+%%====================================================
+
+Supplier -.-> SupplierAgreement
+Supplier -.-> SupplierProduct
+
+SupplierProduct -.-> Availability
+SupplierProduct -.-> Rate
+SupplierProduct -.-> Offer
+SupplierProduct -.-> Season
+
+Supplier -.-> Accommodation
+Supplier -.-> Activity
+
+%%====================================================
+%% FINANCIAL SUPPORT
+%%====================================================
+
+Booking -.-> Refund
+Booking -.-> Commission
+
+Rate -.-> Currency
+Rate -.-> Tax
+
+%%====================================================
+%% OPERATIONS SUPPORT
+%%====================================================
+
+Tour -.-> Vehicle
+Tour -.-> Trailer
+Tour -.-> Driver
+Tour -.-> Guide
+
+Booking -.-> Pickup
+Tour -.-> Meeting
+
+%%====================================================
+%% PLATFORM SUPPORT
+%%====================================================
+
+User -.-> Role
+Role -.-> Permission
+
+Invoice -.-> Document
+Document -.-> Media
+Document -.-> Notification
+```

@@ -1,0 +1,157 @@
+# BA-004 – Booking Lifecycle
+
+| **Diagram ID** | BA-004 |
+|----------------|---------|
+| **Name** | Booking Lifecycle |
+| **Supports** | BUS-003 – Business Process Model |
+| **Related Entity** | Booking |
+| **Version** | 1.0.0 |
+| **Status** | Draft |
+
+## Purpose
+
+This diagram illustrates the lifecycle of a Booking after it has been confirmed.
+
+It identifies the primary business activities and supporting entities required to prepare, manage, deliver and complete a customer's booking.
+
+The diagram focuses on the Booking as the central business entity and demonstrates how surrounding business domains contribute to the successful delivery of a tour.
+
+---
+
+## Mermaid Diagram
+
+```mermaid
+flowchart TB
+
+%%====================================================
+%% Booking Lifecycle
+%%====================================================
+
+Booking["Confirmed Booking"]
+
+%%----------------------------------------------------
+%% Customer
+%%----------------------------------------------------
+
+Booking --> Traveller["Assign Travellers"]
+
+%%----------------------------------------------------
+%% Planning
+%%----------------------------------------------------
+
+Booking --> Itinerary["Create Itinerary"]
+
+Itinerary --> ItineraryDay["Plan Days"]
+
+ItineraryDay --> Activities["Schedule Activities"]
+
+%%----------------------------------------------------
+%% Accommodation
+%%----------------------------------------------------
+
+Booking --> Accommodation["Reserve Accommodation"]
+
+%%----------------------------------------------------
+%% Operations
+%%----------------------------------------------------
+
+Booking --> Resources["Allocate Resources"]
+
+Resources --> Vehicle["Vehicle"]
+
+Resources --> Driver["Driver"]
+
+Resources --> Guide["Guide"]
+
+Resources --> Trailer["Trailer (if required)"]
+
+%%----------------------------------------------------
+%% Financial
+%%----------------------------------------------------
+
+Booking --> Payment["Receive Payment"]
+
+Payment --> Invoice["Issue Invoice"]
+
+Invoice --> Documents["Generate Documents"]
+
+%%----------------------------------------------------
+%% Customer Communication
+%%----------------------------------------------------
+
+Documents --> Notification["Send Confirmation"]
+
+Notification --> Customer["Customer Receives Travel Pack"]
+
+%%----------------------------------------------------
+%% Completion
+%%----------------------------------------------------
+
+Customer --> Tour["Tour Delivered"]
+
+Tour --> Complete["Booking Completed"]
+```
+
+---
+
+## Lifecycle Summary
+
+### 1. Booking Confirmation
+
+A quotation is accepted and becomes a confirmed Booking.
+
+---
+
+### 2. Traveller Management
+
+Travellers are associated with the booking.
+
+---
+
+### 3. Journey Planning
+
+An itinerary is created consisting of itinerary days and scheduled activities.
+
+---
+
+### 4. Accommodation
+
+Accommodation reservations are confirmed where applicable.
+
+---
+
+### 5. Operational Planning
+
+Operational resources are allocated, including:
+
+- Vehicle
+- Driver
+- Guide
+- Trailer (when required)
+
+---
+
+### 6. Financial Processing
+
+Payments are received, invoices issued and business documents generated.
+
+---
+
+### 7. Customer Communication
+
+Travel documentation and confirmations are sent to the customer.
+
+---
+
+### 8. Tour Delivery
+
+The itinerary is delivered and the booking is completed.
+
+---
+
+## Notes
+
+- The Booking is the central business entity within this diagram.
+- Supplier synchronisation is outside the scope of this lifecycle and is covered by BA-005.
+- Live operational execution is covered by BA-006.
+- Cancellation, amendments and refunds are considered alternative lifecycle paths and are not shown in the primary lifecycle.
