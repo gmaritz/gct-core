@@ -12,7 +12,12 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:seed": "prisma db seed",
+    "prisma:studio": "prisma studio"
   },
   "repository": {
     "type": "git",
@@ -31,6 +36,9 @@
     "url": "https://github.com/gmaritz/gct-core/issues"
   },
   "homepage": "https://github.com/gmaritz/gct-core#readme",
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
   "dependencies": {
     "express": "^4.18.2",
     "prisma": "^5.0.0",

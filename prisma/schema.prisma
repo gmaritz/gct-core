@@ -1,0 +1,2176 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// =========================================================
+// Reference / Lookup Domain
+// =========================================================
+
+model Language {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  name        String
+  active      Boolean   @default(true)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  customers   Customer[]
+
+  @@index([code])
+  @@map("language")
+}
+
+model Country {
+  id          String      @id @default(uuid())
+  code        String      @unique
+  name        String
+  active      Boolean     @default(true)
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  travellers  Traveller[]
+
+  @@index([code])
+  @@map("country")
+}
+
+model BookingStatus {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  name        String
+  active      Boolean   @default(true)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  bookings    Booking[]
+
+  @@index([code])
+  @@map("booking_status")
+}
+
+model QuoteStatus {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  name        String
+  active      Boolean   @default(true)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  quotes      Quote[]
+
+  @@index([code])
+  @@map("quote_status")
+}
+
+model ReservationStatus {
+  id            String        @id @default(uuid())
+  code          String        @unique
+  name          String
+  active        Boolean       @default(true)
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  createdBy     String?
+  updatedBy     String?
+  deletedAt     DateTime?
+  deletedBy     String?
+
+  reservations  Reservation[]
+
+  @@index([code])
+  @@map("reservation_status")
+}
+
+model SupplierType {
+  id          String      @id @default(uuid())
+  code        String      @unique
+  name        String
+  active      Boolean     @default(true)
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  suppliers   Supplier[]
+
+  @@index([code])
+  @@map("supplier_type")
+}
+
+model PaymentStatus {
+  id          String     @id @default(uuid())
+  code        String     @unique
+  name        String
+  active      Boolean    @default(true)
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  payments    Payment[]
+
+  @@index([code])
+  @@map("payment_status")
+}
+
+model RefundStatus {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  name        String
+  active      Boolean   @default(true)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  refunds     Refund[]
+
+  @@index([code])
+  @@map("refund_status")
+}
+
+model InvoiceStatus {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  name        String
+  active      Boolean   @default(true)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  invoices    Invoice[]
+
+  @@index([code])
+  @@map("invoice_status")
+}
+
+model ItineraryStatus {
+  id          String      @id @default(uuid())
+  code        String      @unique
+  name        String
+  active      Boolean     @default(true)
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  itineraries Itinerary[]
+
+  @@index([code])
+  @@map("itinerary_status")
+}
+
+model AssignmentStatus {
+  id          String                @id @default(uuid())
+  code        String                @unique
+  name        String
+  active      Boolean               @default(true)
+
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  assignments ResourceAssignment[]
+
+  @@index([code])
+  @@map("assignment_status")
+}
+
+model ScheduleStatus {
+  id          String                @id @default(uuid())
+  code        String                @unique
+  name        String
+  active      Boolean               @default(true)
+
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  schedules   OperationalSchedule[]
+
+  @@index([code])
+  @@map("schedule_status")
+}
+
+model ExecutionStatus {
+  id          String          @id @default(uuid())
+  code        String          @unique
+  name        String
+  active      Boolean         @default(true)
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  executions  TourExecution[]
+
+  @@index([code])
+  @@map("execution_status")
+}
+
+model DocumentType {
+  id          String      @id @default(uuid())
+  code        String      @unique
+  name        String
+  active      Boolean     @default(true)
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  documents   Document[]
+
+  @@index([code])
+  @@map("document_type")
+}
+
+model NotificationType {
+  id            String          @id @default(uuid())
+  code          String          @unique
+  name          String
+  active        Boolean         @default(true)
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  createdBy     String?
+  updatedBy     String?
+  deletedAt     DateTime?
+  deletedBy     String?
+
+  notifications Notification[]
+
+  @@index([code])
+  @@map("notification_type")
+}
+
+model PackageType {
+  id          String     @id @default(uuid())
+  code        String     @unique
+  name        String
+  active      Boolean    @default(true)
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  packages    Package[]
+
+  @@index([code])
+  @@map("package_type")
+}
+
+model TourType {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  active      Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  tours       Tour[]
+
+  @@index([code])
+  @@map("tour_type")
+}
+
+model AccommodationType {
+  id             String          @id @default(uuid())
+  code           String          @unique
+  name           String
+  active         Boolean         @default(true)
+
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  createdBy      String?
+  updatedBy      String?
+  deletedAt      DateTime?
+  deletedBy      String?
+
+  accommodations Accommodation[]
+
+  @@index([code])
+  @@map("accommodation_type")
+}
+
+model CustomerType {
+  id          String     @id @default(uuid())
+  code        String     @unique
+  name        String
+  active      Boolean    @default(true)
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  customers   Customer[]
+
+  @@index([code])
+  @@map("customer_type")
+}
+
+model BookingNoteType {
+  id          String        @id @default(uuid())
+  code        String        @unique
+  name        String
+  active      Boolean       @default(true)
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  bookingNotes BookingNote[]
+
+  @@index([code])
+  @@map("booking_note_type")
+}
+
+model OperationalNoteType {
+  id          String          @id @default(uuid())
+  code        String          @unique
+  name        String
+  active      Boolean         @default(true)
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  operationalNotes OperationalNote[]
+
+  @@index([code])
+  @@map("operational_note_type")
+}
+
+model MediaType {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  name        String
+  active      Boolean   @default(true)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  media       Media[]
+
+  @@index([code])
+  @@map("media_type")
+}
+
+model AccommodationCategory {
+  id              String            @id @default(uuid())
+  code            String            @unique
+  name            String
+  active          Boolean           @default(true)
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  createdBy       String?
+  updatedBy       String?
+  deletedAt       DateTime?
+  deletedBy       String?
+
+  accommodations  Accommodation[]
+
+  @@index([code])
+  @@map("accommodation_category")
+}
+
+model TrailerType {
+  id          String     @id @default(uuid())
+  code        String     @unique
+  name        String
+  active      Boolean    @default(true)
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  trailers    Trailer[]
+
+  @@index([code])
+  @@map("trailer_type")
+}
+
+model SynchronisationJobType {
+  id          String               @id @default(uuid())
+  code        String               @unique
+  name        String
+  active      Boolean              @default(true)
+
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  jobs        SynchronisationJob[]
+
+  @@index([code])
+  @@map("synchronisation_job_type")
+}
+
+model SynchronisationJobStatus {
+  id          String               @id @default(uuid())
+  code        String               @unique
+  name        String
+  active      Boolean              @default(true)
+
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  jobs        SynchronisationJob[]
+
+  @@index([code])
+  @@map("synchronisation_job_status")
+}
+
+model ImportBatchStatus {
+  id            String        @id @default(uuid())
+  code          String        @unique
+  name          String
+  active        Boolean       @default(true)
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  createdBy     String?
+  updatedBy     String?
+  deletedAt     DateTime?
+  deletedBy     String?
+
+  importBatches ImportBatch[]
+
+  @@index([code])
+  @@map("import_batch_status")
+}
+
+model FinancialAdjustmentType {
+  id            String                @id @default(uuid())
+  code          String                @unique
+  name          String
+  active        Boolean               @default(true)
+
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  createdBy     String?
+  updatedBy     String?
+  deletedAt     DateTime?
+  deletedBy     String?
+
+  adjustments   FinancialAdjustment[]
+
+  @@index([code])
+  @@map("financial_adjustment_type")
+}
+
+model ReconciliationType {
+  id                String                    @id @default(uuid())
+  code              String                    @unique
+  name              String
+  active            Boolean                   @default(true)
+
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  createdBy         String?
+  updatedBy         String?
+  deletedAt         DateTime?
+  deletedBy         String?
+
+  reconciliations   FinancialReconciliation[]
+
+  @@index([code])
+  @@map("reconciliation_type")
+}
+
+model ReconciliationStatus {
+  id                String                    @id @default(uuid())
+  code              String                    @unique
+  name              String
+  active            Boolean                   @default(true)
+
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  createdBy         String?
+  updatedBy         String?
+  deletedAt         DateTime?
+  deletedBy         String?
+
+  reconciliations   FinancialReconciliation[]
+
+  @@index([code])
+  @@map("reconciliation_status")
+}
+
+// =========================================================
+// Commercial Domain
+// =========================================================
+
+model Customer {
+  id                String      @id @default(uuid())
+  customerNumber    String      @unique
+  customerTypeId    String
+  firstName         String?
+  lastName          String?
+  companyName       String?
+  email             String
+  mobileNumber      String?
+  preferredLanguageId String?
+  preferredCurrencyId String?
+  active            Boolean     @default(true)
+
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  createdBy         String?
+  updatedBy         String?
+  deletedAt         DateTime?
+  deletedBy         String?
+  version           Int         @default(1)
+
+  travellers        Traveller[]
+  quotes            Quote[]
+  bookings          Booking[]
+  customerType      CustomerType @relation(fields: [customerTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  preferredLanguage Language?  @relation(fields: [preferredLanguageId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  preferredCurrency Currency?  @relation(fields: [preferredCurrencyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([email])
+  @@index([customerNumber])
+  @@index([customerTypeId])
+  @@index([preferredLanguageId])
+  @@index([preferredCurrencyId])
+  @@map("customer")
+}
+
+model Traveller {
+  id                   String      @id @default(uuid())
+  customerId           String
+  title                String?
+  firstName            String
+  lastName             String
+  dateOfBirth          DateTime? @db.Date
+  countryId            String?
+  passportNumber       String?
+  passportExpiry       DateTime? @db.Date
+  dietaryRequirements  String?
+  mobilityRequirements String?
+
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  createdBy            String?
+  updatedBy            String?
+  deletedAt            DateTime?
+  deletedBy            String?
+
+  customer             Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  country              Country?    @relation(fields: [countryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([customerId])
+  @@index([countryId])
+  @@map("traveller")
+}
+
+model Quote {
+  id           String      @id @default(uuid())
+  customerId   String
+  quoteNumber  String      @unique
+  quoteDate      DateTime @db.Date
+  validUntil     DateTime @db.Date
+  totalAmount    Decimal      @db.Decimal(19,4)
+  currencyId     String
+  quoteStatusId  String
+  notes        String?
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  createdBy    String?
+  updatedBy    String?
+  deletedAt    DateTime?
+  deletedBy    String?
+  version      Int         @default(1)
+
+  customer       Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  currency       Currency      @relation(fields: [currencyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  quoteStatus    QuoteStatus   @relation(fields: [quoteStatusId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([customerId])
+  @@index([currencyId])
+  @@index([quoteStatusId])
+  @@map("quote")
+}
+
+model Booking {
+  id              String         @id @default(uuid())
+  customerId      String
+  bookingNumber   String         @unique
+  bookingDate      DateTime @db.Date
+  travelDate       DateTime @db.Date
+  returnDate       DateTime? @db.Date
+  bookingStatusId  String
+  totalAmount      Decimal        @db.Decimal(19,4)
+  currencyId       String
+  specialRequests String?
+  internalNotes   String?
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  createdBy       String?
+  updatedBy       String?
+  deletedAt       DateTime?
+  deletedBy       String?
+  version         Int            @default(1)
+
+  customer         Customer       @relation(fields: [customerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  bookingStatus    BookingStatus  @relation(fields: [bookingStatusId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  currency         Currency       @relation(fields: [currencyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  bookingItems    BookingItem[]
+  bookingContacts BookingContact[]
+  bookingNotes    BookingNote[]
+  reservations    Reservation[]
+  payments        Payment[]
+  invoices        Invoice[]
+  itinerary       Itinerary?
+
+  @@index([customerId])
+  @@index([travelDate])
+  @@index([bookingStatusId])
+  @@index([currencyId])
+  @@map("booking")
+}
+
+model BookingItem {
+  id         String        @id @default(uuid())
+  bookingId  String
+  productId  String
+  quantity   Int
+  unitPrice  Decimal       @db.Decimal(19,4)
+  totalPrice Decimal       @db.Decimal(19,4)
+
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  createdBy  String?
+  updatedBy  String?
+  deletedAt  DateTime?
+  deletedBy  String?
+
+  booking    Booking       @relation(fields: [bookingId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  product    Product       @relation(fields: [productId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  reservations Reservation[]
+
+  @@index([bookingId])
+  @@index([productId])
+  @@map("booking_item")
+}
+
+model BookingContact {
+  id           String      @id @default(uuid())
+  bookingId    String
+  contactName  String
+  email        String?
+  mobileNumber String?
+  relationship String?
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  createdBy    String?
+  updatedBy    String?
+  deletedAt    DateTime?
+  deletedBy    String?
+
+  booking      Booking     @relation(fields: [bookingId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([bookingId])
+  @@map("booking_contact")
+}
+
+model BookingNote {
+  id        String      @id @default(uuid())
+  bookingId String
+  bookingNoteTypeId String
+  note      String
+
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime?
+  deletedBy String?
+
+  booking   Booking         @relation(fields: [bookingId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  noteType  BookingNoteType @relation(fields: [bookingNoteTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([bookingId])
+  @@index([bookingNoteTypeId])
+  @@map("booking_note")
+}
+
+model Reservation {
+  id                   String      @id @default(uuid())
+  bookingId            String
+  bookingItemId        String
+  supplierId           String
+  reservationReference String?
+  reservationStatusId  String
+  reservedAt           DateTime
+  confirmedAt          DateTime?
+  cancelledAt          DateTime?
+
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  createdBy            String?
+  updatedBy            String?
+  deletedAt            DateTime?
+  deletedBy            String?
+
+  booking              Booking     @relation(fields: [bookingId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  bookingItem          BookingItem @relation(fields: [bookingItemId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  supplier             Supplier    @relation(fields: [supplierId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  reservationStatus    ReservationStatus @relation(fields: [reservationStatusId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([bookingId])
+  @@index([bookingItemId])
+  @@index([supplierId])
+  @@index([reservationStatusId])
+  @@map("reservation")
+}
+
+// =========================================================
+// Catalogue Domain
+// =========================================================
+
+model ProductType {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  name        String
+  description String?
+  active      Boolean   @default(true)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  products    Product[]
+
+  @@index([code])
+  @@map("product_type")
+}
+
+model Destination {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  name        String
+  slug        String    @unique
+  description String?
+  latitude    Decimal?
+  longitude   Decimal?
+  active      Boolean   @default(true)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  products    Product[]
+
+  @@index([slug])
+  @@map("destination")
+}
+
+model ProductCategory {
+  id           String                   @id @default(uuid())
+  code         String                   @unique
+  name         String
+  description  String?
+  active       Boolean                  @default(true)
+
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  createdBy    String?
+  updatedBy    String?
+  deletedAt    DateTime?
+  deletedBy    String?
+
+  productLinks ProductProductCategory[]
+
+  @@map("product_category")
+}
+
+model Product {
+  id               String                   @id @default(uuid())
+  productCode      String                   @unique
+  productTypeId    String
+  destinationId    String
+  name             String
+  slug             String                   @unique
+  shortDescription String?
+  description      String?
+  duration         String?
+  active           Boolean                  @default(true)
+  featured         Boolean                  @default(false)
+  seoTitle         String?
+  seoDescription   String?
+
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  createdBy        String?
+  updatedBy        String?
+  deletedAt        DateTime?
+  deletedBy        String?
+  version          Int                      @default(1)
+
+  productType      ProductType              @relation(fields: [productTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  destination      Destination              @relation(fields: [destinationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  categories       ProductProductCategory[]
+  media            Media[]
+  packageProducts  PackageProduct[]
+  bookingItems     BookingItem[]
+  itineraryItems   ItineraryItem[]
+  supplierProducts SupplierProduct[]
+
+  tour             Tour?
+  activity         Activity?
+  accommodation    Accommodation?
+  package          Package?
+
+  @@index([productTypeId])
+  @@index([destinationId])
+  @@index([slug])
+  @@map("product")
+}
+
+model ProductProductCategory {
+  id         String          @id @default(uuid())
+  productId  String
+  categoryId String
+
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  createdBy  String?
+  updatedBy  String?
+
+  product    Product         @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  category   ProductCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([productId, categoryId])
+  @@index([productId])
+  @@index([categoryId])
+  @@map("product_product_category")
+}
+
+model Tour {
+  id             String   @id @default(uuid())
+  productId      String   @unique
+  tourTypeId     String?
+  privateOnly    Boolean  @default(true)
+  minimumGuests  Int?
+  maximumGuests  Int?
+  pickupIncluded Boolean  @default(true)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdBy      String?
+  updatedBy      String?
+  deletedAt      DateTime?
+  deletedBy      String?
+
+  product        Product   @relation(fields: [productId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  tourType       TourType? @relation(fields: [tourTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([tourTypeId])
+  @@map("tour")
+}
+
+model Activity {
+  id               String   @id @default(uuid())
+  productId        String   @unique
+  durationMinutes  Int?
+  minimumAge       Int?
+  weatherDependent Boolean  @default(false)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  createdBy        String?
+  updatedBy        String?
+  deletedAt        DateTime?
+  deletedBy        String?
+
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@map("activity")
+}
+
+model Accommodation {
+  id           String   @id @default(uuid())
+  productId    String   @unique
+  accommodationTypeId String?
+  supplierCode String?
+  accommodationCategoryId String?
+  starRating   Decimal?
+  checkInTime  String?
+  checkOutTime String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  createdBy    String?
+  updatedBy    String?
+  deletedAt    DateTime?
+  deletedBy    String?
+
+  product      Product             @relation(fields: [productId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  accommodationType AccommodationType? @relation(fields: [accommodationTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  accommodationCategory AccommodationCategory? @relation(fields: [accommodationCategoryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([supplierCode])
+  @@index([accommodationTypeId])
+  @@index([accommodationCategoryId])
+  @@map("accommodation")
+}
+
+model Package {
+  id               String           @id @default(uuid())
+  productId        String           @unique
+  packageTypeId    String?
+  numberOfDays     Int?
+  numberOfNights   Int?
+  featured         Boolean          @default(false)
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  createdBy        String?
+  updatedBy        String?
+  deletedAt        DateTime?
+  deletedBy        String?
+
+  product          Product          @relation(fields: [productId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  packageType      PackageType?     @relation(fields: [packageTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  products         PackageProduct[]
+
+  @@index([packageTypeId])
+  @@map("package")
+}
+
+model PackageProduct {
+  id           String   @id @default(uuid())
+  packageId    String
+  productId    String
+  displayOrder Int?
+  optional     Boolean  @default(false)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  createdBy    String?
+  updatedBy    String?
+
+  package      Package  @relation(fields: [packageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([packageId, productId])
+  @@index([packageId])
+  @@index([productId])
+  @@map("package_product")
+}
+
+model Media {
+  id           String   @id @default(uuid())
+  productId    String
+  mediaTypeId  String
+  title        String?
+  url          String
+  thumbnailUrl String?
+  altText      String?
+  displayOrder Int?
+  featured     Boolean  @default(false)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  createdBy    String?
+  updatedBy    String?
+  deletedAt    DateTime?
+  deletedBy    String?
+
+  product      Product   @relation(fields: [productId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  mediaType    MediaType @relation(fields: [mediaTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([productId])
+  @@index([mediaTypeId])
+  @@map("media")
+}
+
+// =========================================================
+// Supplier Domain
+// =========================================================
+
+model Supplier {
+  id                  String               @id @default(uuid())
+  supplierCode        String               @unique
+  name                String
+  supplierTypeId      String
+  apiProvider         String?
+  active              Boolean              @default(true)
+  sandboxEnabled      Boolean              @default(true)
+  productionEnabled   Boolean              @default(false)
+
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  createdBy           String?
+  updatedBy           String?
+  deletedAt           DateTime?
+  deletedBy           String?
+  version             Int                  @default(1)
+
+  supplierType        SupplierType         @relation(fields: [supplierTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  agreements          SupplierAgreement[]
+  products            SupplierProduct[]
+  synchronisationJobs SynchronisationJob[]
+  importBatches       ImportBatch[]
+  mappingRules        MappingRule[]
+  reservations        Reservation[]
+
+  @@index([supplierCode])
+  @@index([supplierTypeId])
+  @@map("supplier")
+}
+
+model SupplierAgreement {
+  id                 String   @id @default(uuid())
+  supplierId         String
+  agreementReference String?
+  effectiveFrom      DateTime @db.Date
+  effectiveTo        DateTime? @db.Date
+  commissionPercent  Decimal?
+  currencyId         String
+  active             Boolean  @default(true)
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  createdBy          String?
+  updatedBy          String?
+  deletedAt          DateTime?
+  deletedBy          String?
+
+  supplier           Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  currency           Currency @relation(fields: [currencyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([supplierId])
+  @@index([currencyId])
+  @@map("supplier_agreement")
+}
+
+model SupplierProduct {
+  id                  String         @id @default(uuid())
+  supplierId          String
+  productId           String
+  supplierProductCode String
+  supplierProductName String
+  active              Boolean        @default(true)
+  lastSynchronizedAt  DateTime?
+
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  createdBy           String?
+  updatedBy           String?
+  deletedAt           DateTime?
+  deletedBy           String?
+  version             Int            @default(1)
+
+  supplier            Supplier       @relation(fields: [supplierId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  product             Product        @relation(fields: [productId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  availability        Availability[]
+  rates               Rate[]
+  offers              Offer[]
+  seasons             Season[]
+
+  @@unique([supplierId, supplierProductCode])
+  @@index([supplierId])
+  @@index([productId])
+  @@map("supplier_product")
+}
+
+model Availability {
+  id                String          @id @default(uuid())
+  supplierProductId String
+  availableFrom     DateTime @db.Date
+  availableTo       DateTime @db.Date
+  allocation        Int?
+  available         Boolean
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  createdBy         String?
+  updatedBy         String?
+  deletedAt         DateTime?
+  deletedBy         String?
+
+  supplierProduct   SupplierProduct @relation(fields: [supplierProductId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([supplierProductId])
+  @@index([availableFrom])
+  @@map("availability")
+}
+
+model Rate {
+  id                String          @id @default(uuid())
+  supplierProductId String
+  rateCode          String?
+  currencyId        String
+  amount            Decimal         @db.Decimal(19,4)
+  validFrom         DateTime @db.Date
+  validTo           DateTime @db.Date
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  createdBy         String?
+  updatedBy         String?
+  deletedAt         DateTime?
+  deletedBy         String?
+
+  supplierProduct   SupplierProduct @relation(fields: [supplierProductId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  currency          Currency        @relation(fields: [currencyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([supplierProductId])
+  @@index([currencyId])
+  @@index([validFrom])
+  @@map("rate")
+}
+
+model Offer {
+  id                String          @id @default(uuid())
+  supplierProductId String
+  offerCode         String?
+  title             String
+  description       String?
+  validFrom         DateTime @db.Date
+  validTo           DateTime @db.Date
+  active            Boolean         @default(true)
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  createdBy         String?
+  updatedBy         String?
+  deletedAt         DateTime?
+  deletedBy         String?
+
+  supplierProduct   SupplierProduct @relation(fields: [supplierProductId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([supplierProductId])
+  @@map("offer")
+}
+
+model Season {
+  id                String          @id @default(uuid())
+  supplierProductId String
+  seasonCode        String
+  name              String
+  startDate         DateTime @db.Date
+  endDate           DateTime @db.Date
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  createdBy         String?
+  updatedBy         String?
+  deletedAt         DateTime?
+  deletedBy         String?
+
+  supplierProduct   SupplierProduct @relation(fields: [supplierProductId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([supplierProductId])
+  @@map("season")
+}
+
+model SynchronisationJob {
+  id               String    @id @default(uuid())
+  supplierId       String
+  jobTypeId        String
+  jobStatusId      String
+  startedAt        DateTime?
+  completedAt      DateTime?
+  recordsProcessed Int?
+  recordsFailed    Int?
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  createdBy        String?
+  updatedBy        String?
+  deletedAt        DateTime?
+  deletedBy        String?
+
+  supplier         Supplier                 @relation(fields: [supplierId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  jobType          SynchronisationJobType   @relation(fields: [jobTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  status           SynchronisationJobStatus @relation(fields: [jobStatusId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([supplierId])
+  @@index([jobTypeId])
+  @@index([jobStatusId])
+  @@map("synchronisation_job")
+}
+
+model ImportBatch {
+  id              String    @id @default(uuid())
+  supplierId      String
+  batchReference  String    @unique
+  startedAt       DateTime
+  completedAt     DateTime?
+  recordsImported Int
+  recordsRejected Int
+  importBatchStatusId String
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdBy       String?
+  updatedBy       String?
+  deletedAt       DateTime?
+  deletedBy       String?
+
+  supplier        Supplier          @relation(fields: [supplierId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  status          ImportBatchStatus @relation(fields: [importBatchStatusId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([supplierId])
+  @@index([importBatchStatusId])
+  @@map("import_batch")
+}
+
+model MappingRule {
+  id                 String    @id @default(uuid())
+  supplierId         String
+  supplierField      String
+  internalField      String
+  transformationRule String?
+  active             Boolean   @default(true)
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  createdBy          String?
+  updatedBy          String?
+  deletedAt          DateTime?
+  deletedBy          String?
+
+  supplier           Supplier  @relation(fields: [supplierId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([supplierId])
+  @@map("mapping_rule")
+}
+
+// =========================================================
+// Financial Domain
+// =========================================================
+
+model Currency {
+  id                String         @id @default(uuid())
+  code              String         @unique
+  name              String
+  symbol            String?
+  decimalPlaces     Int            @default(2)
+  active            Boolean        @default(true)
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  createdBy         String?
+  updatedBy         String?
+  deletedAt         DateTime?
+  deletedBy         String?
+
+  customers         Customer[]
+  quotes            Quote[]
+  bookings          Booking[]
+  supplierAgreements SupplierAgreement[]
+  rates             Rate[]
+  payments          Payment[]
+
+  exchangeRatesFrom ExchangeRate[] @relation("ExchangeRateFrom")
+  exchangeRatesTo   ExchangeRate[] @relation("ExchangeRateTo")
+
+  @@index([code])
+  @@map("currency")
+}
+
+model ExchangeRate {
+  id             String    @id @default(uuid())
+  fromCurrencyId String
+  toCurrencyId   String
+  exchangeRate   Decimal
+  effectiveDate  DateTime @db.Date
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdBy      String?
+  updatedBy      String?
+  deletedAt      DateTime?
+  deletedBy      String?
+
+  fromCurrency   Currency  @relation("ExchangeRateFrom", fields: [fromCurrencyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  toCurrency     Currency  @relation("ExchangeRateTo", fields: [toCurrencyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([fromCurrencyId, toCurrencyId, effectiveDate])
+  @@index([fromCurrencyId])
+  @@index([toCurrencyId])
+  @@map("exchange_rate")
+}
+
+model TaxRate {
+  id            String    @id @default(uuid())
+  taxCode       String    @unique
+  description   String?
+  percentage    Decimal
+  effectiveFrom DateTime @db.Date
+  effectiveTo   DateTime? @db.Date
+  active        Boolean   @default(true)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  createdBy     String?
+  updatedBy     String?
+  deletedAt     DateTime?
+  deletedBy     String?
+
+  @@index([taxCode])
+  @@map("tax_rate")
+}
+
+model PaymentMethod {
+  id        String    @id @default(uuid())
+  code      String    @unique
+  name      String
+  provider  String?
+  active    Boolean   @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime?
+  deletedBy String?
+
+  payments  Payment[]
+
+  @@map("payment_method")
+}
+
+model Payment {
+  id                   String                @id @default(uuid())
+  bookingId            String
+  paymentMethodId      String
+  paymentReference     String                @unique
+  transactionReference String?
+  amount               Decimal               @db.Decimal(19,4)
+  currencyId           String
+  paymentStatusId      String
+  paymentDate          DateTime @db.Date
+  receivedAt           DateTime?
+  gatewayResponse      Json?
+
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  createdBy            String?
+  updatedBy            String?
+  deletedAt            DateTime?
+  deletedBy            String?
+  version              Int                   @default(1)
+
+  booking              Booking               @relation(fields: [bookingId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  paymentMethod        PaymentMethod         @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  currency             Currency              @relation(fields: [currencyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  paymentStatus        PaymentStatus         @relation(fields: [paymentStatusId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  allocations          PaymentAllocation[]
+  refunds              Refund[]
+  adjustments          FinancialAdjustment[]
+
+  @@index([bookingId])
+  @@index([paymentMethodId])
+  @@index([currencyId])
+  @@index([paymentStatusId])
+  @@index([paymentDate])
+  @@map("payment")
+}
+
+model PaymentAllocation {
+  id              String    @id @default(uuid())
+  paymentId       String
+  invoiceId       String
+  allocatedAmount Decimal   @db.Decimal(19,4)
+  allocatedAt     DateTime  @default(now())
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdBy       String?
+  updatedBy       String?
+
+  payment         Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  invoice         Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([paymentId, invoiceId])
+  @@index([paymentId])
+  @@index([invoiceId])
+  @@map("payment_allocation")
+}
+
+model Refund {
+  id              String    @id @default(uuid())
+  paymentId       String
+  refundReference String    @unique
+  amount          Decimal   @db.Decimal(19,4)
+  refundReason    String?
+  refundedAt      DateTime
+  refundStatusId  String
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdBy       String?
+  updatedBy       String?
+  deletedAt       DateTime?
+  deletedBy       String?
+
+  payment         Payment      @relation(fields: [paymentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  refundStatus    RefundStatus @relation(fields: [refundStatusId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([paymentId])
+  @@index([refundStatusId])
+  @@map("refund")
+}
+
+model FinancialAdjustment {
+  id             String    @id @default(uuid())
+  paymentId      String
+  adjustmentTypeId String
+  amount         Decimal   @db.Decimal(19,4)
+  reason         String?
+  adjustedAt     DateTime
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdBy      String?
+  updatedBy      String?
+  deletedAt      DateTime?
+  deletedBy      String?
+
+  payment        Payment                 @relation(fields: [paymentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  adjustmentType FinancialAdjustmentType @relation(fields: [adjustmentTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([paymentId])
+  @@index([adjustmentTypeId])
+  @@map("financial_adjustment")
+}
+
+model Invoice {
+  id            String              @id @default(uuid())
+  bookingId     String
+  invoiceNumber String              @unique
+  invoiceDate     DateTime @db.Date
+  dueDate         DateTime? @db.Date
+  subtotal        Decimal        @db.Decimal(19,4)
+  taxAmount       Decimal        @db.Decimal(19,4)
+  totalAmount     Decimal        @db.Decimal(19,4)
+  invoiceStatusId String
+
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  createdBy     String?
+  updatedBy     String?
+  deletedAt     DateTime?
+  deletedBy     String?
+  version       Int                 @default(1)
+
+  booking       Booking             @relation(fields: [bookingId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  invoiceStatus InvoiceStatus       @relation(fields: [invoiceStatusId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  allocations   PaymentAllocation[]
+  creditNotes   CreditNote[]
+
+  @@index([bookingId])
+  @@index([invoiceStatusId])
+  @@map("invoice")
+}
+
+model CreditNote {
+  id               String    @id @default(uuid())
+  invoiceId        String
+  creditNoteNumber String    @unique
+  amount           Decimal   @db.Decimal(19,4)
+  reason           String?
+  issuedAt         DateTime
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  createdBy        String?
+  updatedBy        String?
+  deletedAt        DateTime?
+  deletedBy        String?
+
+  invoice          Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([invoiceId])
+  @@map("credit_note")
+}
+
+model FinancialReconciliation {
+  id                 String    @id @default(uuid())
+  reconciliationDate DateTime @db.Date
+  reconciliationTypeId String
+  reconciliationStatusId String
+  processedRecords   Int
+  discrepancies      Int
+  notes              String?
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  createdBy          String?
+  updatedBy          String?
+  deletedAt          DateTime?
+  deletedBy          String?
+
+  reconciliationType   ReconciliationType   @relation(fields: [reconciliationTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  reconciliationStatus ReconciliationStatus @relation(fields: [reconciliationStatusId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([reconciliationDate])
+  @@index([reconciliationTypeId])
+  @@index([reconciliationStatusId])
+  @@map("financial_reconciliation")
+}
+
+// =========================================================
+// Operations Domain
+// =========================================================
+
+model Itinerary {
+  id              String                @id @default(uuid())
+  bookingId       String                @unique
+  itineraryNumber String                @unique
+  title           String
+  startDate         DateTime @db.Date
+  endDate           DateTime @db.Date
+  itineraryStatusId String
+
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  createdBy       String?
+  updatedBy       String?
+  deletedAt       DateTime?
+  deletedBy       String?
+  version         Int                   @default(1)
+
+  booking         Booking               @relation(fields: [bookingId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  itineraryStatus ItineraryStatus       @relation(fields: [itineraryStatusId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  days            ItineraryDay[]
+  assignments     ResourceAssignment[]
+  schedules       OperationalSchedule[]
+  executions      TourExecution[]
+  notes           OperationalNote[]
+
+  @@index([bookingId])
+  @@index([itineraryStatusId])
+  @@map("itinerary")
+}
+
+model ItineraryDay {
+  id          String          @id @default(uuid())
+  itineraryId String
+  dayNumber   Int
+  title       String?
+  description String?
+  travelDate  DateTime @db.Date
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  itinerary   Itinerary       @relation(fields: [itineraryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  items       ItineraryItem[]
+
+  @@unique([itineraryId, dayNumber])
+  @@index([itineraryId])
+  @@map("itinerary_day")
+}
+
+model ItineraryItem {
+  id             String      @id @default(uuid())
+  itineraryDayId String
+  productId      String?
+  startTime      DateTime?
+  endTime        DateTime?
+  sequence       Int
+  description    String?
+  location       String?
+
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  createdBy      String?
+  updatedBy      String?
+  deletedAt      DateTime?
+  deletedBy      String?
+
+  itineraryDay   ItineraryDay @relation(fields: [itineraryDayId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  product        Product?     @relation(fields: [productId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([itineraryDayId])
+  @@index([productId])
+  @@index([sequence])
+  @@map("itinerary_item")
+}
+
+model Vehicle {
+  id                 String               @id @default(uuid())
+  registrationNumber String               @unique
+  description        String
+  manufacturer       String?
+  model              String?
+  seatingCapacity    Int
+  active             Boolean              @default(true)
+
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  createdBy          String?
+  updatedBy          String?
+  deletedAt          DateTime?
+  deletedBy          String?
+  version            Int                  @default(1)
+
+  assignments        ResourceAssignment[]
+
+  @@index([registrationNumber])
+  @@map("vehicle")
+}
+
+model Driver {
+  id             String               @id @default(uuid())
+  employeeNumber String?              @unique
+  firstName      String
+  lastName       String
+  mobileNumber   String?
+  driversLicence String?
+  active         Boolean              @default(true)
+
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  createdBy      String?
+  updatedBy      String?
+  deletedAt      DateTime?
+  deletedBy      String?
+  version        Int                  @default(1)
+
+  assignments    ResourceAssignment[]
+
+  @@index([employeeNumber])
+  @@map("driver")
+}
+
+model Guide {
+  id                String               @id @default(uuid())
+  employeeNumber    String?              @unique
+  firstName         String
+  lastName          String
+  languages         Json?
+  guideRegistration String?
+  active            Boolean              @default(true)
+
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  createdBy         String?
+  updatedBy         String?
+  deletedAt         DateTime?
+  deletedBy         String?
+  version           Int                  @default(1)
+
+  assignments       ResourceAssignment[]
+
+  @@index([employeeNumber])
+  @@map("guide")
+}
+
+model Trailer {
+  id                 String               @id @default(uuid())
+  registrationNumber String?              @unique
+  description        String
+  trailerTypeId      String?
+  active             Boolean              @default(true)
+
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  createdBy          String?
+  updatedBy          String?
+  deletedAt          DateTime?
+  deletedBy          String?
+
+  trailerType        TrailerType?          @relation(fields: [trailerTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  assignments        ResourceAssignment[]
+
+  @@index([trailerTypeId])
+  @@map("trailer")
+}
+
+model ResourceAssignment {
+  id               String    @id @default(uuid())
+  itineraryId      String
+  vehicleId        String?
+  driverId         String?
+  guideId          String?
+  trailerId        String?
+  assignedFrom     DateTime
+  assignedTo       DateTime?
+  assignmentStatusId String
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  createdBy        String?
+  updatedBy        String?
+  deletedAt        DateTime?
+  deletedBy        String?
+
+  itinerary        Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  vehicle          Vehicle?  @relation(fields: [vehicleId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  driver           Driver?   @relation(fields: [driverId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  guide            Guide?    @relation(fields: [guideId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  trailer          Trailer?  @relation(fields: [trailerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  assignmentStatus AssignmentStatus @relation(fields: [assignmentStatusId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([itineraryId])
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([guideId])
+  @@index([trailerId])
+  @@index([assignmentStatusId])
+  @@map("resource_assignment")
+}
+
+model OperationalSchedule {
+  id              String    @id @default(uuid())
+  itineraryId     String
+  scheduledStart  DateTime
+  scheduledFinish DateTime
+  scheduleStatusId String
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdBy       String?
+  updatedBy       String?
+  deletedAt       DateTime?
+  deletedBy       String?
+
+  itinerary       Itinerary      @relation(fields: [itineraryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  scheduleStatus  ScheduleStatus @relation(fields: [scheduleStatusId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([itineraryId])
+  @@index([scheduledStart])
+  @@index([scheduleStatusId])
+  @@map("operational_schedule")
+}
+
+model TourExecution {
+  id                 String    @id @default(uuid())
+  itineraryId        String
+  startedAt          DateTime?
+  completedAt        DateTime?
+  executionStatusId  String
+  kilometresTravelled Decimal?
+  customerFeedback   String?
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  createdBy          String?
+  updatedBy          String?
+  deletedAt          DateTime?
+  deletedBy          String?
+
+  itinerary          Itinerary       @relation(fields: [itineraryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  executionStatus    ExecutionStatus @relation(fields: [executionStatusId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([itineraryId])
+  @@index([executionStatusId])
+  @@map("tour_execution")
+}
+
+model OperationalNote {
+  id         String    @id @default(uuid())
+  itineraryId String
+  operationalNoteTypeId String
+  note       String
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  createdBy  String?
+  updatedBy  String?
+  deletedAt  DateTime?
+  deletedBy  String?
+
+  itinerary  Itinerary           @relation(fields: [itineraryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  noteType   OperationalNoteType @relation(fields: [operationalNoteTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([itineraryId])
+  @@index([operationalNoteTypeId])
+  @@map("operational_note")
+}
+
+// =========================================================
+// Platform Domain
+// =========================================================
+
+model User {
+  id           String      @id @default(uuid())
+  username     String      @unique
+  email        String      @unique
+  firstName    String
+  lastName     String
+  passwordHash String
+  active       Boolean     @default(true)
+  lastLoginAt  DateTime?
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  createdBy    String?
+  updatedBy    String?
+  deletedAt    DateTime?
+  deletedBy    String?
+  version      Int         @default(1)
+
+  roles         UserRole[]
+  documents     Document[]
+  notifications Notification[]
+  workflowEvents WorkflowEvent[]
+  auditRecords  AuditRecord[]
+
+  @@index([username])
+  @@index([email])
+  @@map("platform_user")
+}
+
+model Role {
+  id          String           @id @default(uuid())
+  roleCode    String           @unique
+  name        String
+  description String?
+  active      Boolean          @default(true)
+
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  users       UserRole[]
+  permissions RolePermission[]
+
+  @@index([roleCode])
+  @@map("role")
+}
+
+model Permission {
+  id             String           @id @default(uuid())
+  permissionCode String           @unique
+  description    String?
+
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  createdBy      String?
+  updatedBy      String?
+  deletedAt      DateTime?
+  deletedBy      String?
+
+  roles          RolePermission[]
+
+  @@index([permissionCode])
+  @@map("permission")
+}
+
+model UserRole {
+  id         String   @id @default(uuid())
+  userId     String
+  roleId     String
+  assignedAt DateTime @default(now())
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  createdBy  String?
+  updatedBy  String?
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@map("user_role")
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  roleId       String
+  permissionId String
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  createdBy    String?
+  updatedBy    String?
+
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permission")
+}
+
+model Document {
+  id           String    @id @default(uuid())
+  userId       String?
+  documentTypeId String
+  fileName     String
+  storageKey   String
+  mimeType     String
+  fileSize     Int
+  uploadedAt   DateTime  @default(now())
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdBy    String?
+  updatedBy    String?
+  deletedAt    DateTime?
+  deletedBy    String?
+  version      Int       @default(1)
+
+  user         User?        @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  documentType DocumentType @relation(fields: [documentTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([userId])
+  @@index([documentTypeId])
+  @@map("document")
+}
+
+model DocumentTemplate {
+  id           String    @id @default(uuid())
+  templateCode String    @unique
+  name         String
+  templatePath String
+  active       Boolean   @default(true)
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdBy    String?
+  updatedBy    String?
+  deletedAt    DateTime?
+  deletedBy    String?
+
+  @@map("document_template")
+}
+
+model Notification {
+  id               String    @id @default(uuid())
+  userId           String
+  notificationTypeId String
+  subject          String
+  message          String
+  readAt           DateTime?
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  createdBy        String?
+  updatedBy        String?
+  deletedAt        DateTime?
+  deletedBy        String?
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  notificationType NotificationType  @relation(fields: [notificationTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([userId])
+  @@index([notificationTypeId])
+  @@map("notification")
+}
+
+model NotificationTemplate {
+  id              String    @id @default(uuid())
+  templateCode    String    @unique
+  name            String
+  subjectTemplate String
+  bodyTemplate    String
+  active          Boolean   @default(true)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdBy       String?
+  updatedBy       String?
+  deletedAt       DateTime?
+  deletedBy       String?
+
+  @@map("notification_template")
+}
+
+model WorkflowEvent {
+  id           String    @id @default(uuid())
+  userId       String?
+  workflowType String
+  entityType   String
+  entityId     String
+  eventType    String
+  occurredAt   DateTime  @default(now())
+  payload      Json?
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdBy    String?
+  updatedBy    String?
+  deletedAt    DateTime?
+  deletedBy    String?
+
+  user         User?     @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([workflowType])
+  @@map("workflow_event")
+}
+
+model AuditRecord {
+  id         String    @id @default(uuid())
+  userId     String?
+  entityType String
+  entityId   String
+  action     String
+  oldValues  Json?
+  newValues  Json?
+  ipAddress  String?
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  createdBy  String?
+  updatedBy  String?
+  deletedAt  DateTime?
+  deletedBy  String?
+
+  user       User?     @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_record")
+}
+
+model IntegrationEndpoint {
+  id                 String    @id @default(uuid())
+  endpointCode       String    @unique
+  provider           String
+  baseUrl            String
+  authenticationType String
+  active             Boolean   @default(true)
+  timeoutSeconds     Int       @default(30)
+  retryCount         Int       @default(3)
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  createdBy          String?
+  updatedBy          String?
+  deletedAt          DateTime?
+  deletedBy          String?
+
+  @@index([provider])
+  @@map("integration_endpoint")
+}
+
+model SystemConfiguration {
+  id                 String    @id @default(uuid())
+  configurationKey   String    @unique
+  configurationValue String
+  category           String?
+  encrypted          Boolean   @default(false)
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  createdBy          String?
+  updatedBy          String?
+  deletedAt          DateTime?
+  deletedBy          String?
+
+  @@index([category])
+  @@map("system_configuration")
+}
