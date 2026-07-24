@@ -17,12 +17,9 @@ const itineraryStatuses: LookupSeed[] = [
   { code: "CANCELLED", name: "Cancelled", active: true },
 ];
 
-async function seedByCode(
-  model: { upsert: (args: unknown) => Promise<unknown> },
-  rows: LookupSeed[],
-): Promise<void> {
-  for (const row of rows) {
-    await model.upsert({
+async function main(): Promise<void> {
+  for (const row of itineraryStatuses) {
+    await prisma.itineraryStatus.upsert({
       where: { code: row.code },
       update: {
         name: row.name,
@@ -35,10 +32,6 @@ async function seedByCode(
       },
     });
   }
-}
-
-async function main(): Promise<void> {
-  await seedByCode(prisma.itineraryStatus, itineraryStatuses);
 
   // No other canonical lookup values are explicitly defined in approved specs.
   // Tables are created by migration and intentionally left empty in this seed pass.
