@@ -5,7 +5,7 @@ const logging_1 = require("./logging");
 const prisma_1 = require("./prisma");
 let handlersRegistered = false;
 let shuttingDown = false;
-async function handleShutdown(signal, logger) {
+async function handleShutdown(signal, logger, hooks) {
     if (shuttingDown) {
         return;
     }
@@ -13,6 +13,9 @@ async function handleShutdown(signal, logger) {
     try {
         logger.info(`Shutdown signal received: ${signal}`);
         logger.info("Starting graceful shutdown...");
+        if (hooks?.beforeShutdown) {
+            await hooks.beforeShutdown();
+        }
         await (0, prisma_1.disconnectPrisma)();
         logger.info("Prisma disconnected");
         await (0, logging_1.flushLogger)();
@@ -26,15 +29,15 @@ async function handleShutdown(signal, logger) {
         process.exit(1);
     }
 }
-function registerLifecycleHandlers(logger) {
+function registerLifecycleHandlers(logger, hooks) {
     if (handlersRegistered) {
         return;
     }
     process.on("SIGINT", () => {
-        void handleShutdown("SIGINT", logger);
+        void handleShutdown("SIGINT", logger, hooks);
     });
     process.on("SIGTERM", () => {
-        void handleShutdown("SIGTERM", logger);
+        void handleShutdown("SIGTERM", logger, hooks);
     });
     if (!process.stdin.destroyed) {
         process.stdin.resume();

@@ -5,6 +5,7 @@ const configuration_1 = require("./configuration");
 const logging_1 = require("./logging");
 const lifecycle_1 = require("./lifecycle");
 const prisma_1 = require("./prisma");
+const express_1 = require("./express");
 function formatEnvironmentLabel(environment) {
     return `${environment.charAt(0).toUpperCase()}${environment.slice(1)}`;
 }
@@ -18,9 +19,40 @@ async function bootstrapApplication() {
     logger.info("[OK] Logger Initialised");
     await (0, prisma_1.connectPrisma)();
     logger.info("[OK] Prisma Connected");
-    (0, lifecycle_1.registerLifecycleHandlers)(logger);
+    const expressApplication = (0, express_1.createExpressApplication)(configuration);
+    logger.info("[OK] Express Configured");
+    const httpServer = await startHttpServer(expressApplication, configuration.port);
+    logger.info("[OK] HTTP Server Listening");
+    (0, lifecycle_1.registerLifecycleHandlers)(logger, {
+        beforeShutdown: async () => {
+            await stopHttpServer(httpServer);
+            logger.info("HTTP server stopped");
+        },
+    });
     logger.info("[OK] Lifecycle Registered");
-    logger.info("Platform Bootstrap Complete");
+    logger.info("Platform Ready");
+    logger.info(`Listening: http://localhost:${configuration.port}`);
     logger.info("==================================================");
+}
+function startHttpServer(expressApplication, port) {
+    return new Promise((resolve, reject) => {
+        const server = expressApplication.listen(port, () => {
+            resolve(server);
+        });
+        server.on("error", (error) => {
+            reject(error);
+        });
+    });
+}
+function stopHttpServer(server) {
+    return new Promise((resolve, reject) => {
+        server.close((error) => {
+            if (error) {
+                reject(error);
+                return;
+            }
+            resolve();
+        });
+    });
 }
 //# sourceMappingURL=application.js.map

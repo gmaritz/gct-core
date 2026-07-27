@@ -4,7 +4,11 @@ import { disconnectPrisma } from "./prisma";
 let handlersRegistered = false;
 let shuttingDown = false;
 
-async function handleShutdown(signal: NodeJS.Signals, logger: Logger): Promise<void> {
+export interface LifecycleHooks {
+	beforeShutdown?: () => Promise<void>;
+}
+
+async function handleShutdown(signal: NodeJS.Signals, logger: Logger, hooks?: LifecycleHooks): Promise<void> {
 	if (shuttingDown) {
 		return;
 	}
@@ -14,6 +18,9 @@ async function handleShutdown(signal: NodeJS.Signals, logger: Logger): Promise<v
 	try {
 		logger.info(`Shutdown signal received: ${signal}`);
 		logger.info("Starting graceful shutdown...");
+		if (hooks?.beforeShutdown) {
+			await hooks.beforeShutdown();
+		}
 		await disconnectPrisma();
 		logger.info("Prisma disconnected");
 		await flushLogger();
@@ -27,17 +34,17 @@ async function handleShutdown(signal: NodeJS.Signals, logger: Logger): Promise<v
 	}
 }
 
-export function registerLifecycleHandlers(logger: Logger): void {
+export function registerLifecycleHandlers(logger: Logger, hooks?: LifecycleHooks): void {
 	if (handlersRegistered) {
 		return;
 	}
 
 	process.on("SIGINT", () => {
-		void handleShutdown("SIGINT", logger);
+		void handleShutdown("SIGINT", logger, hooks);
 	});
 
 	process.on("SIGTERM", () => {
-		void handleShutdown("SIGTERM", logger);
+		void handleShutdown("SIGTERM", logger, hooks);
 	});
 
 	if (!process.stdin.destroyed) {
