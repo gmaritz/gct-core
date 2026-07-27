@@ -5,18 +5,25 @@ import { initialiseLogging, Logger } from "./logging";
 import { registerLifecycleHandlers } from "./lifecycle";
 import { connectPrisma } from "./prisma";
 import { createExpressApplication } from "./express";
+import { PlatformInfoService } from "../application/platform";
 
 function formatEnvironmentLabel(environment: AppConfiguration["nodeEnv"]): string {
 	return `${environment.charAt(0).toUpperCase()}${environment.slice(1)}`;
 }
 
 export async function bootstrapApplication(): Promise<void> {
+	const startupStartedAt = process.hrtime.bigint();
 	const configuration = loadConfiguration();
 	const logger = initialiseLogging();
+	const platformInfoService = new PlatformInfoService();
 
-	logger.info("==================================================");
-	logger.info("Go Cape Tours Core Platform");
-	logger.info(`Environment : ${formatEnvironmentLabel(configuration.nodeEnv)}`);
+	logger.info("Startup initiated", {
+		...platformInfoService.getPlatformInfo(),
+		environmentLabel: formatEnvironmentLabel(configuration.nodeEnv),
+		nodeVersion: process.version,
+		port: configuration.port,
+		startupTimestamp: platformInfoService.getStartupInfo(configuration.port, 0).startupTimestamp,
+	});
 	logger.info("[OK] Configuration Loaded");
 	logger.info("[OK] Logger Initialised");
 
@@ -35,10 +42,11 @@ export async function bootstrapApplication(): Promise<void> {
 			logger.info("HTTP server stopped");
 		},
 	});
+	const startupDurationMs = Number(process.hrtime.bigint() - startupStartedAt) / 1_000_000;
+	const startupInfo = platformInfoService.getStartupInfo(configuration.port, Number(startupDurationMs.toFixed(2)));
 	logger.info("[OK] Lifecycle Registered");
-	logger.info("Platform Ready");
-	logger.info(`Listening: http://localhost:${configuration.port}`);
-	logger.info("==================================================");
+	logger.info("Platform Ready", startupInfo);
+	logger.info("Listening", { address: `http://localhost:${configuration.port}` });
 }
 
 function startHttpServer(expressApplication: ReturnType<typeof createExpressApplication>, port: number): Promise<Server> {

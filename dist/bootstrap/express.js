@@ -17,6 +17,13 @@ const LOCALHOST_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ];
+function resolveRequestId(request) {
+    const incomingRequestId = request.header("X-Request-Id");
+    if (typeof incomingRequestId === "string" && incomingRequestId.trim().length > 0) {
+        return incomingRequestId;
+    }
+    return (0, crypto_1.randomUUID)();
+}
 function createCorsOptions(configuration) {
     const developmentOrigins = new Set(LOCALHOST_ORIGINS);
     if (configuration.nodeEnv !== "development") {
@@ -40,7 +47,7 @@ function createExpressApplication(configuration, logger) {
     app.set("trust proxy", true);
     app.disable("x-powered-by");
     app.use((request, response, next) => {
-        const requestId = (0, crypto_1.randomUUID)();
+        const requestId = resolveRequestId(request);
         const requestWithId = request;
         requestWithId.requestId = requestId;
         response.setHeader("X-Request-Id", requestId);
@@ -51,7 +58,13 @@ function createExpressApplication(configuration, logger) {
         const requestId = request.requestId ?? "unknown";
         response.on("finish", () => {
             const elapsedMs = Number(process.hrtime.bigint() - startedAt) / 1000000;
-            logger.info(`requestId=${requestId} method=${request.method} url=${request.originalUrl} status=${response.statusCode} durationMs=${elapsedMs.toFixed(2)}`);
+            logger.info("HTTP request completed", {
+                requestId,
+                method: request.method,
+                url: request.originalUrl,
+                status: response.statusCode,
+                durationMs: Number(elapsedMs.toFixed(2)),
+            });
         });
         next();
     });
@@ -59,7 +72,7 @@ function createExpressApplication(configuration, logger) {
     app.use((0, compression_1.default)());
     app.use((0, cors_1.default)(corsOptions));
     app.use(express_1.default.json());
-    app.use((0, routes_1.createRootRouter)(configuration));
+    app.use((0, routes_1.createRootRouter)());
     app.use((_request, response) => {
         response.status(404).json({
             status: 404,

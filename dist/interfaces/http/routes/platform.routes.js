@@ -2,30 +2,16 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createPlatformRouter = createPlatformRouter;
 const express_1 = require("express");
+const platform_1 = require("../../../application/platform");
 const prisma_1 = require("../../../bootstrap/prisma");
-const SERVICE_NAME = "gct-core";
-const PLATFORM_NAME = "Go Cape Tours Core Platform";
-const DEFAULT_VERSION = "1.0.0";
-function createPlatformRouter(configuration) {
+function createPlatformRouter() {
     const router = (0, express_1.Router)();
-    const version = process.env.npm_package_version ?? DEFAULT_VERSION;
-    const build = process.env.BUILD_VERSION ?? "development";
+    const platformInfoService = new platform_1.PlatformInfoService();
     router.get("/", (_request, response) => {
-        response.status(200).json({
-            service: SERVICE_NAME,
-            name: PLATFORM_NAME,
-            version,
-            environment: configuration.nodeEnv,
-        });
+        response.status(200).json(platformInfoService.getPlatformInfo());
     });
     router.get("/version", (_request, response) => {
-        response.status(200).json({
-            service: SERVICE_NAME,
-            version,
-            environment: configuration.nodeEnv,
-            build,
-            timestamp: new Date().toISOString(),
-        });
+        response.status(200).json(platformInfoService.getVersionInfo());
     });
     router.get("/live", (_request, response) => {
         response.status(200).json({
@@ -33,22 +19,30 @@ function createPlatformRouter(configuration) {
         });
     });
     router.get("/ready", (_request, response) => {
+        const readinessDiagnostics = {
+            database: (0, prisma_1.isPrismaReady)() ? "CONNECTED" : "DISCONNECTED",
+            uptimeSeconds: platformInfoService.getUptime(),
+            timestamp: new Date().toISOString(),
+        };
         if ((0, prisma_1.isPrismaReady)()) {
             response.status(200).json({
                 status: "READY",
+                ...readinessDiagnostics,
             });
             return;
         }
         response.status(503).json({
             status: "NOT_READY",
+            ...readinessDiagnostics,
         });
     });
     router.get("/health", (_request, response) => {
+        const platformInfo = platformInfoService.getPlatformInfo();
         response.status(200).json({
             status: "UP",
-            service: SERVICE_NAME,
-            environment: configuration.nodeEnv,
-            version,
+            service: platformInfo.service,
+            environment: platformInfo.environment,
+            version: platformInfo.version,
             timestamp: new Date().toISOString(),
         });
     });

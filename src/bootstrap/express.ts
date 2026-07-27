@@ -19,6 +19,15 @@ const LOCALHOST_ORIGINS = [
 
 type RequestWithId = Request & { requestId?: string };
 
+function resolveRequestId(request: Request): string {
+	const incomingRequestId = request.header("X-Request-Id");
+	if (typeof incomingRequestId === "string" && incomingRequestId.trim().length > 0) {
+		return incomingRequestId;
+	}
+
+	return randomUUID();
+}
+
 function createCorsOptions(configuration: AppConfiguration): CorsOptions {
 	const developmentOrigins = new Set<string>(LOCALHOST_ORIGINS);
 	if (configuration.nodeEnv !== "development") {
@@ -47,7 +56,7 @@ export function createExpressApplication(configuration: AppConfiguration, logger
 	app.disable("x-powered-by");
 
 	app.use((request: Request, response: Response, next: NextFunction) => {
-		const requestId = randomUUID();
+		const requestId = resolveRequestId(request);
 		const requestWithId = request as RequestWithId;
 		requestWithId.requestId = requestId;
 		response.setHeader("X-Request-Id", requestId);
@@ -60,9 +69,13 @@ export function createExpressApplication(configuration: AppConfiguration, logger
 
 		response.on("finish", () => {
 			const elapsedMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
-			logger.info(
-				`requestId=${requestId} method=${request.method} url=${request.originalUrl} status=${response.statusCode} durationMs=${elapsedMs.toFixed(2)}`,
-			);
+			logger.info("HTTP request completed", {
+				requestId,
+				method: request.method,
+				url: request.originalUrl,
+				status: response.statusCode,
+				durationMs: Number(elapsedMs.toFixed(2)),
+			});
 		});
 
 		next();
@@ -73,7 +86,7 @@ export function createExpressApplication(configuration: AppConfiguration, logger
 	app.use(cors(corsOptions));
 	app.use(express.json());
 
-	app.use(createRootRouter(configuration));
+	app.use(createRootRouter());
 
 	app.use((_request: Request, response: Response) => {
 		response.status(404).json({

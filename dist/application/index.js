@@ -25,4 +25,5 @@ __exportStar(require("./handlers"), exports);
 __exportStar(require("./services"), exports);
 __exportStar(require("./dto"), exports);
 __exportStar(require("./mappers"), exports);
+__exportStar(require("./platform"), exports);
 //# sourceMappingURL=index.js.map

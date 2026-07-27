@@ -1,4 +1,3 @@
 import { Router } from "express";
-import { AppConfiguration } from "../../../bootstrap/configuration";
-export declare function createRootRouter(configuration: AppConfiguration): Router;
+export declare function createRootRouter(): Router;
 //# sourceMappingURL=index.d.ts.map

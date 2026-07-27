@@ -5,5 +5,6 @@ export interface Logger {
 }
 export declare function initialiseLogging(): Logger;
 export declare function getLogger(): Logger;
+export declare function withRequestContext(loggerInstance: Logger, requestId: string): Logger;
 export declare function flushLogger(): Promise<void>;
 //# sourceMappingURL=logging.d.ts.map

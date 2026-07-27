@@ -3,3 +3,5 @@
  * 
  * Framework-independent utilities and helpers.
  */
+
+export * from "./metadata";

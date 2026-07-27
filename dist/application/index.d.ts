@@ -9,4 +9,5 @@ export * from './handlers';
 export * from './services';
 export * from './dto';
 export * from './mappers';
+export * from './platform';
 //# sourceMappingURL=index.d.ts.map
