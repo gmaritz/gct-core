@@ -7,9 +7,8 @@ import helmet from "helmet";
 
 import { AppConfiguration } from "./configuration";
 import { Logger } from "./logging";
+import { createRootRouter } from "../interfaces/http/routes";
 
-const SERVICE_NAME = "gct-core";
-const DEFAULT_VERSION = "1.0.0";
 const LOCALHOST_ORIGINS = [
 	"http://localhost:3000",
 	"http://127.0.0.1:3000",
@@ -73,15 +72,7 @@ export function createExpressApplication(configuration: AppConfiguration, logger
 	app.use(cors(corsOptions));
 	app.use(express.json());
 
-	app.get("/health", (_request: Request, response: Response) => {
-		response.status(200).json({
-			status: "UP",
-			service: SERVICE_NAME,
-			environment: configuration.nodeEnv,
-			version: process.env.npm_package_version ?? DEFAULT_VERSION,
-			timestamp: new Date().toISOString(),
-		});
-	});
+	app.use(createRootRouter(configuration));
 
 	app.use((_request: Request, response: Response) => {
 		response.status(404).json({

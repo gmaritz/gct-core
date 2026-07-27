@@ -1,0 +1,1 @@
+{"version":3,"file":"platform.routes.d.ts","sourceRoot":"","sources":["../../../../src/interfaces/http/routes/platform.routes.ts"],"names":[],"mappings":"AAAA,OAAO,EAAqB,MAAM,EAAE,MAAM,SAAS,CAAC;AAEpD,OAAO,EAAE,gBAAgB,EAAE,MAAM,kCAAkC,CAAC;AAOpE,wBAAgB,oBAAoB,CAAC,aAAa,EAAE,gBAAgB,GAAG,MAAM,CAsD5E"}

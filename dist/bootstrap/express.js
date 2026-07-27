@@ -9,8 +9,7 @@ const compression_1 = __importDefault(require("compression"));
 const cors_1 = __importDefault(require("cors"));
 const express_1 = __importDefault(require("express"));
 const helmet_1 = __importDefault(require("helmet"));
-const SERVICE_NAME = "gct-core";
-const DEFAULT_VERSION = "1.0.0";
+const routes_1 = require("../interfaces/http/routes");
 const LOCALHOST_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -59,15 +58,7 @@ function createExpressApplication(configuration, logger) {
     app.use((0, compression_1.default)());
     app.use((0, cors_1.default)(corsOptions));
     app.use(express_1.default.json());
-    app.get("/health", (_request, response) => {
-        response.status(200).json({
-            status: "UP",
-            service: SERVICE_NAME,
-            environment: configuration.nodeEnv,
-            version: process.env.npm_package_version ?? DEFAULT_VERSION,
-            timestamp: new Date().toISOString(),
-        });
-    });
+    app.use((0, routes_1.createRootRouter)(configuration));
     app.use((_request, response) => {
         response.status(404).json({
             status: 404,
