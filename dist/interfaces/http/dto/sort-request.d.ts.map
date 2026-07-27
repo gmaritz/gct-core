@@ -1,0 +1,1 @@
+{"version":3,"file":"sort-request.d.ts","sourceRoot":"","sources":["../../../../src/interfaces/http/dto/sort-request.ts"],"names":[],"mappings":"AAEA,MAAM,MAAM,aAAa,GAAG,KAAK,GAAG,MAAM,CAAC;AAE3C,MAAM,WAAW,WAAW;IAC3B,MAAM,CAAC,EAAE,MAAM,CAAC;IAChB,SAAS,EAAE,aAAa,CAAC;CACzB;AAED,wBAAgB,iBAAiB,CAAC,KAAK,CAAC,EAAE,OAAO,CAAC,WAAW,CAAC,GAAG,WAAW,CAK3E"}

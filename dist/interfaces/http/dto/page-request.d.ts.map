@@ -1,0 +1,1 @@
+{"version":3,"file":"page-request.d.ts","sourceRoot":"","sources":["../../../../src/interfaces/http/dto/page-request.ts"],"names":[],"mappings":"AAEA,MAAM,WAAW,WAAW;IAC3B,IAAI,EAAE,MAAM,CAAC;IACb,QAAQ,EAAE,MAAM,CAAC;CACjB;AAED,wBAAgB,iBAAiB,CAAC,KAAK,CAAC,EAAE,OAAO,CAAC,WAAW,CAAC,GAAG,WAAW,CAS3E"}
