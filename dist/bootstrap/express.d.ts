@@ -1,4 +1,5 @@
 import { Express } from "express";
 import { AppConfiguration } from "./configuration";
-export declare function createExpressApplication(configuration: AppConfiguration): Express;
+import { Logger } from "./logging";
+export declare function createExpressApplication(configuration: AppConfiguration, logger: Logger): Express;
 //# sourceMappingURL=express.d.ts.map

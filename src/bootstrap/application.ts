@@ -23,7 +23,7 @@ export async function bootstrapApplication(): Promise<void> {
 	await connectPrisma();
 	logger.info("[OK] Prisma Connected");
 
-	const expressApplication = createExpressApplication(configuration);
+	const expressApplication = createExpressApplication(configuration, logger);
 	logger.info("[OK] Express Configured");
 
 	const httpServer = await startHttpServer(expressApplication, configuration.port);

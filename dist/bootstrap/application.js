@@ -19,7 +19,7 @@ async function bootstrapApplication() {
     logger.info("[OK] Logger Initialised");
     await (0, prisma_1.connectPrisma)();
     logger.info("[OK] Prisma Connected");
-    const expressApplication = (0, express_1.createExpressApplication)(configuration);
+    const expressApplication = (0, express_1.createExpressApplication)(configuration, logger);
     logger.info("[OK] Express Configured");
     const httpServer = await startHttpServer(expressApplication, configuration.port);
     logger.info("[OK] HTTP Server Listening");
