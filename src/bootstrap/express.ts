@@ -7,6 +7,7 @@ import helmet from "helmet";
 
 import { AppConfiguration } from "./configuration";
 import { Logger } from "./logging";
+import { createGlobalErrorMiddleware } from "../interfaces/http/middleware/error.middleware";
 import { createRootRouter } from "../interfaces/http/routes";
 
 const LOCALHOST_ORIGINS = [
@@ -80,6 +81,8 @@ export function createExpressApplication(configuration: AppConfiguration, logger
 			error: "Not Found",
 		});
 	});
+
+	app.use(createGlobalErrorMiddleware(logger));
 
 	return app;
 }

@@ -1,0 +1,1 @@
+{"version":3,"file":"forbidden.error.d.ts","sourceRoot":"","sources":["../../../../src/interfaces/http/errors/forbidden.error.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,QAAQ,EAAE,MAAM,aAAa,CAAC;AAEvC,qBAAa,cAAe,SAAQ,QAAQ;gBAC/B,MAAM,SAAgD;CAGlE"}

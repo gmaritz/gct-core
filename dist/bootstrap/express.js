@@ -9,6 +9,7 @@ const compression_1 = __importDefault(require("compression"));
 const cors_1 = __importDefault(require("cors"));
 const express_1 = __importDefault(require("express"));
 const helmet_1 = __importDefault(require("helmet"));
+const error_middleware_1 = require("../interfaces/http/middleware/error.middleware");
 const routes_1 = require("../interfaces/http/routes");
 const LOCALHOST_ORIGINS = [
     "http://localhost:3000",
@@ -65,6 +66,7 @@ function createExpressApplication(configuration, logger) {
             error: "Not Found",
         });
     });
+    app.use((0, error_middleware_1.createGlobalErrorMiddleware)(logger));
     return app;
 }
 //# sourceMappingURL=express.js.map
