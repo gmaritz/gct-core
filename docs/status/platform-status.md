@@ -57,6 +57,17 @@ Current Status:
 | OpenAPI Foundation | ✅ |
 | Runtime Services Foundation | ✅ |
 
+Application Shell
+
+    ✔ Frontend Architecture Foundation
+    ⏳ Landing Page
+    ⏳ Layout & Navigation
+    ⏳ Error Pages
+    ⏳ Frontend Smoke Tests
+
+Business Capabilities
+    Waiting
+
 ---
 
 # Completed Milestones

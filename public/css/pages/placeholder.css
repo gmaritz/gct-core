@@ -1,0 +1,26 @@
+.placeholder-page {
+  width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-5);
+}
+
+.placeholder-page__content {
+  max-width: 40rem;
+}
+
+.placeholder-page__eyebrow {
+  margin: 0 0 var(--spacing-2);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--color-accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.placeholder-page__summary {
+  color: var(--color-muted);
+  line-height: 1.7;
+}

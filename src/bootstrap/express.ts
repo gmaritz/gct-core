@@ -1,3 +1,4 @@
+import path from "path";
 import { randomUUID } from "crypto";
 
 import compression from "compression";
@@ -87,6 +88,9 @@ export function createExpressApplication(
 		next();
 	});
 
+	app.set("view engine", "ejs");
+	app.set("views", path.join(process.cwd(), "src/interfaces/views"));
+	app.use(express.static(path.join(process.cwd(), "public")));
 	app.use(helmet());
 	app.use(compression());
 	app.use(cors(corsOptions));
