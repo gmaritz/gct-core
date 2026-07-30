@@ -1,5 +1,6 @@
 @import url('./base/reset.css');
 @import url('./base/tokens.css');
 @import url('./layouts/site.css');
+@import url('./components/navigation.css');
 @import url('./components/placeholder.css');
 @import url('./utilities/helpers.css');
