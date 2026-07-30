@@ -1,0 +1,1 @@
+{"version":3,"file":"worker.interface.d.ts","sourceRoot":"","sources":["../../../../src/application/runtime/workers/worker.interface.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,aAAa;IAC7B,IAAI,IAAI,MAAM,CAAC;IACf,QAAQ,IAAI,IAAI,CAAC;IACjB,IAAI,IAAI,MAAM,EAAE,CAAC;IACjB,MAAM,CAAC,UAAU,EAAE,MAAM,GAAG,MAAM,GAAG,SAAS,CAAC;CAC/C"}

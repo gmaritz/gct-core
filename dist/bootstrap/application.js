@@ -7,6 +7,7 @@ const lifecycle_1 = require("./lifecycle");
 const prisma_1 = require("./prisma");
 const express_1 = require("./express");
 const platform_1 = require("../application/platform");
+const runtime_1 = require("../application/runtime");
 function formatEnvironmentLabel(environment) {
     return `${environment.charAt(0).toUpperCase()}${environment.slice(1)}`;
 }
@@ -15,6 +16,7 @@ async function bootstrapApplication() {
     const configuration = (0, configuration_service_1.loadConfiguration)();
     const logger = (0, logging_1.initialiseLogging)();
     const platformInfoService = new platform_1.PlatformInfoService();
+    const runtimeManager = new runtime_1.RuntimeManager(logger);
     logger.info("Startup initiated", {
         ...platformInfoService.getPlatformInfo(),
         environmentLabel: formatEnvironmentLabel(configuration.platform.environment),
@@ -27,11 +29,13 @@ async function bootstrapApplication() {
     await (0, prisma_1.connectPrisma)();
     logger.info("[OK] Prisma Connected");
     const expressApplication = (0, express_1.createExpressApplication)(configuration, logger);
+    await runtimeManager.start();
     logger.info("[OK] Express Configured");
     const httpServer = await startHttpServer(expressApplication, configuration.server.port);
     logger.info("[OK] HTTP Server Listening");
     (0, lifecycle_1.registerLifecycleHandlers)(logger, {
         beforeShutdown: async () => {
+            await runtimeManager.stop();
             await stopHttpServer(httpServer);
             logger.info("HTTP server stopped");
         },

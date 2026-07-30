@@ -3,10 +3,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createPlatformRouter = createPlatformRouter;
 const express_1 = require("express");
 const platform_1 = require("../../../application/platform");
+const runtime_1 = require("../../../application/runtime");
 const prisma_1 = require("../../../bootstrap/prisma");
 function createPlatformRouter() {
     const router = (0, express_1.Router)();
     const platformInfoService = new platform_1.PlatformInfoService();
+    const runtimeManager = new runtime_1.RuntimeManager({
+        info: () => undefined,
+        warn: () => undefined,
+        error: () => undefined,
+    });
     router.get("/", (_request, response) => {
         response.status(200).json(platformInfoService.getPlatformInfo());
     });
@@ -18,16 +24,21 @@ function createPlatformRouter() {
             status: "UP",
         });
     });
-    router.get("/ready", (_request, response) => {
+    router.get("/ready", async (_request, response) => {
         const readinessDiagnostics = {
             database: (0, prisma_1.isPrismaReady)() ? "CONNECTED" : "DISCONNECTED",
+            runtime: "READY",
+            services: [],
             uptimeSeconds: platformInfoService.getUptime(),
             timestamp: new Date().toISOString(),
         };
         if ((0, prisma_1.isPrismaReady)()) {
+            const runtimeHealth = await runtimeManager.health();
             response.status(200).json({
                 status: "READY",
                 ...readinessDiagnostics,
+                runtime: runtimeHealth.status,
+                services: runtimeHealth.services,
             });
             return;
         }

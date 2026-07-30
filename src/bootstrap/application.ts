@@ -6,6 +6,7 @@ import { registerLifecycleHandlers } from "./lifecycle";
 import { connectPrisma } from "./prisma";
 import { createExpressApplication } from "./express";
 import { PlatformInfoService } from "../application/platform";
+import { RuntimeManager } from "../application/runtime";
 
 function formatEnvironmentLabel(environment: ApplicationConfiguration["platform"]["environment"]): string {
 	return `${environment.charAt(0).toUpperCase()}${environment.slice(1)}`;
@@ -16,6 +17,7 @@ export async function bootstrapApplication(): Promise<void> {
 	const configuration = loadConfiguration();
 	const logger = initialiseLogging();
 	const platformInfoService = new PlatformInfoService();
+	const runtimeManager = new RuntimeManager(logger);
 
 	logger.info("Startup initiated", {
 		...platformInfoService.getPlatformInfo(),
@@ -31,6 +33,7 @@ export async function bootstrapApplication(): Promise<void> {
 	logger.info("[OK] Prisma Connected");
 
 	const expressApplication = createExpressApplication(configuration, logger);
+	await runtimeManager.start();
 	logger.info("[OK] Express Configured");
 
 	const httpServer = await startHttpServer(expressApplication, configuration.server.port);
@@ -38,6 +41,7 @@ export async function bootstrapApplication(): Promise<void> {
 
 	registerLifecycleHandlers(logger as Logger, {
 		beforeShutdown: async () => {
+			await runtimeManager.stop();
 			await stopHttpServer(httpServer);
 			logger.info("HTTP server stopped");
 		},
