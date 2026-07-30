@@ -5,7 +5,52 @@ Review code and suggest improvements.
 Keep implementation aligned with the approved architecture.
 
 
-Milestone 2.5 – API Infrastructure
-Milestone 2.6 – Error Handling
-Milestone 2.7 – Observability
-Milestone 3.0 – First Business Capability
+Phase 3
+
+2.8 Configuration Refinement
+
+↓
+
+2.9 OpenAPI
+
+↓
+
+2.10 Testing Foundation
+
+↓
+
+2.11 Background Processing Foundation
+
+↓
+
+Phase 4
+
+Catalogue
+
+↓
+
+Supplier Synchronisation
+
+↓
+
+Availability
+
+↓
+
+Pricing
+
+↓
+
+Booking
+
+↓
+
+Payments
+
+↓
+
+Customer Management
+
+↓
+
+Journey Management

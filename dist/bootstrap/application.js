@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.bootstrapApplication = bootstrapApplication;
-const configuration_1 = require("./configuration");
+const configuration_service_1 = require("../config/configuration.service");
 const logging_1 = require("./logging");
 const lifecycle_1 = require("./lifecycle");
 const prisma_1 = require("./prisma");
@@ -12,15 +12,15 @@ function formatEnvironmentLabel(environment) {
 }
 async function bootstrapApplication() {
     const startupStartedAt = process.hrtime.bigint();
-    const configuration = (0, configuration_1.loadConfiguration)();
+    const configuration = (0, configuration_service_1.loadConfiguration)();
     const logger = (0, logging_1.initialiseLogging)();
     const platformInfoService = new platform_1.PlatformInfoService();
     logger.info("Startup initiated", {
         ...platformInfoService.getPlatformInfo(),
-        environmentLabel: formatEnvironmentLabel(configuration.nodeEnv),
+        environmentLabel: formatEnvironmentLabel(configuration.platform.environment),
         nodeVersion: process.version,
-        port: configuration.port,
-        startupTimestamp: platformInfoService.getStartupInfo(configuration.port, 0).startupTimestamp,
+        port: configuration.server.port,
+        startupTimestamp: platformInfoService.getStartupInfo(configuration.server.port, 0).startupTimestamp,
     });
     logger.info("[OK] Configuration Loaded");
     logger.info("[OK] Logger Initialised");
@@ -28,7 +28,7 @@ async function bootstrapApplication() {
     logger.info("[OK] Prisma Connected");
     const expressApplication = (0, express_1.createExpressApplication)(configuration, logger);
     logger.info("[OK] Express Configured");
-    const httpServer = await startHttpServer(expressApplication, configuration.port);
+    const httpServer = await startHttpServer(expressApplication, configuration.server.port);
     logger.info("[OK] HTTP Server Listening");
     (0, lifecycle_1.registerLifecycleHandlers)(logger, {
         beforeShutdown: async () => {
@@ -37,10 +37,10 @@ async function bootstrapApplication() {
         },
     });
     const startupDurationMs = Number(process.hrtime.bigint() - startupStartedAt) / 1000000;
-    const startupInfo = platformInfoService.getStartupInfo(configuration.port, Number(startupDurationMs.toFixed(2)));
+    const startupInfo = platformInfoService.getStartupInfo(configuration.server.port, Number(startupDurationMs.toFixed(2)));
     logger.info("[OK] Lifecycle Registered");
     logger.info("Platform Ready", startupInfo);
-    logger.info("Listening", { address: `http://localhost:${configuration.port}` });
+    logger.info("Listening", { address: `http://localhost:${configuration.server.port}` });
 }
 function startHttpServer(expressApplication, port) {
     return new Promise((resolve, reject) => {

@@ -26,7 +26,7 @@ function resolveRequestId(request) {
 }
 function createCorsOptions(configuration) {
     const developmentOrigins = new Set(LOCALHOST_ORIGINS);
-    if (configuration.nodeEnv !== "development") {
+    if (!configuration.security.corsEnabled || configuration.platform.environment !== "development") {
         return {
             origin: false,
         };

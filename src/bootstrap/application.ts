@@ -1,13 +1,13 @@
 import { Server } from "http";
 
-import { AppConfiguration, loadConfiguration } from "./configuration";
+import { ApplicationConfiguration, loadConfiguration } from "../config/configuration.service";
 import { initialiseLogging, Logger } from "./logging";
 import { registerLifecycleHandlers } from "./lifecycle";
 import { connectPrisma } from "./prisma";
 import { createExpressApplication } from "./express";
 import { PlatformInfoService } from "../application/platform";
 
-function formatEnvironmentLabel(environment: AppConfiguration["nodeEnv"]): string {
+function formatEnvironmentLabel(environment: ApplicationConfiguration["platform"]["environment"]): string {
 	return `${environment.charAt(0).toUpperCase()}${environment.slice(1)}`;
 }
 
@@ -19,10 +19,10 @@ export async function bootstrapApplication(): Promise<void> {
 
 	logger.info("Startup initiated", {
 		...platformInfoService.getPlatformInfo(),
-		environmentLabel: formatEnvironmentLabel(configuration.nodeEnv),
+		environmentLabel: formatEnvironmentLabel(configuration.platform.environment),
 		nodeVersion: process.version,
-		port: configuration.port,
-		startupTimestamp: platformInfoService.getStartupInfo(configuration.port, 0).startupTimestamp,
+		port: configuration.server.port,
+		startupTimestamp: platformInfoService.getStartupInfo(configuration.server.port, 0).startupTimestamp,
 	});
 	logger.info("[OK] Configuration Loaded");
 	logger.info("[OK] Logger Initialised");
@@ -33,7 +33,7 @@ export async function bootstrapApplication(): Promise<void> {
 	const expressApplication = createExpressApplication(configuration, logger);
 	logger.info("[OK] Express Configured");
 
-	const httpServer = await startHttpServer(expressApplication, configuration.port);
+	const httpServer = await startHttpServer(expressApplication, configuration.server.port);
 	logger.info("[OK] HTTP Server Listening");
 
 	registerLifecycleHandlers(logger as Logger, {
@@ -43,10 +43,10 @@ export async function bootstrapApplication(): Promise<void> {
 		},
 	});
 	const startupDurationMs = Number(process.hrtime.bigint() - startupStartedAt) / 1_000_000;
-	const startupInfo = platformInfoService.getStartupInfo(configuration.port, Number(startupDurationMs.toFixed(2)));
+	const startupInfo = platformInfoService.getStartupInfo(configuration.server.port, Number(startupDurationMs.toFixed(2)));
 	logger.info("[OK] Lifecycle Registered");
 	logger.info("Platform Ready", startupInfo);
-	logger.info("Listening", { address: `http://localhost:${configuration.port}` });
+	logger.info("Listening", { address: `http://localhost:${configuration.server.port}` });
 }
 
 function startHttpServer(expressApplication: ReturnType<typeof createExpressApplication>, port: number): Promise<Server> {

@@ -1,0 +1,1 @@
+{"version":3,"file":"platform.config.js","sourceRoot":"","sources":["../../src/config/platform.config.ts"],"names":[],"mappings":";;AAQA,oDAQC;AARD,SAAgB,oBAAoB,CAAC,OAAe,EAAE,KAAa,EAAE,WAAmB;IACvF,OAAO;QACN,WAAW,EAAE,UAAU;QACvB,YAAY,EAAE,6BAA6B;QAC3C,OAAO;QACP,KAAK;QACL,WAAW;KACX,CAAC;AACH,CAAC"}

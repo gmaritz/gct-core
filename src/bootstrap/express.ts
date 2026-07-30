@@ -5,10 +5,10 @@ import cors, { CorsOptions } from "cors";
 import express, { Express, NextFunction, Request, Response } from "express";
 import helmet from "helmet";
 
-import { AppConfiguration } from "./configuration";
 import { Logger } from "./logging";
 import { createGlobalErrorMiddleware } from "../interfaces/http/middleware/error.middleware";
 import { createRootRouter } from "../interfaces/http/routes";
+import { ApplicationConfiguration } from "../config/configuration.service";
 
 const LOCALHOST_ORIGINS = [
 	"http://localhost:3000",
@@ -28,9 +28,9 @@ function resolveRequestId(request: Request): string {
 	return randomUUID();
 }
 
-function createCorsOptions(configuration: AppConfiguration): CorsOptions {
+function createCorsOptions(configuration: ApplicationConfiguration): CorsOptions {
 	const developmentOrigins = new Set<string>(LOCALHOST_ORIGINS);
-	if (configuration.nodeEnv !== "development") {
+	if (!configuration.security.corsEnabled || configuration.platform.environment !== "development") {
 		return {
 			origin: false,
 		};
@@ -48,7 +48,7 @@ function createCorsOptions(configuration: AppConfiguration): CorsOptions {
 	};
 }
 
-export function createExpressApplication(configuration: AppConfiguration, logger: Logger): Express {
+export function createExpressApplication(configuration: ApplicationConfiguration, logger: Logger): Express {
 	const app = express();
 	const corsOptions = createCorsOptions(configuration);
 
