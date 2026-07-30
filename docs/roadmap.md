@@ -11,15 +11,19 @@ Phase 3
 
 ↓
 
-2.9 OpenAPI
+2.9 Testing Foundation
 
 ↓
 
-2.10 Testing Foundation
+2.10 OpenAPI
 
 ↓
 
-2.11 Background Processing Foundation
+2.11 Background Processing
+
+↓
+
+Platform v1.1 Complete
 
 ↓
 

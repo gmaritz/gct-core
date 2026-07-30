@@ -9,6 +9,7 @@ import { Logger } from "./logging";
 import { createGlobalErrorMiddleware } from "../interfaces/http/middleware/error.middleware";
 import { createRootRouter } from "../interfaces/http/routes";
 import { ApplicationConfiguration } from "../config/configuration.service";
+import { NotFoundError } from "../interfaces/http/errors";
 
 const LOCALHOST_ORIGINS = [
 	"http://localhost:3000",
@@ -48,7 +49,11 @@ function createCorsOptions(configuration: ApplicationConfiguration): CorsOptions
 	};
 }
 
-export function createExpressApplication(configuration: ApplicationConfiguration, logger: Logger): Express {
+export function createExpressApplication(
+	configuration: ApplicationConfiguration,
+	logger: Logger,
+	configure?: (application: Express) => void,
+): Express {
 	const app = express();
 	const corsOptions = createCorsOptions(configuration);
 
@@ -86,13 +91,14 @@ export function createExpressApplication(configuration: ApplicationConfiguration
 	app.use(cors(corsOptions));
 	app.use(express.json());
 
+	if (configure) {
+		configure(app);
+	}
+
 	app.use(createRootRouter());
 
-	app.use((_request: Request, response: Response) => {
-		response.status(404).json({
-			status: 404,
-			error: "Not Found",
-		});
+	app.use((_request: Request, _response: Response, next: NextFunction) => {
+		next(new NotFoundError());
 	});
 
 	app.use(createGlobalErrorMiddleware(logger));

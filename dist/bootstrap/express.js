@@ -11,6 +11,7 @@ const express_1 = __importDefault(require("express"));
 const helmet_1 = __importDefault(require("helmet"));
 const error_middleware_1 = require("../interfaces/http/middleware/error.middleware");
 const routes_1 = require("../interfaces/http/routes");
+const errors_1 = require("../interfaces/http/errors");
 const LOCALHOST_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -41,7 +42,7 @@ function createCorsOptions(configuration) {
         },
     };
 }
-function createExpressApplication(configuration, logger) {
+function createExpressApplication(configuration, logger, configure) {
     const app = (0, express_1.default)();
     const corsOptions = createCorsOptions(configuration);
     app.set("trust proxy", true);
@@ -72,12 +73,12 @@ function createExpressApplication(configuration, logger) {
     app.use((0, compression_1.default)());
     app.use((0, cors_1.default)(corsOptions));
     app.use(express_1.default.json());
+    if (configure) {
+        configure(app);
+    }
     app.use((0, routes_1.createRootRouter)());
-    app.use((_request, response) => {
-        response.status(404).json({
-            status: 404,
-            error: "Not Found",
-        });
+    app.use((_request, _response, next) => {
+        next(new errors_1.NotFoundError());
     });
     app.use((0, error_middleware_1.createGlobalErrorMiddleware)(logger));
     return app;
