@@ -10,6 +10,7 @@ import { createGlobalErrorMiddleware } from "../interfaces/http/middleware/error
 import { createRootRouter } from "../interfaces/http/routes";
 import { ApplicationConfiguration } from "../config/configuration.service";
 import { NotFoundError } from "../interfaces/http/errors";
+import { createOpenApiRouter } from "../interfaces/http/openapi/openapi";
 
 const LOCALHOST_ORIGINS = [
 	"http://localhost:3000",
@@ -93,6 +94,10 @@ export function createExpressApplication(
 
 	if (configure) {
 		configure(app);
+	}
+
+	if (configuration.platform.environment === "development") {
+		app.use(createOpenApiRouter());
 	}
 
 	app.use(createRootRouter());

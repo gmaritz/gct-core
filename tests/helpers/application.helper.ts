@@ -7,6 +7,7 @@ import { loadConfiguration } from "../../src/config/configuration.service";
 
 export async function createTestApplication(configure?: (application: Express) => void): Promise<Express> {
 	await connectPrisma();
+	process.env.NODE_ENV = "development";
 	const configuration = loadConfiguration();
 	const logger = initialiseLogging();
 	return createExpressApplication(configuration, logger, configure);

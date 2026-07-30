@@ -1,0 +1,1 @@
+{"version":3,"file":"tags.js","sourceRoot":"","sources":["../../../../src/interfaces/http/openapi/tags.ts"],"names":[],"mappings":";;;AAAa,QAAA,YAAY,GAAG;IAC3B;QACC,IAAI,EAAE,UAAU;QAChB,WAAW,EAAE,wCAAwC;KACrD;IACD;QACC,IAAI,EAAE,QAAQ;QACd,WAAW,EAAE,iCAAiC;KAC9C;IACD;QACC,IAAI,EAAE,QAAQ;QACd,WAAW,EAAE,gDAAgD;KAC7D;CACD,CAAC"}

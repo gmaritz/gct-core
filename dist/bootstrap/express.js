@@ -12,6 +12,7 @@ const helmet_1 = __importDefault(require("helmet"));
 const error_middleware_1 = require("../interfaces/http/middleware/error.middleware");
 const routes_1 = require("../interfaces/http/routes");
 const errors_1 = require("../interfaces/http/errors");
+const openapi_1 = require("../interfaces/http/openapi/openapi");
 const LOCALHOST_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -75,6 +76,9 @@ function createExpressApplication(configuration, logger, configure) {
     app.use(express_1.default.json());
     if (configure) {
         configure(app);
+    }
+    if (configuration.platform.environment === "development") {
+        app.use((0, openapi_1.createOpenApiRouter)());
     }
     app.use((0, routes_1.createRootRouter)());
     app.use((_request, _response, next) => {
