@@ -58,3 +58,28 @@ Customer Management
 ↓
 
 Journey Management
+
+
+Milestone 4.2
+
+Landing Page
+
+↓
+
+IMP-002 Hero Section
+
+↓
+
+IMP-003 Featured Experiences
+
+↓
+
+IMP-004 Value Proposition
+
+↓
+
+IMP-005 Testimonials
+
+↓
+
+IMP-006 Footer

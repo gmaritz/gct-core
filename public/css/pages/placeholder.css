@@ -1,26 +1,63 @@
 .placeholder-page {
-  width: 100%;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  padding: var(--spacing-5);
+  display: grid;
+  gap: var(--space-2xl);
 }
 
-.placeholder-page__content {
-  max-width: 40rem;
+.placeholder-page__hero,
+.placeholder-page__panel {
+  width: 100%;
+}
+
+.placeholder-page__hero {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(232, 236, 241, 0.72));
 }
 
 .placeholder-page__eyebrow {
-  margin: 0 0 var(--spacing-2);
+  margin: 0 0 var(--space-sm);
   text-transform: uppercase;
   letter-spacing: 0.16em;
-  color: var(--color-accent);
+  color: var(--color-brand);
   font-size: 0.8rem;
   font-weight: 700;
 }
 
 .placeholder-page__summary {
-  color: var(--color-muted);
-  line-height: 1.7;
+  max-width: 42rem;
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-body);
+}
+
+.placeholder-page__actions,
+.placeholder-page__button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
+}
+
+.placeholder-page__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-lg);
+}
+
+.placeholder-page__panel {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.placeholder-page__cards,
+.placeholder-page__typography {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-md);
+}
+
+.placeholder-page__image-sample {
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(135deg, rgba(184, 115, 26, 0.75), rgba(212, 165, 79, 0.45)),
+    linear-gradient(180deg, rgba(17, 24, 39, 0.15), rgba(17, 24, 39, 0.02));
+  box-shadow: var(--shadow-md);
 }

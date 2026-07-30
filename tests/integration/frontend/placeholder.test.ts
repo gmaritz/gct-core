@@ -17,8 +17,9 @@ describe("Frontend placeholder page", () => {
 
 		expect(response.status).toBe(200);
 		expect(response.headers["content-type"]).toContain("text/html");
+		expect(response.text).toContain("Frontend Design System");
 		expect(response.text).toContain("GCT Core");
-		expect(response.text).toContain("Frontend Architecture Foundation");
+		expect(response.text).toContain("Premium silver foundations");
 		expect(response.text).toContain('aria-label="Primary Navigation"');
 		expect(response.text).toContain("Go Cape Tours");
 		expect(response.text).toContain("Wine Tours");
@@ -34,5 +35,9 @@ describe("Frontend placeholder page", () => {
 		expect(response.text).toContain("/css/app.css");
 		expect(response.text).toContain("/js/components/navigation.js");
 		expect(response.text).toContain("/js/app.js");
+		expect(response.text).toContain("Primary action");
+		expect(response.text).toContain("Elevated content surfaces");
+		expect(response.text).toContain("Accessible inputs and labels");
+		expect(response.text).toContain("Storytelling surfaces");
 	});
 });

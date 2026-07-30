@@ -1,17 +1,76 @@
 :root {
-  --color-background: #f5f7fb;
+  --color-background-primary: #f5f7fa;
+  --color-background-secondary: #e8ecf1;
+  --color-background-tertiary: #d1d5db;
+  --color-background-dark: #9ca3af;
+
+  --color-text-primary: #111827;
+  --color-text-secondary: #4b5563;
+  --color-text-inverse: #f8fafc;
+
+  --color-brand: #b8731a;
+  --color-brand-hover: #9c5f13;
+  --color-brand-light: #d69a3c;
+
+  --color-border: rgba(107, 114, 128, 0.2);
+  --color-shadow: rgba(55, 65, 81, 0.16);
+
+  --color-success: #2f855a;
+  --color-warning: #d69e2e;
+  --color-error: #c53030;
+  --color-info: #2563eb;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --space-hero: 96px;
+
+  --control-min-height: 44px;
+  --control-padding-inline: 1rem;
+  --control-padding-block: 0.85rem;
+  --control-padding-inline-lg: 1.25rem;
+  --textarea-min-height: 9rem;
+  --focus-ring-width: 3px;
+  --focus-ring-color: var(--color-brand-light);
+  --focus-ring-shadow: 0 0 0 var(--focus-ring-width) rgba(184, 115, 26, 0.16);
+  --control-inset-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.18);
+
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow: 300ms ease;
+
+  --font-heading: "Cormorant Garamond", Georgia, serif;
+  --font-body: Inter, system-ui, sans-serif;
+  --line-height-body: 1.7;
+  --container-max-width: 1280px;
+
+  --color-background: var(--color-background-primary);
   --color-surface: #ffffff;
-  --color-text: #141b2d;
-  --color-muted: #52607a;
-  --color-accent: #3157d6;
-  --color-border: #dce3f0;
-  --spacing-1: 0.25rem;
-  --spacing-2: 0.5rem;
-  --spacing-3: 1rem;
-  --spacing-4: 1.5rem;
-  --spacing-5: 2rem;
-  --radius-md: 0.75rem;
-  --shadow-sm: 0 10px 30px rgba(20, 27, 45, 0.08);
-  --container-width: 72rem;
-  --transition-fast: 180ms ease;
+  --color-surface-muted: var(--color-background-secondary);
+  --color-text: var(--color-text-primary);
+  --color-muted: var(--color-text-secondary);
+  --color-accent: var(--color-brand);
+  --spacing-1: var(--space-xs);
+  --spacing-2: var(--space-sm);
+  --spacing-3: var(--space-md);
+  --spacing-4: var(--space-lg);
+  --spacing-5: var(--space-xl);
+  --container-width: var(--container-max-width);
+  --navigation-inline-gap: var(--space-lg);
+  --navigation-link-gap: var(--space-md);
+  --navigation-mobile-gap: var(--space-sm);
+  --navigation-panel-padding: var(--space-lg);
 }

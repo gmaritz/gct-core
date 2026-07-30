@@ -2,25 +2,26 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding-top: 5.25rem;
+  padding-top: 5.5rem;
 }
 
 .site-header,
 .site-footer {
-  border-bottom: 1px solid var(--color-border);
+  background: transparent;
 }
 
 .site-footer {
   border-top: 1px solid var(--color-border);
-  border-bottom: none;
+  border-bottom: 0;
 }
 
 .site-header__inner,
 .site-footer__inner,
 .page-content {
-  max-width: var(--container-width);
+  max-width: var(--container-max-width);
   margin: 0 auto;
-  padding: var(--spacing-4);
+  padding-inline: 24px;
+  padding-block: 24px;
   width: 100%;
 }
 
@@ -42,7 +43,7 @@ body.is-navigation-open {
 
 .page-content {
   flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
+  padding-top: var(--space-3xl);
+  padding-bottom: var(--space-3xl);
 }
