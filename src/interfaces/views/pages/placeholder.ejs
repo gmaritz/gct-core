@@ -1,85 +1,25 @@
-<section class="placeholder-page">
-  <div class="placeholder-page__hero card card--elevated">
-    <p class="placeholder-page__eyebrow">Frontend Design System</p>
-    <h1>GCT Core</h1>
-    <p class="placeholder-page__summary">
-      Premium silver foundations, refined typography, reusable surfaces, and accessible interaction patterns for every future interface.
-    </p>
+<div class="landing-page">
+  <%- include('../partials/homepage-showcase.ejs') %>
 
-    <div class="placeholder-page__actions">
-      <a class="button button--primary" href="#buttons">Primary action</a>
-      <a class="button button--secondary" href="#cards">Secondary action</a>
-      <a class="button button--ghost" href="#forms">Ghost action</a>
+  <section class="placeholder-page" id="featured-experiences">
+    <div class="container">
+      <div class="placeholder-page__grid">
+        <article class="card placeholder-page__panel">
+          <p class="placeholder-page__eyebrow">Featured Experiences</p>
+          <h2>Placeholder section</h2>
+          <p class="placeholder-page__summary">
+            This section reserves the next landing-page surface for future featured experiences work.
+          </p>
+        </article>
+
+        <article class="card placeholder-page__panel" id="journey-planning">
+          <p class="placeholder-page__eyebrow">Journey Planning</p>
+          <h2>Future landing-page sections</h2>
+          <p class="placeholder-page__summary">
+            Remaining landing-page sections will be added in subsequent milestones without changing the hero structure.
+          </p>
+        </article>
+      </div>
     </div>
-  </div>
-
-  <div class="placeholder-page__grid">
-    <article class="card placeholder-page__panel" id="buttons">
-      <p class="placeholder-page__eyebrow">Buttons</p>
-      <h2>Brand, secondary, and ghost actions</h2>
-      <div class="placeholder-page__button-row">
-        <button class="button button--primary" type="button">Book now</button>
-        <button class="button button--secondary" type="button">Learn more</button>
-        <button class="button button--ghost" type="button">Preview</button>
-      </div>
-    </article>
-
-    <article class="card placeholder-page__panel" id="cards">
-      <p class="placeholder-page__eyebrow">Cards</p>
-      <h2>Elevated content surfaces</h2>
-      <div class="placeholder-page__cards">
-        <div class="card">
-          <h3>Premium layout</h3>
-          <p>Rounded corners, medium shadow, and generous spacing.</p>
-        </div>
-        <div class="card card--elevated">
-          <h3>Interactive state</h3>
-          <p>Subtle motion and hover feedback with restrained visual emphasis.</p>
-        </div>
-      </div>
-    </article>
-
-    <article class="card placeholder-page__panel" id="forms">
-      <p class="placeholder-page__eyebrow">Forms</p>
-      <h2>Accessible inputs and labels</h2>
-      <form class="placeholder-page__form">
-        <div class="field">
-          <label for="design-system-name">Name</label>
-          <input id="design-system-name" name="name" type="text" placeholder="Enter your name">
-          <small class="field__message">Clear labels and visible focus states are mandatory.</small>
-        </div>
-
-        <div class="field">
-          <label for="design-system-enquiry">Enquiry type</label>
-          <select id="design-system-enquiry" name="enquiry">
-            <option>General</option>
-            <option>Experience</option>
-            <option>Travel planning</option>
-          </select>
-        </div>
-      </form>
-    </article>
-
-    <article class="card placeholder-page__panel" id="typography">
-      <p class="placeholder-page__eyebrow">Typography</p>
-      <h2>Heading and body scale</h2>
-      <div class="placeholder-page__typography">
-        <div>
-          <h3>Refined heading voice</h3>
-          <p>Cormorant Garamond is used for headings to bring a premium, editorial character.</p>
-        </div>
-        <div>
-          <h4>Readable body text</h4>
-          <p>Inter keeps navigation, labels, and body copy calm, legible, and efficient.</p>
-        </div>
-      </div>
-    </article>
-
-    <article class="card placeholder-page__panel" id="image-guidance">
-      <p class="placeholder-page__eyebrow">Images</p>
-      <h2>Storytelling surfaces</h2>
-      <div class="placeholder-page__image-sample" role="img" aria-label="A scenic placeholder image surface"></div>
-      <p>Use authentic photography, natural light, and meaningful alt text for future image-driven components.</p>
-    </article>
-  </div>
-</section>
+  </section>
+</div>

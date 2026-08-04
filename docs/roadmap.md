@@ -83,3 +83,37 @@ IMP-005 Testimonials
 ↓
 
 IMP-006 Footer
+
+
+
+IMP-002 ✅ Homepage Showcase
+
+↓
+
+IMP-002.2
+
+Homepage Showcase Visual Design
+
+↓
+
+IMP-002.3
+
+Editorial Content
+
+↓
+
+IMP-002.4
+
+Featured Journey Card
+
+↓
+
+IMP-002.5
+
+Homepage Responsiveness & Motion
+
+↓
+
+IMP-003
+
+Featured Experiences

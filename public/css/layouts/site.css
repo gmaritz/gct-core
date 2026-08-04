@@ -37,6 +37,13 @@
   color: var(--color-accent);
 }
 
+.container {
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding-inline: 24px;
+  width: 100%;
+}
+
 body.is-navigation-open {
   overflow: hidden;
 }
@@ -44,6 +51,6 @@ body.is-navigation-open {
 .page-content {
   flex: 1;
   display: block;
-  padding-top: var(--space-3xl);
-  padding-bottom: var(--space-3xl);
+  padding-top: 0;
+  padding-bottom: 0;
 }
