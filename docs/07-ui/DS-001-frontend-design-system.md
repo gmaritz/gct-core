@@ -255,6 +255,114 @@ All pages shall maintain generous whitespace.
 
 ---
 
+---
+
+# Content Container
+
+The application shall use a shared content container to provide consistent horizontal alignment across all pages and reusable sections.
+
+The content container is a foundational layout primitive and shall be reused throughout the frontend.
+
+## Standard Container
+
+```css
+.container {
+    width: min(100% - (2 * var(--space-lg)), 1280px);
+    margin-inline: auto;
+}
+```
+
+The container shall provide:
+
+- Consistent horizontal alignment
+- Predictable spacing
+- Responsive scaling
+- Maximum readable line lengths
+- Reusable layout behaviour
+
+---
+
+## Usage
+
+The standard container shall be used by:
+
+- Navigation
+- Hero
+- Featured Experiences
+- Value Proposition
+- Testimonials
+- Footer
+- Booking Pages
+- Experience Pages
+- Contact Page
+- About Page
+
+---
+
+## Full Width Sections
+
+Some sections may intentionally span the full viewport.
+
+Examples include:
+
+- Hero background image
+- Promotional banners
+- Image galleries
+- Footer background
+
+In these cases:
+
+- The section background may be full width.
+- The content shall remain constrained within the shared container.
+
+Example
+
+```
+------------------------------------------------------
+
+Full-width Background
+
+    +--------------------------------------------+
+    |                                            |
+    |      Shared Content Container              |
+    |                                            |
+    +--------------------------------------------+
+
+------------------------------------------------------
+```
+
+---
+
+## Responsive Behaviour
+
+Desktop
+
+Maximum width
+
+```
+1280px
+```
+
+Tablet
+
+Container automatically scales using available viewport width.
+
+Mobile
+
+Container maintains equal horizontal padding using Design Tokens.
+
+No component shall define its own horizontal page margins outside the shared container.
+
+---
+
+## Engineering Principle
+
+The content container is part of the Design System.
+
+Individual components shall consume the shared container rather than defining independent page widths.
+
+This ensures consistent alignment, simplifies responsive layouts and reinforces the visual rhythm of the interface.
+
 # Responsive Breakpoints
 
 | Device | Width |

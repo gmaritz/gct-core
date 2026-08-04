@@ -1,0 +1,434 @@
+# IMP-002
+# Frontend Implementation Specification
+## Hero Section
+
+---
+
+# Document Information
+
+| Item | Value |
+|------|-------|
+| Project | GCT Core |
+| Document | IMP-002 |
+| Title | Hero Section |
+| Status | Approved |
+| Version | 1.0 |
+| Owner | Frontend Engineering |
+| Depends On | IMP-001, IMP-001A, DS-001 |
+| Followed By | IMP-003 Featured Experiences |
+
+---
+
+# Objective
+
+Implement the Hero Section for the GCT Core landing page.
+
+The Hero Section establishes the first impression of the Go Cape Tours brand and communicates the company's premium positioning through refined typography, authentic imagery and carefully balanced calls-to-action.
+
+The Hero shall consume the DS-001 Design System and Design Tokens.
+
+No business functionality shall be introduced.
+
+---
+
+# Scope
+
+This implementation includes:
+
+- Hero layout
+- Hero imagery
+- Headline
+- Supporting content
+- Primary CTA
+- Secondary CTA
+- Responsive layout
+- Accessibility
+- Performance optimisation
+
+This implementation excludes:
+
+- Booking engine
+- Search
+- Live availability
+- Video backgrounds
+- Dynamic CMS content
+- API integration
+
+---
+
+# Component Structure
+
+```
+views/
+
+partials/
+
+    hero.ejs
+
+public/
+
+css/
+
+    components/
+
+        hero.css
+
+js/
+
+    components/
+
+        hero.js
+```
+
+---
+
+# Design Intent
+
+The Hero should immediately communicate:
+
+- Premium private touring
+- Authentic South African experiences
+- Personal service
+- Luxury without excess
+- Wine country
+- Scenic beauty
+
+The interface should feel calm, spacious and inviting.
+
+Visitors should feel inspired rather than sold to.
+
+---
+
+# Layout
+
+The Hero consists of two distinct layers.
+
+## Layer 1
+
+Full-width visual background.
+
+The background image shall span the full viewport width.
+
+## Layer 2
+
+Shared content container.
+
+The Hero content shall be constrained within the standard Design System container.
+
+Example
+
+-------------------------------------------------------
+
+Full-width Hero Background
+
++-----------------------------------------------------+
+
+        +-----------------------------------+
+
+        Hero Content
+
+        Heading
+
+        Paragraph
+
+        CTA Buttons
+
+        +-----------------------------------+
+
++-----------------------------------------------------+
+
+This alignment shall match all subsequent landing page sections.
+
+---
+
+# Hero Image
+
+Requirements
+
+- Authentic photography
+- High resolution
+- Landscape orientation
+- Natural lighting
+- Cinematic composition
+- Optimised for responsive delivery
+
+Preferred subjects
+
+- Cape Winelands
+- Stellenbosch vineyards
+- Mountain passes
+- Boutique wineries
+- Luxury touring
+- Scenic roads
+- Table Mountain in the distance
+
+Avoid
+
+- Generic stock photography
+- Crowded tourist scenes
+- Over-saturated editing
+- Artificial HDR effects
+
+The image shall support future replacement through a CMS.
+
+---
+
+# Hero Overlay
+
+A subtle overlay may be used to improve text readability.
+
+The overlay shall not obscure the photography.
+
+Overlay styling shall remain component-specific and shall not become a Design Token.
+
+---
+
+# Typography
+
+Heading Font
+
+Cormorant Garamond
+
+Body Font
+
+Inter
+
+The Hero heading shall use the DS-001 typography scale.
+
+---
+
+# Hero Copy
+
+## Primary Heading
+
+```
+Discover South Africa,
+One Exceptional Journey at a Time.
+```
+
+Alternative wording may be substituted during content refinement.
+
+---
+
+## Supporting Paragraph
+
+```
+Private wine tours, unforgettable day experiences and carefully crafted journeys through the Cape's most remarkable destinations.
+```
+
+---
+
+# Call-to-Action Buttons
+
+## Primary CTA
+
+```
+Explore Experiences
+```
+
+Appearance
+
+- Brand Gold background
+- White text
+- Pill radius
+- Medium shadow
+
+---
+
+## Secondary CTA
+
+```
+Plan Your Journey
+```
+
+Appearance
+
+- Transparent
+- Dark border
+- Dark typography
+
+---
+
+# Content Alignment
+
+Desktop
+
+Left aligned
+
+Vertical centre
+
+Maximum text width
+
+```
+640px
+```
+
+Mobile
+
+Centre aligned
+
+Buttons stacked vertically
+
+---
+
+# Responsive Behaviour
+
+Desktop
+
+Two-column visual balance between content and imagery.
+
+Tablet
+
+Maintain generous spacing.
+
+Mobile
+
+- Centre content
+- Responsive typography
+- Stacked buttons
+- Image focal point preserved
+
+---
+
+# Accessibility
+
+Requirements
+
+- Semantic HTML
+- Single H1 element
+- Descriptive alt text (if using an <img>)
+- Decorative imagery marked appropriately where applicable
+- Keyboard-accessible buttons
+- WCAG AA colour contrast
+- Visible focus indicators
+
+---
+
+# Performance
+
+Requirements
+
+- Responsive image delivery
+- Lazy loading where appropriate (do not lazy-load the Largest Contentful Paint image)
+- Modern image formats (WebP preferred)
+- Minimal JavaScript
+- Zero layout shift (CLS)
+
+Target
+
+Lighthouse Performance ≥95
+
+---
+
+# Animation
+
+Animations shall be subtle.
+
+Examples
+
+- Fade-in headline
+- Gentle button appearance
+- Slight image fade
+- Scroll indicator fade
+
+Maximum duration
+
+```
+300ms
+```
+
+Animations shall consume DS-001 transition tokens where applicable.
+
+---
+
+# JavaScript Responsibilities
+
+hero.js shall only manage behaviour.
+
+Examples
+
+- Optional scroll indicator behaviour
+- Reduced-motion support
+- Future enhancement hooks
+
+No presentation logic shall reside in JavaScript.
+
+---
+
+# CSS Responsibilities
+
+hero.css shall define:
+
+- Layout
+- Hero spacing
+- Responsive typography
+- Overlay styling
+- Button positioning
+- Responsive behaviour
+- Animation classes
+
+All reusable values shall consume DS-001 Design Tokens.
+
+---
+
+# Acceptance Criteria
+
+Implementation is complete when:
+
+- Hero renders correctly on desktop.
+- Hero renders correctly on tablet.
+- Hero renders correctly on mobile.
+- Typography follows DS-001.
+- Colours consume Design Tokens.
+- Buttons consume shared button styles.
+- Responsive behaviour is verified.
+- Accessibility requirements are satisfied.
+- Performance targets are met.
+- No inline CSS or JavaScript is present.
+
+---
+
+# Deliverables
+
+```
+views/partials/hero.ejs
+
+public/css/components/hero.css
+
+public/js/components/hero.js
+```
+
+---
+
+# Verification
+
+Upon completion:
+
+- Run the complete frontend test suite.
+- Verify responsive layouts.
+- Run production build.
+- Execute startup smoke verification.
+- Produce implementation report:
+
+```
+RPT-002-hero-section.md
+```
+
+The report shall include:
+
+- Files created
+- Files modified
+- Design Token usage verification
+- Accessibility verification
+- Performance observations
+- Build results
+- Test results
+- Startup verification
+
+---
+
+# Milestone Outcome
+
+Upon successful completion, GCT Core shall have a production-ready Hero Section that establishes the visual identity of Go Cape Tours while fully adhering to the DS-001 Frontend Design System and the reusable component architecture established in earlier milestones.
+
+The Hero shall serve as the foundation for the remainder of the landing page and provide a premium first impression consistent with the Go Cape Tours brand.
