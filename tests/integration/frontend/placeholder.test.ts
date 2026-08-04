@@ -18,9 +18,9 @@ describe("Frontend placeholder page", () => {
 		expect(response.status).toBe(200);
 		expect(response.headers["content-type"]).toContain("text/html");
 		expect(response.text).toContain("GCT Core");
-		expect(response.text).toContain("Premium Private Experiences");
-		expect(response.text).toContain("Go Cape Tours Collection");
-		expect(response.text).toContain("Curated private journeys across the Cape designed with local insight");
+		expect(response.text).toContain("Curated Private Journeys");
+		expect(response.text).toContain("Discover South Africa Through Carefully Curated Journeys.");
+		expect(response.text).toContain("From the vineyards of Stellenbosch to the coastline of the Garden Route");
 		expect(response.text).toContain("Luxury Winelands Escape");
 		expect(response.text).toContain("Cape Winelands");
 		expect(response.text).toContain("4 Days / 3 Nights");

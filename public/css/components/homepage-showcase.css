@@ -18,7 +18,7 @@
 .homepage-showcase__editorial {
   grid-area: editorial;
   display: grid;
-  align-content: start;
+  align-content: center;
   gap: var(--space-lg);
 }
 
@@ -29,6 +29,11 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.homepage-showcase__editorial h1 {
+  max-width: 18ch;
+  line-height: 1.2;
 }
 
 .homepage-showcase__intro {
@@ -146,6 +151,10 @@
       "journeys";
   }
 
+  .homepage-showcase__editorial {
+    align-content: start;
+  }
+
   .homepage-showcase__journeys {
     grid-template-areas:
       "primary"
@@ -159,6 +168,21 @@
   .homepage-showcase {
     min-height: auto;
     padding-block: var(--space-2xl);
+  }
+
+  .homepage-showcase__editorial {
+    text-align: center;
+    justify-items: center;
+  }
+
+  .homepage-showcase__intro {
+    max-width: 34rem;
+  }
+
+  .homepage-showcase__actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .homepage-showcase__journey-actions {
