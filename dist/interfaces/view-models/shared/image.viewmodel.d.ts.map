@@ -1,0 +1,1 @@
+{"version":3,"file":"image.viewmodel.d.ts","sourceRoot":"","sources":["../../../../src/interfaces/view-models/shared/image.viewmodel.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,cAAc;IAC7B,GAAG,EAAE,MAAM,CAAC;IACZ,GAAG,EAAE,MAAM,CAAC;IACZ,KAAK,CAAC,EAAE,MAAM,CAAC;IACf,MAAM,CAAC,EAAE,MAAM,CAAC;CACjB"}

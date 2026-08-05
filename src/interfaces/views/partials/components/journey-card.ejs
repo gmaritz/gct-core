@@ -1,20 +1,30 @@
 <%
-  const headingTag = locals.headingTag || 'h3';
-  const headingClass = headingTag === 'h2' ? 'journey-card__name journey-card__name--primary' : 'journey-card__name';
   const cardVariant = locals.variant || 'secondary';
+  const headingTag = cardVariant === 'primary' ? 'h2' : 'h3';
+  const headingClass = headingTag === 'h2' ? 'journey-card__name journey-card__name--primary' : 'journey-card__name';
   const wrapperClass = ['homepage-showcase__journey-card', `homepage-showcase__journey-card--${cardVariant}`, 'journey-card', 'card'].join(' ');
+  const image = locals.image || {};
+  const price = locals.price || {};
+  const saving = locals.saving || {};
+  const primaryCTA = locals.primaryCTA || {};
+  const highlights = Array.isArray(locals.highlights) ? locals.highlights : [];
+  const ariaLabel = locals.ariaLabel || locals.title;
 %>
-<article class="<%= wrapperClass %>" aria-label="<%= locals.ariaLabel %>">
-  <div class="journey-card__image" role="img" aria-label="<%= locals.imageLabel %>"></div>
+<article class="<%= wrapperClass %>" aria-label="<%= ariaLabel %>">
+  <img class="journey-card__image" src="<%= image.src %>" alt="<%= image.alt %>" width="<%= image.width || 1280 %>" height="<%= image.height || 720 %>">
   <div class="journey-card__content">
-    <<%= headingTag %> class="<%= headingClass %>"><%= locals.name %></<%= headingTag %>>
+    <<%= headingTag %> class="<%= headingClass %>"><%= locals.title %></<%= headingTag %>>
     <p class="journey-card__destination"><%= locals.destination %></p>
     <p class="journey-card__duration"><%= locals.duration %></p>
-    <p class="journey-card__highlights"><%= locals.highlights %></p>
-    <p class="journey-card__price"><%= locals.price %></p>
+    <ul class="journey-card__highlights" aria-label="Journey highlights">
+      <% highlights.forEach((highlight) => { %>
+        <li><%= highlight %></li>
+      <% }); %>
+    </ul>
+    <p class="journey-card__price"><%= price.display %></p>
     <div class="journey-card__actions">
-      <a class="button <%= locals.buttonClass || 'button--primary' %>" href="<%= locals.ctaHref || '#journey-planning' %>"><%= locals.ctaLabel || 'View Journey' %></a>
-      <span class="journey-card__saving"><%= locals.saving %></span>
+      <a class="button button--<%= primaryCTA.style || 'primary' %>" href="<%= primaryCTA.href || '#journey-planning' %>"><%= primaryCTA.label || 'View Journey' %></a>
+      <span class="journey-card__saving"><%= saving.display || 'Save 0%' %></span>
     </div>
   </div>
 </article>

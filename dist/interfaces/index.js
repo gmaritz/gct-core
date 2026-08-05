@@ -24,4 +24,5 @@ __exportStar(require("./controllers"), exports);
 __exportStar(require("./http"), exports);
 __exportStar(require("./middleware"), exports);
 __exportStar(require("./presenters"), exports);
+__exportStar(require("./view-models"), exports);
 //# sourceMappingURL=index.js.map

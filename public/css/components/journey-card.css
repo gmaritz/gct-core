@@ -18,7 +18,8 @@
   width: 100%;
   aspect-ratio: 16 / 9;
   border-radius: var(--radius-sm);
-  background: linear-gradient(135deg, rgba(184, 115, 26, 0.24), rgba(156, 95, 19, 0.2));
+  object-fit: cover;
+  display: block;
 }
 
 .journey-card__content {
@@ -37,10 +38,19 @@
 
 .journey-card__destination,
 .journey-card__duration,
-.journey-card__highlights,
 .journey-card__price {
   margin: 0;
   color: var(--color-text-secondary);
+}
+
+.journey-card__highlights {
+  margin: 0;
+  padding-left: 1.125rem;
+  color: var(--color-text-secondary);
+}
+
+.journey-card__highlights li + li {
+  margin-top: var(--space-xs);
 }
 
 .journey-card__duration {

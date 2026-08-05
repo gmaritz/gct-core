@@ -1,18 +1,18 @@
 <%
-  const journeys = Array.isArray(curatedJourneys) ? curatedJourneys : [];
+  const homepageShowcase = homepageShowcaseViewModel || {};
+  const editorial = homepageShowcase.editorial || {};
+  const journeys = Array.isArray(homepageShowcase.journeys) ? homepageShowcase.journeys : [];
 %>
 <section class="homepage-showcase" aria-labelledby="homepage-showcase-title">
   <div class="container">
     <div class="homepage-showcase__layout">
       <div class="homepage-showcase__editorial">
-        <p class="homepage-showcase__kicker">Curated Private Journeys</p>
-        <h1 id="homepage-showcase-title">Discover South Africa Through Carefully Curated Journeys.</h1>
-        <p class="homepage-showcase__intro">
-          From the vineyards of Stellenbosch to the coastline of the Garden Route, every Go Cape Tours journey combines exceptional accommodation, authentic experiences and local expertise to create unforgettable memories.
-        </p>
+        <p class="homepage-showcase__kicker"><%= editorial.eyebrow %></p>
+        <h1 id="homepage-showcase-title"><%= editorial.heading %></h1>
+        <p class="homepage-showcase__intro"><%= editorial.narrative %></p>
         <div class="homepage-showcase__actions">
-          <a class="button button--primary" href="#featured-experiences">Explore Experiences</a>
-          <a class="button button--secondary" href="#journey-planning">Plan Your Journey</a>
+          <a class="button button--<%= editorial.primaryCTA?.style || 'primary' %>" href="<%= editorial.primaryCTA?.href || '#featured-experiences' %>"><%= editorial.primaryCTA?.label || 'Explore Experiences' %></a>
+          <a class="button button--<%= editorial.secondaryCTA?.style || 'secondary' %>" href="<%= editorial.secondaryCTA?.href || '#journey-planning' %>"><%= editorial.secondaryCTA?.label || 'Plan Your Journey' %></a>
         </div>
       </div>
 

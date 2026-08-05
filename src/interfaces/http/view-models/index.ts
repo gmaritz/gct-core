@@ -1,1 +1,1 @@
-export * from "./homepage-showcase.view-model";
+export * from "../../view-models";

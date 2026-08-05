@@ -88,23 +88,41 @@ IMP-006 Footer
 
 IMP-002 ✅ Homepage Showcase
 
+Homepage Showcase
+
+    ✅ Structure
+
+    ✅ Visual Design
+
+    ✅ Editorial Panel
+
+    ✅ Journey Card
+
+    ✅ Homepage Showcase ViewModel
+
 ↓
 
-IMP-002.2
+IMP-002.5
 
-Homepage Showcase Visual Design
-
-↓
-
-IMP-002.3
-
-Editorial Content
+Accommodation Gallery
 
 ↓
 
-IMP-002.4
+IMP-002.6
 
-Featured Journey Card
+Journey Rotation & Merchandising
+
+↓
+
+IMP-002.7
+
+Responsive Behaviour & Motion
+
+↓
+
+BRAND-001
+
+Editorial Voice & Content Guidelines
 
 ↓
 
