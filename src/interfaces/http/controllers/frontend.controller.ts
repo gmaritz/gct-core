@@ -2,6 +2,7 @@ import path from "path";
 
 import ejs from "ejs";
 import { Request, Response } from "express";
+import { getHomepageShowcaseViewModel } from "../view-models";
 
 async function renderView(response: Response, viewName: string, locals: Record<string, unknown>): Promise<void> {
 	const viewsRoot = path.join(process.cwd(), "src/interfaces/views");
@@ -14,10 +15,13 @@ async function renderView(response: Response, viewName: string, locals: Record<s
 }
 
 export async function renderPlaceholderPage(request: Request, response: Response): Promise<void> {
+  const { curatedJourneys } = getHomepageShowcaseViewModel();
+
 	await renderView(response, "pages/placeholder", {
 		title: "GCT Core",
 		pageTitle: "Frontend Architecture Foundation",
 		currentPath: request.path,
+    curatedJourneys,
 	});
 }
 

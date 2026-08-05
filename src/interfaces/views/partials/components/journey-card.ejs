@@ -1,0 +1,20 @@
+<%
+  const headingTag = locals.headingTag || 'h3';
+  const headingClass = headingTag === 'h2' ? 'journey-card__name journey-card__name--primary' : 'journey-card__name';
+  const cardVariant = locals.variant || 'secondary';
+  const wrapperClass = ['homepage-showcase__journey-card', `homepage-showcase__journey-card--${cardVariant}`, 'journey-card', 'card'].join(' ');
+%>
+<article class="<%= wrapperClass %>" aria-label="<%= locals.ariaLabel %>">
+  <div class="journey-card__image" role="img" aria-label="<%= locals.imageLabel %>"></div>
+  <div class="journey-card__content">
+    <<%= headingTag %> class="<%= headingClass %>"><%= locals.name %></<%= headingTag %>>
+    <p class="journey-card__destination"><%= locals.destination %></p>
+    <p class="journey-card__duration"><%= locals.duration %></p>
+    <p class="journey-card__highlights"><%= locals.highlights %></p>
+    <p class="journey-card__price"><%= locals.price %></p>
+    <div class="journey-card__actions">
+      <a class="button <%= locals.buttonClass || 'button--primary' %>" href="<%= locals.ctaHref || '#journey-planning' %>"><%= locals.ctaLabel || 'View Journey' %></a>
+      <span class="journey-card__saving"><%= locals.saving %></span>
+    </div>
+  </div>
+</article>

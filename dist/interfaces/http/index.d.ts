@@ -8,4 +8,5 @@ export * from "./dto/sort-request";
 export * from "./errors";
 export * from "./middleware/error.middleware";
 export * from "./routes";
+export * from "./view-models";
 //# sourceMappingURL=index.d.ts.map

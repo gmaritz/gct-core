@@ -26,7 +26,7 @@ describe("Frontend placeholder page", () => {
 		expect(response.text).toContain("4 Days / 3 Nights");
 		expect(response.text).toContain("From R18 950 per couple");
 		expect(response.text).toContain("Save 22%");
-		expect(response.text).toContain("Ocean & Vineyard Retreat");
+		expect(response.text).toContain("Ocean &amp; Vineyard Retreat");
 		expect(response.text).toContain("Mountain Valley Signature");
 		expect(response.text).toContain("Featured Experiences");
 		expect(response.text).toContain("Future landing-page sections");
@@ -34,8 +34,10 @@ describe("Frontend placeholder page", () => {
 		expect(response.text).toContain('class="homepage-showcase__layout"');
 		expect(response.text).toContain('class="homepage-showcase__editorial"');
 		expect(response.text).toContain('class="homepage-showcase__journeys"');
-		expect(response.text).toContain('class="homepage-showcase__journey-card homepage-showcase__journey-card--primary card"');
-		expect(response.text).toContain('class="homepage-showcase__journey-card homepage-showcase__journey-card--secondary card"');
+		expect(response.text).toContain('class="homepage-showcase__journey-card homepage-showcase__journey-card--primary journey-card card"');
+		expect(response.text).toContain('class="homepage-showcase__journey-card homepage-showcase__journey-card--secondary journey-card card"');
+		expect(response.text).toContain('class="journey-card__actions"');
+		expect(response.text).toContain('class="journey-card__saving"');
 		expect(response.text).toContain('class="container"');
 		expect(response.text).toContain('class="homepage-showcase__actions"');
 		expect(response.text).toContain('aria-label="Primary Navigation"');
