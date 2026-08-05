@@ -1,137 +1,17 @@
-Guide Copilot with precise implementation instructions.
-Review architectural compliance when needed.
-Help debug and troubleshoot issues.
-Review code and suggest improvements.
-Keep implementation aligned with the approved architecture.
+APP-002.6  Hotelbeds Provider Models
 
+APP-002.7  Hotelbeds Mapper
 
-Phase 3
+APP-002.8  Hotelbeds Provider Adapter
 
-2.8 Configuration Refinement
+APP-002.9  Accommodation Search Service
 
-↓
+APP-002.10 Accommodation Details Service
 
-2.9 Testing Foundation
+APP-002.11 Accommodation Image Service
 
-↓
+APP-003    Package Builder
 
-2.10 OpenAPI
+APP-004    Journey Pricing Engine
 
-↓
-
-2.11 Background Processing
-
-↓
-
-Platform v1.1 Complete
-
-↓
-
-Phase 4
-
-Catalogue
-
-↓
-
-Supplier Synchronisation
-
-↓
-
-Availability
-
-↓
-
-Pricing
-
-↓
-
-Booking
-
-↓
-
-Payments
-
-↓
-
-Customer Management
-
-↓
-
-Journey Management
-
-
-Milestone 4.2
-
-Landing Page
-
-↓
-
-IMP-002 Hero Section
-
-↓
-
-IMP-003 Featured Experiences
-
-↓
-
-IMP-004 Value Proposition
-
-↓
-
-IMP-005 Testimonials
-
-↓
-
-IMP-006 Footer
-
-
-
-IMP-002 ✅ Homepage Showcase
-
-Homepage Showcase
-
-    ✅ Structure
-
-    ✅ Visual Design
-
-    ✅ Editorial Panel
-
-    ✅ Journey Card
-
-    ✅ Homepage Showcase ViewModel
-
-↓
-
-IMP-002.5
-
-Accommodation Gallery
-
-↓
-
-IMP-002.6
-
-Journey Rotation & Merchandising
-
-↓
-
-IMP-002.7
-
-Responsive Behaviour & Motion
-
-↓
-
-BRAND-001
-
-Editorial Voice & Content Guidelines
-
-↓
-
-IMP-002.5
-
-Homepage Responsiveness & Motion
-
-↓
-
-IMP-003
-
-Featured Experiences
+APP-005    Dynamic Homepage Merchandising

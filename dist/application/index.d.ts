@@ -11,4 +11,5 @@ export * from './dto';
 export * from './mappers';
 export * from './platform';
 export * from './merchandising';
+export * from './accommodation';
 //# sourceMappingURL=index.d.ts.map

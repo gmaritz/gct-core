@@ -27,4 +27,5 @@ __exportStar(require("./dto"), exports);
 __exportStar(require("./mappers"), exports);
 __exportStar(require("./platform"), exports);
 __exportStar(require("./merchandising"), exports);
+__exportStar(require("./accommodation"), exports);
 //# sourceMappingURL=index.js.map

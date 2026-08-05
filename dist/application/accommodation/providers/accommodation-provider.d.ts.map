@@ -1,0 +1,1 @@
+{"version":3,"file":"accommodation-provider.d.ts","sourceRoot":"","sources":["../../../../src/application/accommodation/providers/accommodation-provider.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,qBAAqB,EAAE,MAAM,iBAAiB,CAAC;AAExD,MAAM,WAAW,qBAAqB;IACpC,QAAQ,CAAC,UAAU,EAAE,MAAM,CAAC;IAC5B,QAAQ,CAAC,YAAY,EAAE,qBAAqB,CAAC;IAC7C,MAAM,IAAI,OAAO,CAAC,IAAI,CAAC,CAAC;CACzB"}
