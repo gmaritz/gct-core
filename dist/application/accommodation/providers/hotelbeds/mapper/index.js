@@ -14,6 +14,15 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-__exportStar(require("./models"), exports);
-__exportStar(require("./mapper"), exports);
+__exportStar(require("./hotel.mapper"), exports);
+__exportStar(require("./identity.mapper"), exports);
+__exportStar(require("./address.mapper"), exports);
+__exportStar(require("./location.mapper"), exports);
+__exportStar(require("./rating.mapper"), exports);
+__exportStar(require("./image.mapper"), exports);
+__exportStar(require("./facility.mapper"), exports);
+__exportStar(require("./room.mapper"), exports);
+__exportStar(require("./rate.mapper"), exports);
+__exportStar(require("./destination.mapper"), exports);
+__exportStar(require("./provider-reference.mapper"), exports);
 //# sourceMappingURL=index.js.map

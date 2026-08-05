@@ -1,0 +1,12 @@
+export * from "./hotel.mapper";
+export * from "./identity.mapper";
+export * from "./address.mapper";
+export * from "./location.mapper";
+export * from "./rating.mapper";
+export * from "./image.mapper";
+export * from "./facility.mapper";
+export * from "./room.mapper";
+export * from "./rate.mapper";
+export * from "./destination.mapper";
+export * from "./provider-reference.mapper";
+//# sourceMappingURL=index.d.ts.map
