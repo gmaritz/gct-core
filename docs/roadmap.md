@@ -11,7 +11,3 @@ APP-002.10 Accommodation Details Service
 APP-002.11 Accommodation Image Service
 
 APP-003    Package Builder
-
-APP-004    Journey Pricing Engine
-
-APP-005    Dynamic Homepage Merchandising
