@@ -1,14 +1,17 @@
+import { AccommodationSearchQuery, DefaultAccommodationDiscoveryEngine } from "../discovery";
 import { ProviderRegistry } from "../registry";
+import { AccommodationSearchResult } from "../results";
 
 export interface AccommodationEngine {
-  search(): Promise<void>;
+  search(query: AccommodationSearchQuery): Promise<AccommodationSearchResult>;
 }
 
 export class DefaultAccommodationEngine implements AccommodationEngine {
   public constructor(private readonly providerRegistry: ProviderRegistry) {}
 
-  public async search(): Promise<void> {
-    // APP-002.1 scaffold only: search orchestration will be implemented in later milestones.
-    void this.providerRegistry;
+  public async search(query: AccommodationSearchQuery): Promise<AccommodationSearchResult> {
+    const discoveryEngine = new DefaultAccommodationDiscoveryEngine(this.providerRegistry);
+
+    return discoveryEngine.search(query);
   }
 }

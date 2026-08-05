@@ -1,10 +1,38 @@
 import {
+  AccommodationSearchCriteria,
+  AccommodationSearchQuery,
   AccommodationProviderCapabilityType,
   AccommodationProvider,
+  AccommodationSearchSource,
   DefaultAccommodationEngine,
   InMemoryProviderRegistry,
   ProviderRegistry,
 } from "@application/accommodation";
+
+function createCriteria(): AccommodationSearchCriteria {
+  return {
+    destination: "Cape Town",
+    checkInDate: new Date("2026-09-10T00:00:00.000Z"),
+    checkOutDate: new Date("2026-09-14T00:00:00.000Z"),
+    adults: 2,
+    children: 0,
+    rooms: 1,
+  };
+}
+
+function createQuery(): AccommodationSearchQuery {
+  return {
+    criteria: createCriteria(),
+    context: {
+      requestId: "req-engine-001",
+      source: AccommodationSearchSource.INTERNAL,
+      channel: "application",
+      locale: "en-ZA",
+      currency: "ZAR",
+      timestamp: new Date("2026-08-05T00:00:00.000Z"),
+    },
+  };
+}
 
 describe("AccommodationEngine namespace scaffold", () => {
   it("supports namespace imports and engine construction", () => {
@@ -56,6 +84,11 @@ describe("AccommodationEngine namespace scaffold", () => {
     const registry: ProviderRegistry = new InMemoryProviderRegistry();
     const engine = new DefaultAccommodationEngine(registry);
 
-    await expect(engine.search()).resolves.toBeUndefined();
+    await expect(engine.search(createQuery())).resolves.toEqual({
+      accommodations: [],
+      metadata: expect.objectContaining({
+        version: "1.0.0",
+      }),
+    });
   });
 });

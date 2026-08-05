@@ -1,4 +1,5 @@
 export * from "./engine";
+export * from "./discovery";
 export * from "./providers";
 export * from "./registry";
 export * from "./capabilities";

@@ -51,8 +51,18 @@ class HotelbedsProvider {
         this.providerId = "hotelbeds";
         this.capabilities = createCapabilities();
     }
-    async search() {
-        const response = await this.client.searchHotels(createRequest("search", "/hotels"));
+    async search(criteria) {
+        const response = await this.client.searchHotels({
+            ...createRequest("search", "/hotels"),
+            query: {
+                destination: criteria.destination,
+                checkInDate: criteria.checkInDate.toISOString(),
+                checkOutDate: criteria.checkOutDate.toISOString(),
+                adults: criteria.adults,
+                children: criteria.children,
+                rooms: criteria.rooms,
+            },
+        });
         return {
             accommodations: response.data.map((hotel) => this.mapper.mapHotel(hotel)),
             metadata: createMetadata(),

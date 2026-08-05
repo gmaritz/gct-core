@@ -1,6 +1,7 @@
 import { ProviderCapabilitySet } from "../../../capabilities";
 import { Accommodation } from "../../../models";
 import { AccommodationContentResult, AccommodationDetailsResult, AccommodationImageResult, AccommodationSearchResult } from "../../../results";
+import { AccommodationSearchCriteria } from "../../../discovery";
 import { AccommodationProvider } from "../../accommodation-provider";
 import { HotelbedsClient } from "../client";
 import { HotelbedsHotel } from "../models";
@@ -13,7 +14,7 @@ export declare class HotelbedsProvider implements AccommodationProvider {
     readonly providerId = "hotelbeds";
     readonly capabilities: ProviderCapabilitySet;
     constructor(client?: HotelbedsClient, mapper?: HotelbedsAccommodationMapper);
-    search(): Promise<AccommodationSearchResult>;
+    search(criteria: AccommodationSearchCriteria): Promise<AccommodationSearchResult>;
     details(providerAccommodationId: string): Promise<AccommodationDetailsResult>;
     content(providerAccommodationId: string): Promise<AccommodationContentResult>;
     images(providerAccommodationId: string): Promise<AccommodationImageResult>;

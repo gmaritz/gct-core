@@ -1,6 +1,7 @@
 import {
   Accommodation,
   AccommodationProviderCapabilityType,
+  AccommodationSearchCriteria,
   AccommodationSearchResult,
   HotelbedsClient,
   HotelbedsHotel,
@@ -8,6 +9,17 @@ import {
   HotelbedsRequest,
   HotelbedsResponse,
 } from "@application/accommodation";
+
+function createCriteria(): AccommodationSearchCriteria {
+  return {
+    destination: "Cape Town",
+    checkInDate: new Date("2026-09-10T00:00:00.000Z"),
+    checkOutDate: new Date("2026-09-14T00:00:00.000Z"),
+    adults: 2,
+    children: 1,
+    rooms: 1,
+  };
+}
 
 function createHotel(code: number, name: string): HotelbedsHotel {
   return {
@@ -74,10 +86,19 @@ describe("Hotelbeds provider implementation", () => {
     };
     const provider = new HotelbedsProvider(client);
 
-    const result: AccommodationSearchResult = await provider.search();
+    const criteria = createCriteria();
+    const result: AccommodationSearchResult = await provider.search(criteria);
 
     expect(searchRequests).toHaveLength(1);
     expect(searchRequests[0]?.operation).toBe("search");
+    expect(searchRequests[0]?.query).toEqual({
+      destination: criteria.destination,
+      checkInDate: criteria.checkInDate.toISOString(),
+      checkOutDate: criteria.checkOutDate.toISOString(),
+      adults: criteria.adults,
+      children: criteria.children,
+      rooms: criteria.rooms,
+    });
     expect(result.accommodations).toHaveLength(1);
     expect(result.accommodations[0]?.identity.id).toBe("101");
     expect(result.metadata.provider).toBe("hotelbeds");
@@ -137,7 +158,7 @@ describe("Hotelbeds provider implementation", () => {
     };
     const provider = new HotelbedsProvider(client, mapper);
 
-    const result = await provider.search();
+    const result = await provider.search(createCriteria());
 
     expect(mapperCalls).toHaveLength(1);
     expect(mapperCalls[0]?.code).toBe(777);

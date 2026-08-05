@@ -1,12 +1,12 @@
-import { AccommodationSearchQuery } from "../discovery";
 import { ProviderRegistry } from "../registry";
 import { AccommodationSearchResult } from "../results";
-export interface AccommodationEngine {
+import { AccommodationSearchQuery } from "./accommodation-search-query";
+export interface AccommodationDiscoveryEngine {
     search(query: AccommodationSearchQuery): Promise<AccommodationSearchResult>;
 }
-export declare class DefaultAccommodationEngine implements AccommodationEngine {
+export declare class DefaultAccommodationDiscoveryEngine implements AccommodationDiscoveryEngine {
     private readonly providerRegistry;
     constructor(providerRegistry: ProviderRegistry);
     search(query: AccommodationSearchQuery): Promise<AccommodationSearchResult>;
 }
-//# sourceMappingURL=accommodation-engine.d.ts.map
+//# sourceMappingURL=accommodation-discovery-engine.d.ts.map

@@ -1,0 +1,10 @@
+export declare enum AccommodationSearchSource {
+    HOMEPAGE_MERCHANDISING = "HOMEPAGE_MERCHANDISING",
+    PACKAGE_BUILDER = "PACKAGE_BUILDER",
+    PACKAGE_DETAILS = "PACKAGE_DETAILS",
+    DAY_TOUR = "DAY_TOUR",
+    ADMIN = "ADMIN",
+    API = "API",
+    INTERNAL = "INTERNAL"
+}
+//# sourceMappingURL=accommodation-search-source.d.ts.map

@@ -2,12 +2,24 @@ import {
   AccommodationProvider,
   AccommodationProviderCapability,
   AccommodationProviderCapabilityType,
+  AccommodationSearchCriteria,
   InMemoryProviderRegistry,
   ProviderCapabilitySet,
   ProviderFeature,
   ProviderFeatureSet,
   ProviderRegistry,
 } from "@application/accommodation";
+
+function createCriteria(): AccommodationSearchCriteria {
+  return {
+    destination: "Cape Town",
+    checkInDate: new Date("2026-09-10T00:00:00.000Z"),
+    checkOutDate: new Date("2026-09-14T00:00:00.000Z"),
+    adults: 2,
+    children: 0,
+    rooms: 1,
+  };
+}
 
 describe("Provider capability framework", () => {
   it("constructs capability descriptor and feature models", () => {
@@ -65,7 +77,7 @@ describe("Provider capability framework", () => {
     expect(capabilitySet.capabilities[0]?.type).toBe(AccommodationProviderCapabilityType.IMAGES);
   });
 
-  it("discovers providers, capabilities, and features through the registry", () => {
+  it("discovers providers, capabilities, and features through the registry", async () => {
     const registry: ProviderRegistry = new InMemoryProviderRegistry();
     const provider: AccommodationProvider = {
       providerId: "hotelbeds",
@@ -92,7 +104,8 @@ describe("Provider capability framework", () => {
           },
         ],
       },
-      async search() {
+      async search(criteria: AccommodationSearchCriteria) {
+        void criteria;
         return {
           accommodations: [],
           metadata: {
@@ -105,6 +118,8 @@ describe("Provider capability framework", () => {
     };
 
     registry.register(provider);
+
+    await provider.search(createCriteria());
 
     expect(registry.findProviders(AccommodationProviderCapabilityType.SEARCH)).toEqual([provider]);
     expect(registry.capabilities("hotelbeds")).toEqual(provider.capabilities);

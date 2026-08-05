@@ -1,9 +1,21 @@
 import {
   AccommodationProviderCapabilityType,
   AccommodationProvider,
+  AccommodationSearchCriteria,
   InMemoryProviderRegistry,
   ProviderRegistry,
 } from "@application/accommodation";
+
+function createCriteria(): AccommodationSearchCriteria {
+  return {
+    destination: "Cape Town",
+    checkInDate: new Date("2026-09-10T00:00:00.000Z"),
+    checkOutDate: new Date("2026-09-14T00:00:00.000Z"),
+    adults: 2,
+    children: 0,
+    rooms: 1,
+  };
+}
 
 function createProvider(
   providerId: string,
@@ -32,7 +44,8 @@ function createProvider(
         },
       })),
     },
-    async search() {
+    async search(criteria: AccommodationSearchCriteria) {
+      void criteria;
       return {
         accommodations: [],
         metadata: {
@@ -134,6 +147,7 @@ describe("ProviderRegistry behavior", () => {
 
   it("compiles registry contracts through namespace exports", () => {
     const registry: ProviderRegistry = new InMemoryProviderRegistry();
+    void createCriteria();
 
     expect(registry.resolveAll()).toEqual([]);
   });
