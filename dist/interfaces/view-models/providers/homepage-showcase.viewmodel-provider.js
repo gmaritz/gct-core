@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getHomepageShowcaseViewModel = getHomepageShowcaseViewModel;
+const merchandising_1 = require("../../../application/merchandising");
 function createPlaceholderImage(label) {
     const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-label="${label}">
@@ -36,105 +37,60 @@ function createSaving(display) {
         display,
     };
 }
-function createJourneyCard(input) {
+function mapJourneyToViewModel(journey, index) {
+    const variant = journey.isPrimary ? "primary" : "secondary";
+    const ariaLabel = journey.isPrimary
+        ? "Primary journey"
+        : index === 1
+            ? "Secondary journey one"
+            : "Secondary journey two";
     return {
-        variant: input.variant,
-        ariaLabel: input.ariaLabel,
-        id: input.id,
-        title: input.title,
-        destination: input.destination,
-        duration: input.duration,
-        image: createPlaceholderImage(input.imageLabel),
-        highlights: input.highlights,
-        price: createPrice(input.price),
-        saving: createSaving(input.saving),
+        variant,
+        ariaLabel,
+        id: journey.id,
+        title: journey.title,
+        destination: journey.destination,
+        duration: journey.duration,
+        image: createPlaceholderImage(journey.imageLabel),
+        highlights: [...journey.highlights],
+        price: createPrice(journey.priceDisplay),
+        saving: createSaving(journey.savingDisplay),
         primaryCTA: {
-            label: input.ctaLabel,
-            href: input.ctaHref,
-            style: input.ctaStyle,
+            label: journey.primaryCallToActionLabel,
+            href: journey.primaryCallToActionHref,
+            style: journey.isPrimary ? "primary" : "secondary",
         },
     };
 }
-function getHomepageShowcaseViewModel() {
+function mapMetadataToViewModel(metadata) {
+    return {
+        generatedAt: new Date(metadata.generatedAt),
+        version: metadata.version,
+    };
+}
+function mapMerchandisingToViewModel(result) {
     return {
         editorial: {
-            eyebrow: "Curated Private Journeys",
-            heading: "Discover South Africa Through Carefully Curated Journeys.",
-            narrative: "From the vineyards of Stellenbosch to the coastline of the Garden Route, every Go Cape Tours journey combines exceptional accommodation, authentic experiences and local expertise to create unforgettable memories.",
+            eyebrow: result.editorial.eyebrow,
+            heading: result.editorial.heading,
+            narrative: result.editorial.narrative,
             primaryCTA: {
-                label: "Explore Experiences",
-                href: "#featured-experiences",
+                label: result.editorial.primaryCallToActionLabel,
+                href: result.editorial.primaryCallToActionHref,
                 style: "primary",
             },
             secondaryCTA: {
-                label: "Plan Your Journey",
-                href: "#journey-planning",
+                label: result.editorial.secondaryCallToActionLabel,
+                href: result.editorial.secondaryCallToActionHref,
                 style: "secondary",
             },
         },
-        journeys: [
-            createJourneyCard({
-                variant: "primary",
-                ariaLabel: "Primary journey",
-                id: "luxury-winelands-escape",
-                title: "Luxury Winelands Escape",
-                destination: "Cape Winelands",
-                duration: "4 Days / 3 Nights",
-                imageLabel: "Luxury Winelands landscape",
-                highlights: [
-                    "Private cellar experiences",
-                    "Boutique lodges",
-                    "Curated culinary route",
-                ],
-                price: "From R18 950 per couple",
-                saving: "Save 22%",
-                ctaLabel: "View Journey",
-                ctaHref: "#journey-planning",
-                ctaStyle: "primary",
-            }),
-            createJourneyCard({
-                variant: "secondary",
-                ariaLabel: "Secondary journey one",
-                id: "ocean-vineyard-retreat",
-                title: "Ocean & Vineyard Retreat",
-                destination: "Atlantic Seaboard",
-                duration: "3 Days / 2 Nights",
-                imageLabel: "Coastal journey landscape",
-                highlights: [
-                    "Coastal estates",
-                    "Sunset tastings",
-                    "Private guide",
-                ],
-                price: "From R12 400 per couple",
-                saving: "Save 18%",
-                ctaLabel: "View Journey",
-                ctaHref: "#journey-planning",
-                ctaStyle: "secondary",
-            }),
-            createJourneyCard({
-                variant: "secondary",
-                ariaLabel: "Secondary journey two",
-                id: "mountain-valley-signature",
-                title: "Mountain Valley Signature",
-                destination: "Franschhoek Valley",
-                duration: "5 Days / 4 Nights",
-                imageLabel: "Mountain and valley journey landscape",
-                highlights: [
-                    "Scenic rail moments",
-                    "Chef tables",
-                    "Private transfers",
-                ],
-                price: "From R21 300 per couple",
-                saving: "Save 15%",
-                ctaLabel: "View Journey",
-                ctaHref: "#journey-planning",
-                ctaStyle: "secondary",
-            }),
-        ],
-        metadata: {
-            generatedAt: new Date("2026-08-05T00:00:00.000Z"),
-            version: "1.0.0",
-        },
+        journeys: result.journeys.map((journey, index) => mapJourneyToViewModel(journey, index)),
+        metadata: mapMetadataToViewModel(result.metadata),
     };
+}
+async function getHomepageShowcaseViewModel(service = new merchandising_1.DefaultHomepageMerchandisingService()) {
+    const merchandisingResult = await service.getHomepageMerchandising();
+    return mapMerchandisingToViewModel(merchandisingResult);
 }
 //# sourceMappingURL=homepage-showcase.viewmodel-provider.js.map

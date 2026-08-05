@@ -15,7 +15,7 @@ async function renderView(response: Response, viewName: string, locals: Record<s
 }
 
 export async function renderPlaceholderPage(request: Request, response: Response): Promise<void> {
-  const homepageShowcaseViewModel = getHomepageShowcaseViewModel();
+  const homepageShowcaseViewModel = await getHomepageShowcaseViewModel();
 
 	await renderView(response, "pages/placeholder", {
 		title: "GCT Core",

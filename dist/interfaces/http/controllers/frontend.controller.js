@@ -18,7 +18,7 @@ async function renderView(response, viewName, locals) {
     });
 }
 async function renderPlaceholderPage(request, response) {
-    const homepageShowcaseViewModel = (0, view_models_1.getHomepageShowcaseViewModel)();
+    const homepageShowcaseViewModel = await (0, view_models_1.getHomepageShowcaseViewModel)();
     await renderView(response, "pages/placeholder", {
         title: "GCT Core",
         pageTitle: "Frontend Architecture Foundation",
