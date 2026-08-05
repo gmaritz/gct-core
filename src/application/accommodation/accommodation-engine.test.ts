@@ -34,8 +34,15 @@ describe("AccommodationEngine namespace scaffold", () => {
           },
         ],
       },
-      async search(): Promise<void> {
-        return;
+      async search() {
+        return {
+          accommodations: [],
+          metadata: {
+            provider: "stub",
+            generatedAt: new Date("2026-08-05T00:00:00.000Z"),
+            version: "1.0.0",
+          },
+        };
       },
     };
 

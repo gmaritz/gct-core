@@ -1,4 +1,4 @@
-import { AccommodationProviderReference } from "@application/accommodation/models";
+import { AccommodationProviderReference } from "../../../models";
 
 import { HotelbedsHotel } from "../models";
 

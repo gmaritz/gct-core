@@ -1,8 +1,4 @@
-import {
-  Accommodation,
-  AccommodationCategory,
-  AccommodationPolicy,
-} from "@application/accommodation/models";
+import { Accommodation, AccommodationCategory, AccommodationPolicy } from "../../../models";
 
 import { HotelbedsHotel, HotelbedsLocation } from "../models";
 import { mapHotelbedsAddress } from "./address.mapper";

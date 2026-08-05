@@ -1,4 +1,4 @@
-import { AccommodationImage } from "@application/accommodation/models";
+import { AccommodationImage } from "../../../models";
 
 import { HotelbedsImage } from "../models";
 

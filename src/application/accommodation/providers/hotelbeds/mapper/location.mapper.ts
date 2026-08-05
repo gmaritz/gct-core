@@ -1,4 +1,4 @@
-import { AccommodationLocation } from "@application/accommodation/models";
+import { AccommodationLocation } from "../../../models";
 
 import { HotelbedsLocation } from "../models";
 

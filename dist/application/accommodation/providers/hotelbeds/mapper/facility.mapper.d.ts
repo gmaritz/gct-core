@@ -1,4 +1,4 @@
-import { AccommodationAmenity } from "@application/accommodation/models";
+import { AccommodationAmenity } from "../../../models";
 import { HotelbedsFacility } from "../models";
 export declare function mapHotelbedsFacility(facility: HotelbedsFacility): AccommodationAmenity;
 export declare function mapHotelbedsFacilities(facilities?: ReadonlyArray<HotelbedsFacility>): ReadonlyArray<AccommodationAmenity>;

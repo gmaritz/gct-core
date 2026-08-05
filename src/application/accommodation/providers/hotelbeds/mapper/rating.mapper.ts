@@ -1,4 +1,4 @@
-import { AccommodationRating } from "@application/accommodation/models";
+import { AccommodationRating } from "../../../models";
 
 import { HotelbedsHotel } from "../models";
 
