@@ -1,13 +1,13 @@
-import { ApplicationService } from "@application/application-service";
+import { ApplicationService } from "../../../application-service";
 import {
   JourneyPolicyOutcome,
   JourneyPolicyPipeline,
   JourneyPolicyPriority,
-} from "@application/journeys/policies";
+} from "../../policies";
 import {
   JourneyCompositionQuery,
   JourneyValidationPipeline,
-} from "@application/journeys/validation";
+} from "../../validation";
 import {
   AccommodationCompositionAdapter,
 } from "../accommodation";

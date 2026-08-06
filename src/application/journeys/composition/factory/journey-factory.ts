@@ -1,14 +1,14 @@
 import {
   Journey,
-  JourneyCategory,
   JourneyComposition,
+  JourneyCategory,
   JourneyDestination,
   JourneyExperience,
   JourneyLifecycle,
   JourneyStatus,
   JourneyTag,
   JourneyType,
-} from "@application/journeys";
+} from "../../aggregate";
 
 import { JourneyCompositionContext } from "../models";
 

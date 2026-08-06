@@ -21,13 +21,13 @@ describe("Frontend placeholder page", () => {
 		expect(response.text).toContain("Curated Private Journeys");
 		expect(response.text).toContain("Discover South Africa Through Carefully Curated Journeys.");
 		expect(response.text).toContain("From the vineyards of Stellenbosch to the coastline of the Garden Route");
-		expect(response.text).toContain("Luxury Winelands Escape");
+		expect(response.text).toContain("SIGNATURE Cape Winelands Journey");
 		expect(response.text).toContain("Cape Winelands");
 		expect(response.text).toContain("4 Days / 3 Nights");
-		expect(response.text).toContain("From R18 950 per couple");
-		expect(response.text).toContain("Save 22%");
-		expect(response.text).toContain("Ocean &amp; Vineyard Retreat");
-		expect(response.text).toContain("Mountain Valley Signature");
+		expect(response.text).toContain("Price on request");
+		expect(response.text).toContain("Curated Journey");
+		expect(response.text).toContain("SIGNATURE Atlantic Seaboard Journey");
+		expect(response.text).toContain("LUXURY Franschhoek Valley Journey");
 		expect(response.text).toContain("Featured Experiences");
 		expect(response.text).toContain("Future landing-page sections");
 		expect(response.text).toContain('class="homepage-showcase"');

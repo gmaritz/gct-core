@@ -1,4 +1,4 @@
-import { JourneyCompositionResult } from "@application/journeys/composition";
+import { JourneyCompositionResult } from "../../composition";
 
 import {
   createJourneyPresentationModel,

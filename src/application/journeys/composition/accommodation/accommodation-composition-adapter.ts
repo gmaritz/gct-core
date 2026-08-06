@@ -4,7 +4,7 @@ import {
   AccommodationSearchQuery,
   AccommodationSearchResult,
   AccommodationSearchSource,
-} from "@application/accommodation";
+} from "../../../accommodation";
 import {
   AccommodationContentContext,
   AccommodationContentLocale,
@@ -12,14 +12,14 @@ import {
   AccommodationContentResult,
   AccommodationContentService,
   AccommodationContentSource,
-} from "@application/accommodation";
+} from "../../../accommodation";
 import {
   AccommodationAvailabilityResult,
   AccommodationInventoryContext,
   AccommodationInventoryQuery,
   AccommodationInventoryService,
   AccommodationInventorySource,
-} from "@application/accommodation";
+} from "../../../accommodation";
 import {
   AccommodationCurrency,
   AccommodationRateContext,
@@ -28,9 +28,10 @@ import {
   AccommodationRateSelectionStrategy,
   AccommodationRateService,
   AccommodationRateSource,
-} from "@application/accommodation";
-import { AccommodationDiscoveryEngine } from "@application/accommodation";
-import { JourneyAccommodation, JourneyCompositionSource } from "@application/journeys";
+} from "../../../accommodation";
+import { AccommodationDiscoveryEngine } from "../../../accommodation";
+import { JourneyAccommodation } from "../../models";
+import { JourneyCompositionSource } from "../../validation";
 
 import { AccommodationCompositionContext } from "./accommodation-composition-context";
 import {

@@ -1,4 +1,4 @@
-import { Journey, JourneyComposition, JourneyExperience } from "@application/journeys";
+import { Journey, JourneyComposition, JourneyExperience } from "../../aggregate";
 import { JourneyCompositionContext } from "../models";
 export interface JourneyFactoryInput {
     readonly context: JourneyCompositionContext;

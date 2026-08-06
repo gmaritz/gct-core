@@ -2,7 +2,7 @@ import {
   JourneyDuration,
   JourneyOperatingSeason,
   JourneyType,
-} from "@application/journeys/models";
+} from "../../../models";
 
 export interface ExperienceTravellerProfile {
   readonly adults: number;

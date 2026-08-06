@@ -1,18 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.JourneyFactory = void 0;
-const journeys_1 = require("@application/journeys");
+const aggregate_1 = require("../../aggregate");
 function mapCategory(journeyType) {
     switch (journeyType) {
-        case journeys_1.JourneyType.DAY_TOUR:
-            return journeys_1.JourneyCategory.CLASSIC;
-        case journeys_1.JourneyType.MULTI_DAY:
-            return journeys_1.JourneyCategory.ADVENTURE;
-        case journeys_1.JourneyType.PRIVATE:
-            return journeys_1.JourneyCategory.LUXURY;
-        case journeys_1.JourneyType.PACKAGE:
+        case aggregate_1.JourneyType.DAY_TOUR:
+            return aggregate_1.JourneyCategory.CLASSIC;
+        case aggregate_1.JourneyType.MULTI_DAY:
+            return aggregate_1.JourneyCategory.ADVENTURE;
+        case aggregate_1.JourneyType.PRIVATE:
+            return aggregate_1.JourneyCategory.LUXURY;
+        case aggregate_1.JourneyType.PACKAGE:
         default:
-            return journeys_1.JourneyCategory.SIGNATURE;
+            return aggregate_1.JourneyCategory.SIGNATURE;
     }
 }
 function createDestinations(context) {
@@ -37,7 +37,7 @@ class JourneyFactory {
         const destinations = createDestinations(context);
         ensureInvariant(destinations.length > 0, "Journey factory requires at least one destination.");
         ensureInvariant(typeof context.query.context?.requestId === "string" && context.query.context.requestId.trim().length > 0, "Journey factory requires a request ID.");
-        const journeyType = context.query.journeyType ?? journeys_1.JourneyType.PACKAGE;
+        const journeyType = context.query.journeyType ?? aggregate_1.JourneyType.PACKAGE;
         const duration = context.query.stayRequirements?.duration;
         const travellerRules = context.query.travellerRequirements;
         const composition = {
@@ -45,7 +45,7 @@ class JourneyFactory {
                 id: `journey-${context.query.context.requestId}`,
             }),
             classification: Object.freeze({
-                type: typeof journeyType === "string" ? journeyType : journeys_1.JourneyType.PACKAGE,
+                type: typeof journeyType === "string" ? journeyType : aggregate_1.JourneyType.PACKAGE,
                 category: mapCategory(journeyType),
             }),
             metadata: Object.freeze({
@@ -54,8 +54,8 @@ class JourneyFactory {
                 version: "1.0.0",
                 source: "APP-003.7",
             }),
-            status: journeys_1.JourneyStatus.DRAFT,
-            lifecycle: journeys_1.JourneyLifecycle.DESIGN,
+            status: aggregate_1.JourneyStatus.DRAFT,
+            lifecycle: aggregate_1.JourneyLifecycle.DESIGN,
             duration: Object.freeze({
                 days: duration?.days,
                 nights: duration?.nights,
@@ -72,7 +72,7 @@ class JourneyFactory {
             }),
             tags: createTags(context),
         };
-        return journeys_1.Journey.create(composition);
+        return aggregate_1.Journey.create(composition);
     }
 }
 exports.JourneyFactory = JourneyFactory;

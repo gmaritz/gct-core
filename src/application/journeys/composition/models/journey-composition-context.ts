@@ -1,12 +1,12 @@
+import { Journey } from "../../aggregate";
+import { JourneyType } from "../../models";
 import {
-  Journey,
   JourneyCompositionQuery,
   JourneyCompositionSource,
-  JourneyType,
-} from "@application/journeys";
+} from "../../validation";
 import {
   JourneyCompositionPolicyContext,
-} from "@application/journeys/policies";
+} from "../../policies";
 import {
   AccommodationCompositionContext,
 } from "../accommodation";

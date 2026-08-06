@@ -1,6 +1,6 @@
-import { ApplicationService } from "@application/application-service";
-import { JourneyPolicyPipeline } from "@application/journeys/policies";
-import { JourneyCompositionQuery, JourneyValidationPipeline } from "@application/journeys/validation";
+import { ApplicationService } from "../../../application-service";
+import { JourneyPolicyPipeline } from "../../policies";
+import { JourneyCompositionQuery, JourneyValidationPipeline } from "../../validation";
 import { AccommodationCompositionAdapter } from "../accommodation";
 import { ExperienceCompositionFramework } from "../experiences";
 import { JourneyCompositionResult } from "../models";

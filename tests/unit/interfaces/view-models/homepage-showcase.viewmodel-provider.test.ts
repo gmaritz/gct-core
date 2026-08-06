@@ -1,4 +1,5 @@
 import {
+  HomepageJourneyShowcaseResult,
   HomepageMerchandisingResult,
   HomepageMerchandisingService,
 } from "@application/merchandising";
@@ -75,12 +76,102 @@ class HomepageMerchandisingServiceSpy implements HomepageMerchandisingService {
   }
 }
 
+class HomepageJourneyShowcaseServiceSpy {
+  called = 0;
+
+  async execute(): Promise<HomepageJourneyShowcaseResult> {
+    this.called += 1;
+
+    return {
+      success: true,
+      featuredJourneys: [
+        {
+          id: "journey-001",
+          title: "Signature Cape Winelands Journey",
+          subtitle: "PACKAGE experience for curated travel",
+          destination: "Cape Winelands",
+          duration: "4 Days / 3 Nights",
+          image: {
+            src: "data:image/svg+xml,journey-001",
+            alt: "Journey hero",
+            width: 1280,
+            height: 720,
+          },
+          highlights: [
+            "Private cellar experiences",
+            "Boutique lodges",
+            "Curated culinary route",
+          ],
+          accommodationSummary: "1 accommodation option",
+          experienceSummary: "2 experiences",
+          badges: ["SIGNATURE", "DRAFT"],
+          primaryCTA: {
+            label: "View Journey",
+            href: "#journey-journey-001",
+            style: "primary",
+          },
+        },
+        {
+          id: "journey-002",
+          title: "Signature Atlantic Seaboard Journey",
+          subtitle: "PACKAGE experience for curated travel",
+          destination: "Atlantic Seaboard",
+          duration: "3 Days / 2 Nights",
+          image: {
+            src: "data:image/svg+xml,journey-002",
+            alt: "Journey hero two",
+            width: 1280,
+            height: 720,
+          },
+          highlights: ["Coastal estates", "Sunset tastings", "Private guide"],
+          accommodationSummary: "1 accommodation option",
+          experienceSummary: "2 experiences",
+          badges: ["SIGNATURE", "DRAFT"],
+          primaryCTA: {
+            label: "View Journey",
+            href: "#journey-journey-002",
+            style: "primary",
+          },
+        },
+        {
+          id: "journey-003",
+          title: "Luxury Franschhoek Valley Journey",
+          subtitle: "PRIVATE experience for curated travel",
+          destination: "Franschhoek Valley",
+          duration: "5 Days / 4 Nights",
+          image: {
+            src: "data:image/svg+xml,journey-003",
+            alt: "Journey hero three",
+            width: 1280,
+            height: 720,
+          },
+          highlights: ["Scenic rail moments", "Chef tables", "Private transfers"],
+          accommodationSummary: "1 accommodation option",
+          experienceSummary: "2 experiences",
+          badges: ["LUXURY", "DRAFT"],
+          primaryCTA: {
+            label: "View Journey",
+            href: "#journey-journey-003",
+            style: "primary",
+          },
+        },
+      ],
+      metadata: {
+        generatedAt: new Date("2026-08-06T00:00:00.000Z"),
+        version: "1.0.0",
+      },
+    };
+  }
+}
+
 describe("getHomepageShowcaseViewModel", () => {
   it("requests HomepageMerchandisingService and builds the homepage showcase presentation contract", async () => {
     const service = new HomepageMerchandisingServiceSpy();
-    const viewModel = await getHomepageShowcaseViewModel(service);
+    const showcaseService = new HomepageJourneyShowcaseServiceSpy();
+    const viewModel = await getHomepageShowcaseViewModel(service, showcaseService);
 
     expect(service.called).toBe(1);
+    expect(showcaseService.called).toBe(1);
 
     expect(viewModel.editorial.eyebrow).toBe("Curated Private Journeys");
     expect(viewModel.editorial.heading).toContain("Carefully Curated Journeys");
@@ -88,10 +179,10 @@ describe("getHomepageShowcaseViewModel", () => {
     expect(viewModel.editorial.secondaryCTA.label).toBe("Plan Your Journey");
     expect(viewModel.metadata.version).toBe("1.0.0");
     expect(viewModel.journeys).toHaveLength(3);
-    expect(viewModel.journeys[0].title).toBe("Luxury Winelands Escape");
-    expect(viewModel.journeys[0].image.alt).toBe("Luxury Winelands landscape");
-    expect(viewModel.journeys[0].price.display).toBe("From R18 950 per couple");
-    expect(viewModel.journeys[0].saving.display).toBe("Save 22%");
+    expect(viewModel.journeys[0].title).toBe("Signature Cape Winelands Journey");
+    expect(viewModel.journeys[0].image.alt).toBe("Journey hero");
+    expect(viewModel.journeys[0].price.display).toBe("Price on request");
+    expect(viewModel.journeys[0].saving.display).toBe("Curated Journey");
     expect(viewModel.journeys[0].primaryCTA.label).toBe("View Journey");
     expect(viewModel.journeys[0].variant).toBe("primary");
     expect(viewModel.journeys[1].variant).toBe("secondary");

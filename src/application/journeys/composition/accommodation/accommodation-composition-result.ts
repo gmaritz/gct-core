@@ -1,4 +1,4 @@
-import { JourneyAccommodation } from "@application/journeys/models";
+import { JourneyAccommodation } from "../../models";
 
 export type AccommodationCompositionResult = ReadonlyArray<JourneyAccommodation>;
 

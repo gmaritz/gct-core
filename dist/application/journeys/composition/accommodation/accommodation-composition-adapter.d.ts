@@ -1,8 +1,8 @@
-import { AccommodationSearchQuery, AccommodationSearchResult } from "@application/accommodation";
-import { AccommodationContentQuery, AccommodationContentResult, AccommodationContentService } from "@application/accommodation";
-import { AccommodationAvailabilityResult, AccommodationInventoryQuery, AccommodationInventoryService } from "@application/accommodation";
-import { AccommodationRateQuery, AccommodationRateResult, AccommodationRateService } from "@application/accommodation";
-import { AccommodationDiscoveryEngine } from "@application/accommodation";
+import { AccommodationSearchQuery, AccommodationSearchResult } from "../../../accommodation";
+import { AccommodationContentQuery, AccommodationContentResult, AccommodationContentService } from "../../../accommodation";
+import { AccommodationAvailabilityResult, AccommodationInventoryQuery, AccommodationInventoryService } from "../../../accommodation";
+import { AccommodationRateQuery, AccommodationRateResult, AccommodationRateService } from "../../../accommodation";
+import { AccommodationDiscoveryEngine } from "../../../accommodation";
 import { AccommodationCompositionContext } from "./accommodation-composition-context";
 import { AccommodationCompositionResult } from "./accommodation-composition-result";
 interface AccommodationDiscoveryService {

@@ -1,4 +1,4 @@
-import { Journey } from "@application/journeys/aggregate";
+import { Journey } from "../../aggregate";
 
 export interface JourneyCompositionResultMetadata {
   readonly generatedAt: Date;

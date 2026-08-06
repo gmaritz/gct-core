@@ -1,6 +1,6 @@
-import { AccommodationAmenity, AccommodationCategory } from "@application/accommodation/models";
-import { AccommodationCurrency } from "@application/accommodation/rates";
-import { JourneyCompositionSource } from "@application/journeys/validation";
+import { AccommodationAmenity, AccommodationCategory } from "../../../accommodation/models";
+import { AccommodationCurrency } from "../../../accommodation/rates";
+import { JourneyCompositionSource } from "../../validation";
 export interface AccommodationCompositionPreferences {
     readonly category?: AccommodationCategory;
     readonly minimumRating?: number;

@@ -1,10 +1,10 @@
 import {
   AccommodationAmenity,
   AccommodationCategory,
-} from "@application/accommodation/models";
-import { AccommodationCurrency } from "@application/accommodation/rates";
+} from "../../../accommodation/models";
+import { AccommodationCurrency } from "../../../accommodation/rates";
 
-import { JourneyCompositionSource } from "@application/journeys/validation";
+import { JourneyCompositionSource } from "../../validation";
 
 export interface AccommodationCompositionPreferences {
   readonly category?: AccommodationCategory;

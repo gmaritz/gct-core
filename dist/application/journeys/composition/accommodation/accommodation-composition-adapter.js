@@ -1,11 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AccommodationCompositionAdapter = void 0;
-const accommodation_1 = require("@application/accommodation");
-const accommodation_2 = require("@application/accommodation");
-const accommodation_3 = require("@application/accommodation");
-const accommodation_4 = require("@application/accommodation");
-const journeys_1 = require("@application/journeys");
+const accommodation_1 = require("../../../accommodation");
+const accommodation_2 = require("../../../accommodation");
+const accommodation_3 = require("../../../accommodation");
+const accommodation_4 = require("../../../accommodation");
+const validation_1 = require("../../validation");
 const accommodation_composition_result_1 = require("./accommodation-composition-result");
 function isBlank(value) {
     return typeof value !== "string" || value.trim().length === 0;
@@ -15,17 +15,17 @@ function isFulfilled(result) {
 }
 function toSearchSource(source) {
     switch (source) {
-        case journeys_1.JourneyCompositionSource.HOMEPAGE:
+        case validation_1.JourneyCompositionSource.HOMEPAGE:
             return accommodation_1.AccommodationSearchSource.HOMEPAGE_MERCHANDISING;
-        case journeys_1.JourneyCompositionSource.PACKAGE_DESIGNER:
+        case validation_1.JourneyCompositionSource.PACKAGE_DESIGNER:
             return accommodation_1.AccommodationSearchSource.PACKAGE_BUILDER;
-        case journeys_1.JourneyCompositionSource.PACKAGE_DETAILS:
+        case validation_1.JourneyCompositionSource.PACKAGE_DETAILS:
             return accommodation_1.AccommodationSearchSource.PACKAGE_DETAILS;
-        case journeys_1.JourneyCompositionSource.ADMIN:
+        case validation_1.JourneyCompositionSource.ADMIN:
             return accommodation_1.AccommodationSearchSource.ADMIN;
-        case journeys_1.JourneyCompositionSource.API:
+        case validation_1.JourneyCompositionSource.API:
             return accommodation_1.AccommodationSearchSource.API;
-        case journeys_1.JourneyCompositionSource.INTERNAL:
+        case validation_1.JourneyCompositionSource.INTERNAL:
             return accommodation_1.AccommodationSearchSource.INTERNAL;
         default:
             return accommodation_1.AccommodationSearchSource.INTERNAL;
@@ -33,17 +33,17 @@ function toSearchSource(source) {
 }
 function toInventorySource(source) {
     switch (source) {
-        case journeys_1.JourneyCompositionSource.HOMEPAGE:
+        case validation_1.JourneyCompositionSource.HOMEPAGE:
             return accommodation_3.AccommodationInventorySource.HOMEPAGE;
-        case journeys_1.JourneyCompositionSource.PACKAGE_DESIGNER:
+        case validation_1.JourneyCompositionSource.PACKAGE_DESIGNER:
             return accommodation_3.AccommodationInventorySource.PACKAGE_BUILDER;
-        case journeys_1.JourneyCompositionSource.PACKAGE_DETAILS:
+        case validation_1.JourneyCompositionSource.PACKAGE_DETAILS:
             return accommodation_3.AccommodationInventorySource.PACKAGE_DETAILS;
-        case journeys_1.JourneyCompositionSource.ADMIN:
+        case validation_1.JourneyCompositionSource.ADMIN:
             return accommodation_3.AccommodationInventorySource.ADMIN;
-        case journeys_1.JourneyCompositionSource.API:
+        case validation_1.JourneyCompositionSource.API:
             return accommodation_3.AccommodationInventorySource.API;
-        case journeys_1.JourneyCompositionSource.INTERNAL:
+        case validation_1.JourneyCompositionSource.INTERNAL:
             return accommodation_3.AccommodationInventorySource.INTERNAL;
         default:
             return accommodation_3.AccommodationInventorySource.INTERNAL;
@@ -51,17 +51,17 @@ function toInventorySource(source) {
 }
 function toRateSource(source) {
     switch (source) {
-        case journeys_1.JourneyCompositionSource.HOMEPAGE:
+        case validation_1.JourneyCompositionSource.HOMEPAGE:
             return accommodation_4.AccommodationRateSource.HOMEPAGE;
-        case journeys_1.JourneyCompositionSource.PACKAGE_DESIGNER:
+        case validation_1.JourneyCompositionSource.PACKAGE_DESIGNER:
             return accommodation_4.AccommodationRateSource.PACKAGE_BUILDER;
-        case journeys_1.JourneyCompositionSource.PACKAGE_DETAILS:
+        case validation_1.JourneyCompositionSource.PACKAGE_DETAILS:
             return accommodation_4.AccommodationRateSource.PACKAGE_DETAILS;
-        case journeys_1.JourneyCompositionSource.ADMIN:
+        case validation_1.JourneyCompositionSource.ADMIN:
             return accommodation_4.AccommodationRateSource.ADMIN;
-        case journeys_1.JourneyCompositionSource.API:
+        case validation_1.JourneyCompositionSource.API:
             return accommodation_4.AccommodationRateSource.API;
-        case journeys_1.JourneyCompositionSource.INTERNAL:
+        case validation_1.JourneyCompositionSource.INTERNAL:
             return accommodation_4.AccommodationRateSource.INTERNAL;
         default:
             return accommodation_4.AccommodationRateSource.INTERNAL;
@@ -69,17 +69,17 @@ function toRateSource(source) {
 }
 function toContentSource(source) {
     switch (source) {
-        case journeys_1.JourneyCompositionSource.HOMEPAGE:
+        case validation_1.JourneyCompositionSource.HOMEPAGE:
             return accommodation_2.AccommodationContentSource.HOMEPAGE;
-        case journeys_1.JourneyCompositionSource.PACKAGE_DESIGNER:
+        case validation_1.JourneyCompositionSource.PACKAGE_DESIGNER:
             return accommodation_2.AccommodationContentSource.PACKAGE_BUILDER;
-        case journeys_1.JourneyCompositionSource.PACKAGE_DETAILS:
+        case validation_1.JourneyCompositionSource.PACKAGE_DETAILS:
             return accommodation_2.AccommodationContentSource.PACKAGE_DETAILS;
-        case journeys_1.JourneyCompositionSource.ADMIN:
+        case validation_1.JourneyCompositionSource.ADMIN:
             return accommodation_2.AccommodationContentSource.ADMIN;
-        case journeys_1.JourneyCompositionSource.API:
+        case validation_1.JourneyCompositionSource.API:
             return accommodation_2.AccommodationContentSource.API;
-        case journeys_1.JourneyCompositionSource.INTERNAL:
+        case validation_1.JourneyCompositionSource.INTERNAL:
             return accommodation_2.AccommodationContentSource.INTERNAL;
         default:
             return accommodation_2.AccommodationContentSource.INTERNAL;

@@ -1,27 +1,28 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createJourneyCompositionContext = createJourneyCompositionContext;
-const journeys_1 = require("@application/journeys");
+const models_1 = require("../../models");
+const validation_1 = require("../../validation");
 const experiences_1 = require("../experiences");
 function mapSource(source) {
-    if (source === journeys_1.JourneyCompositionSource.HOMEPAGE
-        || source === journeys_1.JourneyCompositionSource.PACKAGE_DESIGNER
-        || source === journeys_1.JourneyCompositionSource.PACKAGE_DETAILS
-        || source === journeys_1.JourneyCompositionSource.ADMIN
-        || source === journeys_1.JourneyCompositionSource.API
-        || source === journeys_1.JourneyCompositionSource.INTERNAL) {
+    if (source === validation_1.JourneyCompositionSource.HOMEPAGE
+        || source === validation_1.JourneyCompositionSource.PACKAGE_DESIGNER
+        || source === validation_1.JourneyCompositionSource.PACKAGE_DETAILS
+        || source === validation_1.JourneyCompositionSource.ADMIN
+        || source === validation_1.JourneyCompositionSource.API
+        || source === validation_1.JourneyCompositionSource.INTERNAL) {
         return source;
     }
-    return journeys_1.JourneyCompositionSource.INTERNAL;
+    return validation_1.JourneyCompositionSource.INTERNAL;
 }
 function mapJourneyType(type) {
-    if (type === journeys_1.JourneyType.DAY_TOUR
-        || type === journeys_1.JourneyType.MULTI_DAY
-        || type === journeys_1.JourneyType.PACKAGE
-        || type === journeys_1.JourneyType.PRIVATE) {
+    if (type === models_1.JourneyType.DAY_TOUR
+        || type === models_1.JourneyType.MULTI_DAY
+        || type === models_1.JourneyType.PACKAGE
+        || type === models_1.JourneyType.PRIVATE) {
         return type;
     }
-    return journeys_1.JourneyType.PACKAGE;
+    return models_1.JourneyType.PACKAGE;
 }
 function firstDestination(query) {
     return query.destinationRequirements?.destinations?.[0]?.name ?? "";

@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.JourneyCompositionService = void 0;
-const policies_1 = require("@application/journeys/policies");
+const policies_1 = require("../../policies");
 const models_1 = require("../models");
 function isFulfilled(result) {
     return result.status === "fulfilled";

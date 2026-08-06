@@ -1,5 +1,6 @@
-import { Journey, JourneyCompositionQuery } from "@application/journeys";
-import { JourneyCompositionPolicyContext } from "@application/journeys/policies";
+import { Journey } from "../../aggregate";
+import { JourneyCompositionQuery } from "../../validation";
+import { JourneyCompositionPolicyContext } from "../../policies";
 import { AccommodationCompositionContext } from "../accommodation";
 import { ExperienceCompositionContext } from "../experiences";
 export interface JourneyCompositionContext {

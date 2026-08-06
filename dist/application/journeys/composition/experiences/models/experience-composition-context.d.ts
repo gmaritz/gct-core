@@ -1,4 +1,4 @@
-import { JourneyDuration, JourneyOperatingSeason, JourneyType } from "@application/journeys/models";
+import { JourneyDuration, JourneyOperatingSeason, JourneyType } from "../../../models";
 export interface ExperienceTravellerProfile {
     readonly adults: number;
     readonly children: number;

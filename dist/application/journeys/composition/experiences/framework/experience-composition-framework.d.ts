@@ -1,4 +1,4 @@
-import { JourneyExperience } from "@application/journeys/models";
+import { JourneyExperience } from "../../../models";
 import { ExperienceCompositionContext, ExperiencePriority, ExperienceSequence, ExperienceSource, ExperienceType } from "../models";
 export interface ExperienceCompositionCandidate {
     readonly experienceId: string;
