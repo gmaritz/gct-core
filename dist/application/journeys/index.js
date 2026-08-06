@@ -14,20 +14,5 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-/**
- * Application Layer Index
- *
- * Main entry point for the application layer.
- */
-__exportStar(require("./commands"), exports);
-__exportStar(require("./queries"), exports);
-__exportStar(require("./handlers"), exports);
-__exportStar(require("./services"), exports);
-__exportStar(require("./dto"), exports);
-__exportStar(require("./mappers"), exports);
-__exportStar(require("./platform"), exports);
-__exportStar(require("./merchandising"), exports);
-__exportStar(require("./accommodation"), exports);
-__exportStar(require("./journeys"), exports);
-__exportStar(require("./application-service"), exports);
+__exportStar(require("./aggregate"), exports);
 //# sourceMappingURL=index.js.map
