@@ -1,0 +1,8 @@
+export enum AccommodationContentValidationErrorCode {
+  MISSING_IDENTIFIER,
+  INVALID_IDENTIFIER,
+  MISSING_REQUEST_ID,
+  MISSING_SOURCE,
+  MISSING_TIMESTAMP,
+  INVALID_LOCALE,
+}
