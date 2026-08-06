@@ -1,0 +1,11 @@
+export declare enum ExperienceType {
+    WINE = "WINE",
+    RESTAURANT = "RESTAURANT",
+    ACTIVITY = "ACTIVITY",
+    SAFARI = "SAFARI",
+    CULTURAL = "CULTURAL",
+    SCENIC = "SCENIC",
+    TRANSFER = "TRANSFER",
+    EVENT = "EVENT"
+}
+//# sourceMappingURL=experience-type.d.ts.map
