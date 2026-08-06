@@ -13,5 +13,6 @@ export * from './platform';
 export * from './merchandising';
 export * from './accommodation';
 export * from './journeys';
+export * from './reservations';
 export * from './application-service';
 //# sourceMappingURL=index.d.ts.map

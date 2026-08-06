@@ -62,3 +62,25 @@ APP-003.7 Journey Composition Service
 APP-003.8 Journey View Model Provider
 
 APP-003.9 Homepage Showcase Integration
+
+APP-004 Reservation Engine
+
+↓
+
+APP-005 Pricing Engine
+
+↓
+
+APP-006 Booking Orchestration
+
+↓
+
+APP-007 Customer & Traveller Management
+
+↓
+
+APP-008 Communications
+
+↓
+
+APP-009 Payments
