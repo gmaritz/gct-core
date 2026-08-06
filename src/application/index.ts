@@ -12,3 +12,4 @@ export * from './mappers';
 export * from './platform';
 export * from './merchandising';
 export * from './accommodation';
+export * from './application-service';

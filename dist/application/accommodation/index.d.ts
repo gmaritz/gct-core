@@ -7,4 +7,5 @@ export * from "./models";
 export * from "./policies";
 export * from "./results";
 export * from "./content";
+export * from "./inventory";
 //# sourceMappingURL=index.d.ts.map
