@@ -41,14 +41,24 @@ APP-003
 
 Package Builder
 
-APP-003 Journey Composition Engine
-│
-├── APP-003.1 Journey Aggregate
-├── APP-003.2 Journey Composition Models
-├── APP-003.3 Journey Validator
-├── APP-003.4 Accommodation Composition
-├── APP-003.5 Experience Composition
-├── APP-003.6 Journey Composition Service
-├── APP-003.7 Composition Policies
-├── APP-003.8 Journey View Model Provider
-└── APP-003.9 Homepage Showcase Integration
+APP-003
+
+Journey Composition Engine
+
+✓ APP-003.1 Journey Aggregate
+
+✓ APP-003.2 Journey Canonical Model Library
+
+✓ APP-003.3 Journey Validation Pipeline
+
+➡ APP-003.4 Journey Composition Policy Framework
+
+APP-003.5 Accommodation Composition
+
+APP-003.6 Experience Composition
+
+APP-003.7 Journey Composition Service
+
+APP-003.8 Journey View Model Provider
+
+APP-003.9 Homepage Showcase Integration
