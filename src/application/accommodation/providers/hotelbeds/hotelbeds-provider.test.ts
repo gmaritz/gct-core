@@ -1,6 +1,10 @@
 import {
+  AccommodationCurrency,
+  AccommodationRateSelectionStrategy,
+  AccommodationRateSource,
   Accommodation,
   AccommodationProviderCapabilityType,
+  AccommodationRateResult,
   AccommodationSearchCriteria,
   AccommodationSearchResult,
   HotelbedsClient,
@@ -81,7 +85,18 @@ describe("Hotelbeds provider implementation", () => {
         return createResponse(request, []);
       },
       async getHotelRates(request) {
-        return createResponse(request, []);
+        return createResponse(request, [
+          {
+            rateKey: "hb-rate-888",
+            rateClass: "NOR",
+            rateType: "BOOKABLE",
+            net: "300.00",
+            sellingRate: "330.00",
+            boardCode: "RO",
+            boardName: "ROOM ONLY",
+            allotment: 4,
+          },
+        ]);
       },
     };
     const provider = new HotelbedsProvider(client);
@@ -146,7 +161,18 @@ describe("Hotelbeds provider implementation", () => {
         return createResponse(request, []);
       },
       async getHotelRates(request) {
-        return createResponse(request, []);
+        return createResponse(request, [
+          {
+            rateKey: "hb-rate-888",
+            rateClass: "NOR",
+            rateType: "BOOKABLE",
+            net: "300.00",
+            sellingRate: "330.00",
+            boardCode: "RO",
+            boardName: "ROOM ONLY",
+            allotment: 4,
+          },
+        ]);
       },
     };
     const mapperCalls: ReadonlyArray<HotelbedsHotel> = [];
@@ -180,7 +206,18 @@ describe("Hotelbeds provider implementation", () => {
         return createResponse(request, []);
       },
       async getHotelRates(request) {
-        return createResponse(request, []);
+        return createResponse(request, [
+          {
+            rateKey: "hb-rate-888",
+            rateClass: "NOR",
+            rateType: "BOOKABLE",
+            net: "300.00",
+            sellingRate: "330.00",
+            boardCode: "RO",
+            boardName: "ROOM ONLY",
+            allotment: 4,
+          },
+        ]);
       },
     };
     const provider = new HotelbedsProvider(client);
@@ -188,11 +225,33 @@ describe("Hotelbeds provider implementation", () => {
     const details = await provider.details("888");
     const content = await provider.content("888");
     const images = await provider.images("888");
+    const rates: AccommodationRateResult = await provider.rates({
+      identifier: "888",
+      stayPeriod: {
+        checkIn: new Date("2026-09-10T00:00:00.000Z"),
+        checkOut: new Date("2026-09-14T00:00:00.000Z"),
+      },
+      occupancy: {
+        adults: 2,
+        children: 0,
+        rooms: 1,
+      },
+      selectionStrategy: AccommodationRateSelectionStrategy.CHEAPEST,
+      context: {
+        requestId: "req-rates-888",
+        source: AccommodationRateSource.API,
+        currency: AccommodationCurrency.EUR,
+        market: "ZA",
+        timestamp: new Date("2026-08-05T00:00:00.000Z"),
+      },
+    });
 
     expect(details.accommodation.identity.id).toBe("888");
     expect(content.accommodation.identity.name).toBe("Table Mountain Lodge");
     expect(images.accommodationId).toBe("888");
     expect(images.images).toHaveLength(1);
+    expect(rates.accommodationId).toBe("888");
+    expect(rates.rates[0]?.currency).toBe(AccommodationCurrency.EUR);
   });
 
   it("compiles provider exports through the accommodation namespace", () => {

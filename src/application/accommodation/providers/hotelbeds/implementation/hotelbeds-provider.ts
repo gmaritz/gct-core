@@ -11,12 +11,62 @@ import {
   AccommodationResultMetadata,
   AccommodationSearchResult,
 } from "../../../results";
+import {
+  AccommodationRate,
+  AccommodationRateResult,
+  AccommodationRateStatus,
+  AccommodationRateType,
+} from "../../../rates";
 import { AccommodationSearchCriteria } from "../../../discovery";
 
 import { AccommodationProvider } from "../../accommodation-provider";
 import { HotelMapper } from "../mapper";
 import { DefaultHotelbedsClient, HotelbedsClient, HotelbedsRequest } from "../client";
-import { HotelbedsHotel } from "../models";
+import { HotelbedsHotel, HotelbedsRate } from "../models";
+
+function parseAmount(value: string | undefined): number {
+  if (!value) {
+    return 0;
+  }
+
+  const parsed = Number.parseFloat(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function mapRateType(_rate: HotelbedsRate): AccommodationRateType {
+  return AccommodationRateType.PUBLIC;
+}
+
+function mapRateStatus(rate: HotelbedsRate): AccommodationRateStatus {
+  if (typeof rate.allotment !== "number") {
+    return AccommodationRateStatus.UNKNOWN;
+  }
+
+  if (rate.allotment <= 0) {
+    return AccommodationRateStatus.UNAVAILABLE;
+  }
+
+  if (rate.allotment <= 3) {
+    return AccommodationRateStatus.LIMITED;
+  }
+
+  return AccommodationRateStatus.AVAILABLE;
+}
+
+function mapRate(
+  rate: HotelbedsRate,
+  defaultCurrency: AccommodationRateResult["rates"][number]["currency"],
+): AccommodationRate {
+  return {
+    id: rate.rateKey ?? "unknown-rate",
+    type: mapRateType(rate),
+    status: mapRateStatus(rate),
+    currency: defaultCurrency,
+    amount: parseAmount(rate.sellingRate ?? rate.net),
+    boardCode: rate.boardCode,
+    boardName: rate.boardName,
+  };
+}
 
 export interface HotelbedsAccommodationMapper {
   mapHotel(hotel: HotelbedsHotel): Accommodation;
@@ -146,6 +196,21 @@ export class HotelbedsProvider implements AccommodationProvider {
     return {
       accommodationId: detailsResult.accommodation.identity.id,
       images: detailsResult.accommodation.images,
+      metadata: createMetadata(),
+    };
+  }
+
+  public async rates(query: import("../../../rates").AccommodationRateQuery): Promise<AccommodationRateResult> {
+    const response = await this.client.getHotelRates(
+      createRequest("rates", `/hotels/${query.identifier}/rates`),
+    );
+
+    return {
+      accommodationId: query.identifier,
+      stayPeriod: query.stayPeriod,
+      occupancy: query.occupancy,
+      selectionStrategy: query.selectionStrategy,
+      rates: response.data.map((rate) => mapRate(rate, query.context.currency)),
       metadata: createMetadata(),
     };
   }

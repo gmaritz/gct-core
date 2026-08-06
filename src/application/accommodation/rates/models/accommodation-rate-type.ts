@@ -1,0 +1,6 @@
+export enum AccommodationRateType {
+  PUBLIC = "PUBLIC",
+  PACKAGE = "PACKAGE",
+  NEGOTIATED = "NEGOTIATED",
+  PROMOTIONAL = "PROMOTIONAL",
+}

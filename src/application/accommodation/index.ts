@@ -8,3 +8,4 @@ export * from "./policies";
 export * from "./results";
 export * from "./content";
 export * from "./inventory";
+export * from "./rates";

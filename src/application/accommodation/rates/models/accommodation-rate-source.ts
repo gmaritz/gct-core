@@ -1,0 +1,8 @@
+export enum AccommodationRateSource {
+  HOMEPAGE = "HOMEPAGE",
+  PACKAGE_BUILDER = "PACKAGE_BUILDER",
+  PACKAGE_DETAILS = "PACKAGE_DETAILS",
+  ADMIN = "ADMIN",
+  API = "API",
+  INTERNAL = "INTERNAL",
+}

@@ -2,8 +2,42 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HotelbedsProvider = void 0;
 const capabilities_1 = require("../../../capabilities");
+const rates_1 = require("../../../rates");
 const mapper_1 = require("../mapper");
 const client_1 = require("../client");
+function parseAmount(value) {
+    if (!value) {
+        return 0;
+    }
+    const parsed = Number.parseFloat(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+}
+function mapRateType(_rate) {
+    return rates_1.AccommodationRateType.PUBLIC;
+}
+function mapRateStatus(rate) {
+    if (typeof rate.allotment !== "number") {
+        return rates_1.AccommodationRateStatus.UNKNOWN;
+    }
+    if (rate.allotment <= 0) {
+        return rates_1.AccommodationRateStatus.UNAVAILABLE;
+    }
+    if (rate.allotment <= 3) {
+        return rates_1.AccommodationRateStatus.LIMITED;
+    }
+    return rates_1.AccommodationRateStatus.AVAILABLE;
+}
+function mapRate(rate, defaultCurrency) {
+    return {
+        id: rate.rateKey ?? "unknown-rate",
+        type: mapRateType(rate),
+        status: mapRateStatus(rate),
+        currency: defaultCurrency,
+        amount: parseAmount(rate.sellingRate ?? rate.net),
+        boardCode: rate.boardCode,
+        boardName: rate.boardName,
+    };
+}
 function createMetadata() {
     return {
         provider: "hotelbeds",
@@ -87,6 +121,17 @@ class HotelbedsProvider {
         return {
             accommodationId: detailsResult.accommodation.identity.id,
             images: detailsResult.accommodation.images,
+            metadata: createMetadata(),
+        };
+    }
+    async rates(query) {
+        const response = await this.client.getHotelRates(createRequest("rates", `/hotels/${query.identifier}/rates`));
+        return {
+            accommodationId: query.identifier,
+            stayPeriod: query.stayPeriod,
+            occupancy: query.occupancy,
+            selectionStrategy: query.selectionStrategy,
+            rates: response.data.map((rate) => mapRate(rate, query.context.currency)),
             metadata: createMetadata(),
         };
     }

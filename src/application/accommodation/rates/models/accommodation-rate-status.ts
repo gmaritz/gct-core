@@ -1,0 +1,7 @@
+export enum AccommodationRateStatus {
+  AVAILABLE = "AVAILABLE",
+  LIMITED = "LIMITED",
+  ON_REQUEST = "ON_REQUEST",
+  UNAVAILABLE = "UNAVAILABLE",
+  UNKNOWN = "UNKNOWN",
+}

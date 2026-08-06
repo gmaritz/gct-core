@@ -1,0 +1,1 @@
+{"version":3,"file":"accommodation-rate-validation-result.d.ts","sourceRoot":"","sources":["../../../../../src/application/accommodation/rates/validation/accommodation-rate-validation-result.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,gCAAgC,EAAE,MAAM,uCAAuC,CAAC;AAEzF,MAAM,WAAW,iCAAiC;IAChD,QAAQ,CAAC,KAAK,EAAE,OAAO,CAAC;IACxB,QAAQ,CAAC,MAAM,EAAE,aAAa,CAAC,gCAAgC,CAAC,CAAC;CAClE"}
