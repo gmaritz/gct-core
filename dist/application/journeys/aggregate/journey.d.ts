@@ -1,6 +1,4 @@
-export interface JourneyIdentity {
-    readonly id: string;
-}
+import { JourneyAccommodation, JourneyDestination, JourneyDuration, JourneyExperience, JourneyIdentity, JourneyLifecycle, JourneyStatus, JourneyTag, JourneyTravellerRules } from "../models";
 export interface JourneyClassification {
     readonly type: string;
     readonly category: string;
@@ -10,44 +8,6 @@ export interface JourneyMetadata {
     readonly modified: Date;
     readonly version: string;
     readonly source: string;
-}
-export declare enum JourneyStatus {
-    DRAFT = "DRAFT",
-    CURATED = "CURATED",
-    PUBLISHED = "PUBLISHED",
-    ARCHIVED = "ARCHIVED"
-}
-export declare enum JourneyLifecycle {
-    DESIGN = "DESIGN",
-    CURATED = "CURATED",
-    MERCHANDISED = "MERCHANDISED",
-    BOOKABLE = "BOOKABLE",
-    RETIRED = "RETIRED"
-}
-export interface JourneyDuration {
-    readonly days?: number;
-    readonly nights?: number;
-    readonly description?: string;
-}
-export interface JourneyDestination {
-    readonly name: string;
-}
-export interface JourneyAccommodation {
-    readonly accommodationId: string;
-    readonly name: string;
-}
-export interface JourneyExperience {
-    readonly experienceId: string;
-    readonly name: string;
-}
-export interface JourneyTravellerRules {
-    readonly minimumTravellers?: number;
-    readonly maximumTravellers?: number;
-    readonly privateOnly?: boolean;
-    readonly ageRestriction?: string;
-}
-export interface JourneyTag {
-    readonly value: string;
 }
 export interface JourneyComposition {
     readonly identity: JourneyIdentity;

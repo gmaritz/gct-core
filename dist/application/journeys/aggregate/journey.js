@@ -1,21 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Journey = exports.JourneyLifecycle = exports.JourneyStatus = void 0;
-var JourneyStatus;
-(function (JourneyStatus) {
-    JourneyStatus["DRAFT"] = "DRAFT";
-    JourneyStatus["CURATED"] = "CURATED";
-    JourneyStatus["PUBLISHED"] = "PUBLISHED";
-    JourneyStatus["ARCHIVED"] = "ARCHIVED";
-})(JourneyStatus || (exports.JourneyStatus = JourneyStatus = {}));
-var JourneyLifecycle;
-(function (JourneyLifecycle) {
-    JourneyLifecycle["DESIGN"] = "DESIGN";
-    JourneyLifecycle["CURATED"] = "CURATED";
-    JourneyLifecycle["MERCHANDISED"] = "MERCHANDISED";
-    JourneyLifecycle["BOOKABLE"] = "BOOKABLE";
-    JourneyLifecycle["RETIRED"] = "RETIRED";
-})(JourneyLifecycle || (exports.JourneyLifecycle = JourneyLifecycle = {}));
+exports.Journey = void 0;
 function freezeDate(date) {
     return new Date(date.getTime());
 }

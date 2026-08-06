@@ -1,0 +1,1 @@
+{"version":3,"file":"journey-operating-season.d.ts","sourceRoot":"","sources":["../../../../../src/application/journeys/models/temporal/journey-operating-season.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,aAAa,EAAE,MAAM,kCAAkC,CAAC;AAEjE,MAAM,WAAW,sBAAsB;IACrC,QAAQ,CAAC,OAAO,EAAE,aAAa,CAAC,aAAa,CAAC,CAAC;IAC/C,QAAQ,CAAC,SAAS,EAAE,OAAO,CAAC;CAC7B"}
