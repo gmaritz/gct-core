@@ -1,0 +1,1 @@
+{"version":3,"file":"journey-validation-error.d.ts","sourceRoot":"","sources":["../../../../../src/application/journeys/validation/models/journey-validation-error.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,0BAA0B,EAAE,MAAM,iCAAiC,CAAC;AAE7E,MAAM,WAAW,sBAAsB;IACrC,QAAQ,CAAC,IAAI,EAAE,0BAA0B,CAAC;IAC1C,QAAQ,CAAC,OAAO,EAAE,MAAM,CAAC;CAC1B"}
