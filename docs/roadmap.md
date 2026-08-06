@@ -11,3 +11,32 @@ APP-002.10 Accommodation Details Service
 APP-002.11 Accommodation Image Service
 
 APP-003    Package Builder
+
+
+APP-002.9B
+
+Accommodation Query Validator
+
+↓
+
+APP-002.10
+
+Accommodation Information Service
+
+↓
+
+APP-002.11
+
+Availability Service
+
+↓
+
+APP-002.12
+
+Rate Service
+
+↓
+
+APP-003
+
+Package Builder

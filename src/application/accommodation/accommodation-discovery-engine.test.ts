@@ -1,4 +1,5 @@
 import {
+  AccommodationQueryValidator,
   AccommodationProvider,
   AccommodationSearchContext,
   AccommodationProviderCapabilityType,
@@ -137,7 +138,7 @@ describe("AccommodationDiscoveryEngine", () => {
     );
     registry.register(createProvider("content-only", [AccommodationProviderCapabilityType.CONTENT]));
 
-    const engine = new DefaultAccommodationDiscoveryEngine(registry);
+    const engine = new DefaultAccommodationDiscoveryEngine(registry, new AccommodationQueryValidator());
     const query = createQuery();
     const result = await engine.search(query);
 
@@ -160,7 +161,7 @@ describe("AccommodationDiscoveryEngine", () => {
       }),
     );
 
-    const engine = new DefaultAccommodationDiscoveryEngine(registry);
+    const engine = new DefaultAccommodationDiscoveryEngine(registry, new AccommodationQueryValidator());
     const result = await engine.search(createQuery());
 
     expect(result.accommodations.map((accommodation) => accommodation.identity.id)).toEqual([
@@ -182,7 +183,7 @@ describe("AccommodationDiscoveryEngine", () => {
       }),
     );
 
-    const engine = new DefaultAccommodationDiscoveryEngine(registry);
+    const engine = new DefaultAccommodationDiscoveryEngine(registry, new AccommodationQueryValidator());
     const result = await engine.search(createQuery());
 
     expect(result.accommodations).toHaveLength(1);
@@ -191,9 +192,60 @@ describe("AccommodationDiscoveryEngine", () => {
 
   it("compiles discovery engine exports through the accommodation namespace", async () => {
     const registry: ProviderRegistry = new InMemoryProviderRegistry();
-    const engine = new DefaultAccommodationDiscoveryEngine(registry);
+    const engine = new DefaultAccommodationDiscoveryEngine(registry, new AccommodationQueryValidator());
     const result = await engine.search(createQuery());
 
     expect(result.accommodations).toEqual([]);
+  });
+
+  it("rejects invalid queries before provider discovery begins", async () => {
+    let providerDiscoveryInvoked = false;
+    const registry: ProviderRegistry = {
+      register() {
+        throw new Error("register should not be called");
+      },
+      unregister() {
+        throw new Error("unregister should not be called");
+      },
+      resolve() {
+        return undefined;
+      },
+      resolveAll() {
+        return [];
+      },
+      findProviders() {
+        providerDiscoveryInvoked = true;
+        throw new Error("provider discovery should not be reached for invalid queries");
+      },
+      capabilities() {
+        return undefined;
+      },
+      features() {
+        return [];
+      },
+      supports() {
+        return false;
+      },
+    };
+
+    const validator = {
+      validate() {
+        return {
+          valid: false,
+          errors: [
+            {
+              code: 0,
+              field: "criteria.destination",
+              message: "Destination is required.",
+            },
+          ],
+        };
+      },
+    };
+
+    const engine = new DefaultAccommodationDiscoveryEngine(registry, validator as AccommodationQueryValidator);
+
+    await expect(engine.search(createQuery())).rejects.toThrow("Accommodation query validation failed");
+    expect(providerDiscoveryInvoked).toBe(false);
   });
 });

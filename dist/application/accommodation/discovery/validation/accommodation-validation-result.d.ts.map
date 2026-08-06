@@ -1,0 +1,1 @@
+{"version":3,"file":"accommodation-validation-result.d.ts","sourceRoot":"","sources":["../../../../../src/application/accommodation/discovery/validation/accommodation-validation-result.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,4BAA4B,EAAE,MAAM,kCAAkC,CAAC;AAEhF,MAAM,WAAW,6BAA6B;IAC5C,QAAQ,CAAC,KAAK,EAAE,OAAO,CAAC;IACxB,QAAQ,CAAC,MAAM,EAAE,aAAa,CAAC,4BAA4B,CAAC,CAAC;CAC9D"}
