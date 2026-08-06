@@ -51,11 +51,11 @@ Journey Composition Engine
 
 ✓ APP-003.3 Journey Validation Pipeline
 
-➡ APP-003.4 Journey Composition Policy Framework
+✓ APP-003.4 Journey Composition Policy Framework
 
-APP-003.5 Accommodation Composition
+✓ APP-003.5 Accommodation Composition Adapter
 
-APP-003.6 Experience Composition
+➡ APP-003.6 Experience Composition Framework
 
 APP-003.7 Journey Composition Service
 
