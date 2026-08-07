@@ -5,4 +5,5 @@ export * from "./policies";
 export * from "./builder";
 export * from "./service";
 export * from "./presentation";
+export * from "./integration";
 //# sourceMappingURL=index.d.ts.map
