@@ -1,0 +1,7 @@
+export enum PaymentProcessingStage {
+  AUTHORIZATION = "AUTHORIZATION",
+  CAPTURE = "CAPTURE",
+  SETTLEMENT = "SETTLEMENT",
+  COMPLETION = "COMPLETION",
+  REFUND = "REFUND",
+}
