@@ -2,6 +2,7 @@ import {
   Pricing,
   PricingComposition,
 } from "@application/pricing/aggregate";
+import { Currency, TaxType } from "@application/pricing";
 
 function createComposition(): PricingComposition {
   return {
@@ -18,13 +19,15 @@ function createComposition(): PricingComposition {
         {
           code: "BASE",
           label: "Base package",
-          amount: 20000,
+          unitAmount: { amount: 20000, currency: Currency.ZAR },
+          totalAmount: { amount: 40000, currency: Currency.ZAR },
           quantity: 2,
         },
         {
           code: "EXPERIENCE",
           label: "Premium experience",
-          amount: 3500,
+          unitAmount: { amount: 3500, currency: Currency.ZAR },
+          totalAmount: { amount: 3500, currency: Currency.ZAR },
           quantity: 1,
         },
       ],
@@ -33,52 +36,50 @@ function createComposition(): PricingComposition {
       entries: [
         {
           code: "VAT",
-          amount: 4200,
+          type: TaxType.VAT,
+          amount: { amount: 4200, currency: Currency.ZAR },
         },
       ],
+      total: { amount: 4200, currency: Currency.ZAR },
     },
-    fees: {
-      entries: [
-        {
-          code: "SERVICE",
-          amount: 600,
-        },
-      ],
-    },
-    discounts: {
-      entries: [
-        {
-          code: "LOYALTY",
-          amount: 800,
-        },
-      ],
-    },
-    markups: {
-      entries: [
-        {
-          code: "SEASONAL",
-          amount: 500,
-        },
-      ],
-    },
-    commissions: {
-      entries: [
-        {
-          code: "AGENCY",
-          amount: 1200,
-        },
-      ],
-    },
+    fees: [
+      {
+        code: "SERVICE",
+        label: "Service fee",
+        amount: { amount: 600, currency: Currency.ZAR },
+      },
+    ],
+    discounts: [
+      {
+        code: "LOYALTY",
+        label: "Loyalty discount",
+        amount: { amount: 800, currency: Currency.ZAR },
+      },
+    ],
+    markups: [
+      {
+        code: "SEASONAL",
+        label: "Seasonal markup",
+        amount: { amount: 500, currency: Currency.ZAR },
+      },
+    ],
+    commissions: [
+      {
+        code: "AGENCY",
+        label: "Agency commission",
+        amount: { amount: 1200, currency: Currency.ZAR },
+      },
+    ],
     totals: {
-      subtotal: 43500,
-      taxTotal: 4200,
-      feeTotal: 600,
-      discountTotal: 800,
-      markupTotal: 500,
-      commissionTotal: 1200,
-      grandTotal: 48000,
+      subtotal: { amount: 43500, currency: Currency.ZAR },
+      taxTotal: { amount: 4200, currency: Currency.ZAR },
+      feeTotal: { amount: 600, currency: Currency.ZAR },
+      discountTotal: { amount: 800, currency: Currency.ZAR },
+      markupTotal: { amount: 500, currency: Currency.ZAR },
+      commissionTotal: { amount: 1200, currency: Currency.ZAR },
+      grandTotal: { amount: 48000, currency: Currency.ZAR },
     },
-    currency: "ZAR",
+    currency: Currency.ZAR,
     metadata: {
       createdAt: new Date("2026-08-07T00:00:00.000Z"),
       updatedAt: new Date("2026-08-07T00:00:00.000Z"),
@@ -93,9 +94,9 @@ describe("Pricing aggregate", () => {
     const pricing = Pricing.create(createComposition());
 
     expect(pricing.identity.id).toBe("pricing-001");
-    expect(pricing.currency).toBe("ZAR");
+    expect(pricing.currency).toBe(Currency.ZAR);
     expect(pricing.breakdown.lineItems).toHaveLength(2);
-    expect(pricing.totals.grandTotal).toBe(48000);
+    expect(pricing.totals.grandTotal.amount).toBe(48000);
   });
 
   it("fails creation when identifier is missing", () => {
@@ -139,7 +140,7 @@ describe("Pricing aggregate", () => {
     expect(() =>
       Pricing.create({
         ...composition,
-        currency: "",
+        currency: "" as unknown as PricingComposition["currency"],
       }),
     ).toThrow("Pricing currency is required.");
   });
@@ -150,7 +151,7 @@ describe("Pricing aggregate", () => {
 
     expect(pricing.identity.id).toBe("pricing-001");
     expect(pricing.summary.productId).toBe("journey-2001");
-    expect(pricing.totals.grandTotal).toBe(48000);
+    expect(pricing.totals.grandTotal.amount).toBe(48000);
   });
 
   it("preserves immutable restoration", () => {
@@ -163,10 +164,10 @@ describe("Pricing aggregate", () => {
     expect(Object.isFrozen(pricing.breakdown)).toBe(true);
     expect(Object.isFrozen(pricing.breakdown.lineItems)).toBe(true);
     expect(Object.isFrozen(pricing.taxes.entries)).toBe(true);
-    expect(Object.isFrozen(pricing.fees.entries)).toBe(true);
-    expect(Object.isFrozen(pricing.discounts.entries)).toBe(true);
-    expect(Object.isFrozen(pricing.markups.entries)).toBe(true);
-    expect(Object.isFrozen(pricing.commissions.entries)).toBe(true);
+    expect(Object.isFrozen(pricing.fees)).toBe(true);
+    expect(Object.isFrozen(pricing.discounts)).toBe(true);
+    expect(Object.isFrozen(pricing.markups)).toBe(true);
+    expect(Object.isFrozen(pricing.commissions)).toBe(true);
     expect(Object.isFrozen(pricing.totals)).toBe(true);
     expect(Object.isFrozen(pricing.metadata)).toBe(true);
   });
@@ -179,7 +180,8 @@ describe("Pricing aggregate", () => {
     mutableLineItems[0] = {
       code: "CHANGED",
       label: "Changed",
-      amount: 1,
+      unitAmount: { amount: 1, currency: Currency.ZAR },
+      totalAmount: { amount: 1, currency: Currency.ZAR },
       quantity: 1,
     };
     composition.metadata.createdAt.setFullYear(2030);

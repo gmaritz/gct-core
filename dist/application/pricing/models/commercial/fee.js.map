@@ -1,0 +1,1 @@
+{"version":3,"file":"fee.js","sourceRoot":"","sources":["../../../../../src/application/pricing/models/commercial/fee.ts"],"names":[],"mappings":";;AAQA,8BAMC;AAdD,oCAA8C;AAQ9C,SAAgB,SAAS,CAAC,GAAQ;IAChC,OAAO,MAAM,CAAC,MAAM,CAAC;QACnB,IAAI,EAAE,GAAG,CAAC,IAAI;QACd,KAAK,EAAE,GAAG,CAAC,KAAK;QAChB,MAAM,EAAE,IAAA,mBAAW,EAAC,GAAG,CAAC,MAAM,CAAC;KAChC,CAAC,CAAC;AACL,CAAC"}

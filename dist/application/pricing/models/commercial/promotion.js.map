@@ -1,0 +1,1 @@
+{"version":3,"file":"promotion.js","sourceRoot":"","sources":["../../../../../src/application/pricing/models/commercial/promotion.ts"],"names":[],"mappings":";;AAMA,0CAMC;AAND,SAAgB,eAAe,CAAC,SAAoB;IAClD,OAAO,MAAM,CAAC,MAAM,CAAC;QACnB,IAAI,EAAE,SAAS,CAAC,IAAI;QACpB,KAAK,EAAE,SAAS,CAAC,KAAK;QACtB,WAAW,EAAE,SAAS,CAAC,WAAW;KACnC,CAAC,CAAC;AACL,CAAC"}

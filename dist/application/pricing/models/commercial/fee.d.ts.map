@@ -1,0 +1,1 @@
+{"version":3,"file":"fee.d.ts","sourceRoot":"","sources":["../../../../../src/application/pricing/models/commercial/fee.ts"],"names":[],"mappings":"AAAA,OAAO,EAAe,KAAK,EAAE,MAAM,UAAU,CAAC;AAE9C,MAAM,WAAW,GAAG;IAClB,QAAQ,CAAC,IAAI,EAAE,MAAM,CAAC;IACtB,QAAQ,CAAC,KAAK,EAAE,MAAM,CAAC;IACvB,QAAQ,CAAC,MAAM,EAAE,KAAK,CAAC;CACxB;AAED,wBAAgB,SAAS,CAAC,GAAG,EAAE,GAAG,GAAG,GAAG,CAMvC"}

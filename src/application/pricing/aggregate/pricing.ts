@@ -1,216 +1,46 @@
+import {
+  Commission,
+  createCommission,
+  createDiscount,
+  createFee,
+  createMarkup,
+  createPricingBreakdown,
+  createPricingMetadata,
+  createPricingSummary,
+  createPricingTotal,
+  createTaxBreakdown,
+  Currency,
+  Discount,
+  Fee,
+  Markup,
+  PricingBreakdown,
+  PricingMetadata,
+  PricingSummary,
+  PricingTotal,
+  TaxBreakdown,
+} from "../models";
+
 export interface PricingIdentity {
   readonly id: string;
-}
-
-export interface PricingSummary {
-  readonly productId: string;
-  readonly productType: string;
-  readonly description: string;
-}
-
-export interface PricingBreakdownLineItem {
-  readonly code: string;
-  readonly label: string;
-  readonly amount: number;
-  readonly quantity: number;
-}
-
-export interface PricingBreakdown {
-  readonly lineItems: ReadonlyArray<PricingBreakdownLineItem>;
-}
-
-export interface PricingTaxEntry {
-  readonly code: string;
-  readonly amount: number;
-}
-
-export interface PricingFeeEntry {
-  readonly code: string;
-  readonly amount: number;
-}
-
-export interface PricingDiscountEntry {
-  readonly code: string;
-  readonly amount: number;
-}
-
-export interface PricingMarkupEntry {
-  readonly code: string;
-  readonly amount: number;
-}
-
-export interface PricingCommissionEntry {
-  readonly code: string;
-  readonly amount: number;
-}
-
-export interface PricingTaxSummary {
-  readonly entries: ReadonlyArray<PricingTaxEntry>;
-}
-
-export interface PricingFeeSummary {
-  readonly entries: ReadonlyArray<PricingFeeEntry>;
-}
-
-export interface PricingDiscountSummary {
-  readonly entries: ReadonlyArray<PricingDiscountEntry>;
-}
-
-export interface PricingMarkupSummary {
-  readonly entries: ReadonlyArray<PricingMarkupEntry>;
-}
-
-export interface PricingCommissionSummary {
-  readonly entries: ReadonlyArray<PricingCommissionEntry>;
-}
-
-export interface PricingTotals {
-  readonly subtotal: number;
-  readonly taxTotal: number;
-  readonly feeTotal: number;
-  readonly discountTotal: number;
-  readonly markupTotal: number;
-  readonly commissionTotal: number;
-  readonly grandTotal: number;
-}
-
-export interface PricingMetadata {
-  readonly createdAt: Date;
-  readonly updatedAt: Date;
-  readonly version: string;
-  readonly source: string;
 }
 
 export interface PricingComposition {
   readonly identity: PricingIdentity;
   readonly summary: PricingSummary;
   readonly breakdown: PricingBreakdown;
-  readonly taxes: PricingTaxSummary;
-  readonly fees: PricingFeeSummary;
-  readonly discounts: PricingDiscountSummary;
-  readonly markups: PricingMarkupSummary;
-  readonly commissions: PricingCommissionSummary;
-  readonly totals: PricingTotals;
-  readonly currency: string;
+  readonly taxes: TaxBreakdown;
+  readonly fees: ReadonlyArray<Fee>;
+  readonly discounts: ReadonlyArray<Discount>;
+  readonly markups: ReadonlyArray<Markup>;
+  readonly commissions: ReadonlyArray<Commission>;
+  readonly totals: PricingTotal;
+  readonly currency: Currency;
   readonly metadata: PricingMetadata;
-}
-
-function cloneDate(value: Date): Date {
-  return new Date(value.getTime());
 }
 
 function freezeIdentity(identity: PricingIdentity): PricingIdentity {
   return Object.freeze({
     id: identity.id,
-  });
-}
-
-function freezeSummary(summary: PricingSummary): PricingSummary {
-  return Object.freeze({
-    productId: summary.productId,
-    productType: summary.productType,
-    description: summary.description,
-  });
-}
-
-function freezeBreakdownLineItem(item: PricingBreakdownLineItem): PricingBreakdownLineItem {
-  return Object.freeze({
-    code: item.code,
-    label: item.label,
-    amount: item.amount,
-    quantity: item.quantity,
-  });
-}
-
-function freezeBreakdown(breakdown: PricingBreakdown): PricingBreakdown {
-  return Object.freeze({
-    lineItems: Object.freeze(breakdown.lineItems.map(freezeBreakdownLineItem)),
-  });
-}
-
-function freezeTaxEntry(entry: PricingTaxEntry): PricingTaxEntry {
-  return Object.freeze({
-    code: entry.code,
-    amount: entry.amount,
-  });
-}
-
-function freezeFeeEntry(entry: PricingFeeEntry): PricingFeeEntry {
-  return Object.freeze({
-    code: entry.code,
-    amount: entry.amount,
-  });
-}
-
-function freezeDiscountEntry(entry: PricingDiscountEntry): PricingDiscountEntry {
-  return Object.freeze({
-    code: entry.code,
-    amount: entry.amount,
-  });
-}
-
-function freezeMarkupEntry(entry: PricingMarkupEntry): PricingMarkupEntry {
-  return Object.freeze({
-    code: entry.code,
-    amount: entry.amount,
-  });
-}
-
-function freezeCommissionEntry(entry: PricingCommissionEntry): PricingCommissionEntry {
-  return Object.freeze({
-    code: entry.code,
-    amount: entry.amount,
-  });
-}
-
-function freezeTaxes(taxes: PricingTaxSummary): PricingTaxSummary {
-  return Object.freeze({
-    entries: Object.freeze(taxes.entries.map(freezeTaxEntry)),
-  });
-}
-
-function freezeFees(fees: PricingFeeSummary): PricingFeeSummary {
-  return Object.freeze({
-    entries: Object.freeze(fees.entries.map(freezeFeeEntry)),
-  });
-}
-
-function freezeDiscounts(discounts: PricingDiscountSummary): PricingDiscountSummary {
-  return Object.freeze({
-    entries: Object.freeze(discounts.entries.map(freezeDiscountEntry)),
-  });
-}
-
-function freezeMarkups(markups: PricingMarkupSummary): PricingMarkupSummary {
-  return Object.freeze({
-    entries: Object.freeze(markups.entries.map(freezeMarkupEntry)),
-  });
-}
-
-function freezeCommissions(commissions: PricingCommissionSummary): PricingCommissionSummary {
-  return Object.freeze({
-    entries: Object.freeze(commissions.entries.map(freezeCommissionEntry)),
-  });
-}
-
-function freezeTotals(totals: PricingTotals): PricingTotals {
-  return Object.freeze({
-    subtotal: totals.subtotal,
-    taxTotal: totals.taxTotal,
-    feeTotal: totals.feeTotal,
-    discountTotal: totals.discountTotal,
-    markupTotal: totals.markupTotal,
-    commissionTotal: totals.commissionTotal,
-    grandTotal: totals.grandTotal,
-  });
-}
-
-function freezeMetadata(metadata: PricingMetadata): PricingMetadata {
-  return Object.freeze({
-    createdAt: cloneDate(metadata.createdAt),
-    updatedAt: cloneDate(metadata.updatedAt),
-    version: metadata.version,
-    source: metadata.source,
   });
 }
 
@@ -243,29 +73,29 @@ export class Pricing {
   public readonly identity: PricingIdentity;
   public readonly summary: PricingSummary;
   public readonly breakdown: PricingBreakdown;
-  public readonly taxes: PricingTaxSummary;
-  public readonly fees: PricingFeeSummary;
-  public readonly discounts: PricingDiscountSummary;
-  public readonly markups: PricingMarkupSummary;
-  public readonly commissions: PricingCommissionSummary;
-  public readonly totals: PricingTotals;
-  public readonly currency: string;
+  public readonly taxes: TaxBreakdown;
+  public readonly fees: ReadonlyArray<Fee>;
+  public readonly discounts: ReadonlyArray<Discount>;
+  public readonly markups: ReadonlyArray<Markup>;
+  public readonly commissions: ReadonlyArray<Commission>;
+  public readonly totals: PricingTotal;
+  public readonly currency: Currency;
   public readonly metadata: PricingMetadata;
 
   private constructor(composition: PricingComposition) {
     validateRequiredComposition(composition);
 
     this.identity = freezeIdentity(composition.identity);
-    this.summary = freezeSummary(composition.summary);
-    this.breakdown = freezeBreakdown(composition.breakdown);
-    this.taxes = freezeTaxes(composition.taxes);
-    this.fees = freezeFees(composition.fees);
-    this.discounts = freezeDiscounts(composition.discounts);
-    this.markups = freezeMarkups(composition.markups);
-    this.commissions = freezeCommissions(composition.commissions);
-    this.totals = freezeTotals(composition.totals);
+    this.summary = createPricingSummary(composition.summary);
+    this.breakdown = createPricingBreakdown(composition.breakdown);
+    this.taxes = createTaxBreakdown(composition.taxes);
+    this.fees = Object.freeze(composition.fees.map(createFee));
+    this.discounts = Object.freeze(composition.discounts.map(createDiscount));
+    this.markups = Object.freeze(composition.markups.map(createMarkup));
+    this.commissions = Object.freeze(composition.commissions.map(createCommission));
+    this.totals = createPricingTotal(composition.totals);
     this.currency = composition.currency;
-    this.metadata = freezeMetadata(composition.metadata);
+    this.metadata = createPricingMetadata(composition.metadata);
 
     Object.freeze(this);
   }

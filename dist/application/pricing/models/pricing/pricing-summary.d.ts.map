@@ -1,0 +1,1 @@
+{"version":3,"file":"pricing-summary.d.ts","sourceRoot":"","sources":["../../../../../src/application/pricing/models/pricing/pricing-summary.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,cAAc;IAC7B,QAAQ,CAAC,SAAS,EAAE,MAAM,CAAC;IAC3B,QAAQ,CAAC,WAAW,EAAE,MAAM,CAAC;IAC7B,QAAQ,CAAC,WAAW,EAAE,MAAM,CAAC;CAC9B;AAED,wBAAgB,oBAAoB,CAAC,OAAO,EAAE,cAAc,GAAG,cAAc,CAM5E"}
