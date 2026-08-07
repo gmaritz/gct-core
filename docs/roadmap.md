@@ -89,20 +89,22 @@ APP-009 Payments
 
 APP-006 Payments
 
-APP-006.1 Payment Aggregate
+✓ APP-006 Capability
 
-APP-006.2 Payment Model Library
+✓ APP-006.1 Payment Aggregate
 
-APP-006.3 Payment Validation Pipeline
+✓ APP-006.2 Payment Model Library
 
-APP-006.4 Payment Policy Framework
+✓ APP-006.3 Validation Pipeline
 
-APP-006.5 Payment Processing Framework
+➡ APP-006.4 Policy Framework
+
+APP-006.5 Processing Framework
 
 APP-006.6 Payment Engine
 
-APP-006.7 Payment Presentation Pipeline
+APP-006.7 Presentation Pipeline
 
-APP-006.8 Payment Provider Integration
+APP-006.8 Provider Integration
 
-APP-006 Payment Capability Summary
+Capability Summary
