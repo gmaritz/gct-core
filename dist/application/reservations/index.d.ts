@@ -3,4 +3,5 @@ export * from "./models";
 export * from "./validation";
 export * from "./policies";
 export * from "./builder";
+export * from "./service";
 //# sourceMappingURL=index.d.ts.map
