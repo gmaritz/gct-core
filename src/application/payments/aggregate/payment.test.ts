@@ -1,9 +1,25 @@
-import { Payment, PaymentComposition, PaymentStatus } from "@application/payments/aggregate";
+import {
+  AuthorizationStatus,
+  CaptureStatus,
+  PaymentEventType,
+  PaymentMethod,
+  PaymentStatus,
+  RefundStatus,
+  SettlementStatus,
+} from "@application/payments/models";
+import { Payment, PaymentComposition } from "@application/payments/aggregate";
 
 function createComposition(): PaymentComposition {
   return {
-    identity: {
-      id: "payment-001",
+    reference: {
+      paymentId: "payment-001",
+      reservationId: "reservation-9001",
+      quotationNumber: "Q-9001",
+    },
+    transactionReference: {
+      transactionId: "txn-9001",
+      providerCorrelationId: "corr-9001",
+      customerReference: "cust-9001",
     },
     reservationSnapshot: {
       snapshotId: "reservation-snap-001",
@@ -34,67 +50,74 @@ function createComposition(): PaymentComposition {
     },
     paymentAmount: 46300,
     currency: "ZAR",
-    paymentMethod: "CARD",
-    status: PaymentStatus.PENDING_AUTHORIZATION,
-    authorizationSnapshot: {
-      snapshotId: "auth-snap-001",
-      capturedAt: new Date("2026-08-07T10:03:00.000Z"),
-      version: "1.0.0",
+    paymentMethod: PaymentMethod.CARD,
+    paymentInstrument: {
+      instrumentType: "CARD",
+      maskedIdentifier: "**** **** **** 1001",
+      holderName: "Ari Jacobs",
+      expiryMonth: 8,
+      expiryYear: 2028,
+    },
+    status: PaymentStatus.AUTHORIZATION_REQUESTED,
+    authorization: {
       authorizationId: "auth-9001",
       authorizedAt: new Date("2026-08-07T10:03:30.000Z"),
       amount: 46300,
       currency: "ZAR",
-      providerReference: "AUTH-REF-9001",
-      status: "APPROVED",
+      providerReference: {
+        providerIdentifier: "gateway-a",
+        reference: "AUTH-REF-9001",
+        correlationId: "corr-9001",
+      },
+      status: AuthorizationStatus.APPROVED,
     },
-    captureSnapshot: {
-      snapshotId: "capture-snap-001",
-      capturedAt: new Date("2026-08-07T10:04:00.000Z"),
-      version: "1.0.0",
+    capture: {
       captureId: "capture-9001",
+      capturedAt: new Date("2026-08-07T10:04:00.000Z"),
       amount: 46300,
       currency: "ZAR",
-      providerReference: "CAP-REF-9001",
-      status: "CAPTURED",
+      providerReference: {
+        providerIdentifier: "gateway-a",
+        reference: "CAP-REF-9001",
+      },
+      status: CaptureStatus.CAPTURED,
     },
-    settlementSnapshot: {
-      snapshotId: "settlement-snap-001",
-      capturedAt: new Date("2026-08-08T10:04:00.000Z"),
-      version: "1.0.0",
-      settlementId: "settlement-9001",
+    settlement: {
+      reference: {
+        settlementId: "settlement-9001",
+        batchReference: "batch-9001",
+        providerReference: {
+          providerIdentifier: "gateway-a",
+          reference: "SET-REF-9001",
+        },
+      },
       settledAt: new Date("2026-08-08T10:05:00.000Z"),
       amount: 46300,
       currency: "ZAR",
-      providerReference: "SET-REF-9001",
-      status: "SETTLED",
+      status: SettlementStatus.SETTLED,
     },
     refunds: [
       {
-        snapshotId: "refund-snap-001",
-        capturedAt: new Date("2026-08-09T10:04:00.000Z"),
-        version: "1.0.0",
         refundId: "refund-9001",
         requestedAt: new Date("2026-08-09T10:10:00.000Z"),
         refundedAt: new Date("2026-08-09T12:00:00.000Z"),
         amount: 500,
         currency: "ZAR",
         reason: "Customer change",
-        status: "REFUNDED",
+        status: RefundStatus.REFUNDED,
+        providerReference: {
+          providerIdentifier: "gateway-a",
+          reference: "REFUND-REF-9001",
+        },
       },
     ],
     timeline: [
       {
-        snapshotId: "timeline-snap-001",
-        capturedAt: new Date("2026-08-07T10:00:00.000Z"),
-        version: "1.0.0",
-        milestone: "Created",
+        eventType: PaymentEventType.PAYMENT_CREATED,
         occurredAt: new Date("2026-08-07T10:00:00.000Z"),
       },
       {
-        snapshotId: "timeline-snap-002",
-        capturedAt: new Date("2026-08-07T10:04:00.000Z"),
-        version: "1.0.0",
-        milestone: "Captured",
+        eventType: PaymentEventType.CAPTURE_COMPLETED,
         occurredAt: new Date("2026-08-07T10:04:00.000Z"),
       },
     ],
@@ -102,7 +125,11 @@ function createComposition(): PaymentComposition {
       createdAt: new Date("2026-08-07T10:00:00.000Z"),
       updatedAt: new Date("2026-08-09T12:00:00.000Z"),
       version: "1.0.0",
-      source: "APP-006.1",
+      source: "APP-006.2",
+      audit: {
+        correlationId: "corr-9001",
+        requestId: "request-9001",
+      },
     },
   };
 }
@@ -111,16 +138,16 @@ describe("Payment aggregate", () => {
   it("supports valid aggregate creation", () => {
     const payment = Payment.create(createComposition());
 
-    expect(payment.identity.id).toBe("payment-001");
+    expect(payment.reference.paymentId).toBe("payment-001");
     expect(payment.reservationSnapshot.reservationId).toBe("reservation-9001");
     expect(payment.pricingSnapshot.total).toBe(46300);
-    expect(payment.status).toBe(PaymentStatus.PENDING_AUTHORIZATION);
+    expect(payment.status).toBe(PaymentStatus.AUTHORIZATION_REQUESTED);
   });
 
   it("supports aggregate restoration", () => {
     const payment = Payment.restore(createComposition());
 
-    expect(payment.identity.id).toBe("payment-001");
+    expect(payment.reference.paymentId).toBe("payment-001");
     expect(payment.quoteSnapshot?.quotationNumber).toBe("Q-9001");
   });
 
@@ -130,8 +157,9 @@ describe("Payment aggregate", () => {
     expect(() =>
       Payment.create({
         ...composition,
-        identity: {
-          id: " ",
+        reference: {
+          ...composition.reference,
+          paymentId: " ",
         },
       }),
     ).toThrow("Payment identity is required.");
@@ -165,7 +193,7 @@ describe("Payment aggregate", () => {
     expect(() =>
       Payment.create({
         ...composition,
-        paymentMethod: "",
+        paymentMethod: undefined as unknown as PaymentComposition["paymentMethod"],
       }),
     ).toThrow("Payment method is required.");
   });
@@ -185,7 +213,7 @@ describe("Payment aggregate", () => {
     const payment = Payment.create(createComposition());
 
     expect(Object.isFrozen(payment)).toBe(true);
-    expect(Object.isFrozen(payment.identity)).toBe(true);
+    expect(Object.isFrozen(payment.reference)).toBe(true);
     expect(Object.isFrozen(payment.reservationSnapshot)).toBe(true);
     expect(Object.isFrozen(payment.pricingSnapshot)).toBe(true);
     expect(Object.isFrozen(payment.refunds)).toBe(true);
@@ -196,37 +224,38 @@ describe("Payment aggregate", () => {
   it("uses defensive copying for input mutation and cloned dates", () => {
     const composition = createComposition();
     const payment = Payment.create(composition);
-    const mutableIdentity = composition.identity as { id: string };
+    const mutableReference = composition.reference as { paymentId: string };
     const mutableReservation = composition.reservationSnapshot as { reservationId: string };
     const mutableRefunds = (composition.refunds ?? []) as unknown as Array<{
-      snapshotId: string;
-      capturedAt: Date;
-      version: string;
       refundId: string;
       requestedAt: Date;
-      refundedAt?: Date;
       amount: number;
       currency: string;
       reason: string;
-      status: string;
+      status: RefundStatus;
+      providerReference: {
+        providerIdentifier: string;
+        reference: string;
+      };
     }>;
 
-    mutableIdentity.id = "payment-mutated";
+    mutableReference.paymentId = "payment-mutated";
     mutableReservation.reservationId = "reservation-mutated";
     mutableRefunds[0] = {
-      snapshotId: "refund-mutated",
-      capturedAt: new Date("2027-01-01T00:00:00.000Z"),
-      version: "1.0.0",
       refundId: "refund-mutated",
       requestedAt: new Date("2027-01-01T00:00:00.000Z"),
       amount: 1,
       currency: "ZAR",
       reason: "Mutation",
-      status: "PENDING",
+      status: RefundStatus.REQUESTED,
+      providerReference: {
+        providerIdentifier: "gateway-a",
+        reference: "mutated",
+      },
     };
     composition.metadata.createdAt.setFullYear(2030);
 
-    expect(payment.identity.id).toBe("payment-001");
+    expect(payment.reference.paymentId).toBe("payment-001");
     expect(payment.reservationSnapshot.reservationId).toBe("reservation-9001");
     expect(payment.refunds[0]?.refundId).toBe("refund-9001");
     expect(payment.metadata.createdAt.getFullYear()).toBe(2026);

@@ -1,0 +1,1 @@
+{"version":3,"file":"transaction-reference.js","sourceRoot":"","sources":["../../../../../src/application/payments/models/identity/transaction-reference.ts"],"names":[],"mappings":";;AAMA,gEAMC;AAND,SAAgB,0BAA0B,CAAC,SAA+B;IACxE,OAAO,MAAM,CAAC,MAAM,CAAC;QACnB,aAAa,EAAE,SAAS,CAAC,aAAa;QACtC,qBAAqB,EAAE,SAAS,CAAC,qBAAqB;QACtD,iBAAiB,EAAE,SAAS,CAAC,iBAAiB;KAC/C,CAAC,CAAC;AACL,CAAC"}
