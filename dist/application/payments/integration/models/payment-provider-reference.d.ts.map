@@ -1,0 +1,1 @@
+{"version":3,"file":"payment-provider-reference.d.ts","sourceRoot":"","sources":["../../../../../src/application/payments/integration/models/payment-provider-reference.ts"],"names":[],"mappings":"AAAA,OAAO,EACL,wBAAwB,IAAI,4BAA4B,EAEzD,MAAM,cAAc,CAAC;AAEtB,MAAM,MAAM,+BAA+B,GAAG,4BAA4B,CAAC;AAE3E,wBAAgB,qCAAqC,CACnD,SAAS,EAAE,+BAA+B,GACzC,+BAA+B,CAEjC"}
