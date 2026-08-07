@@ -1,0 +1,1 @@
+{"version":3,"file":"risk-policy.d.ts","sourceRoot":"","sources":["../../../../../src/application/payments/policies/contracts/risk-policy.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,oBAAoB,EAAE,mBAAmB,EAAE,MAAM,WAAW,CAAC;AACtE,OAAO,EAAE,aAAa,EAAE,MAAM,kBAAkB,CAAC;AAEjD,MAAM,WAAW,UAAW,SAAQ,aAAa,CAAC,oBAAoB,EAAE,mBAAmB,CAAC;CAAG"}

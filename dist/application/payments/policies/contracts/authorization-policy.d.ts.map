@@ -1,0 +1,1 @@
+{"version":3,"file":"authorization-policy.d.ts","sourceRoot":"","sources":["../../../../../src/application/payments/policies/contracts/authorization-policy.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,oBAAoB,EAAE,mBAAmB,EAAE,MAAM,WAAW,CAAC;AACtE,OAAO,EAAE,aAAa,EAAE,MAAM,kBAAkB,CAAC;AAEjD,MAAM,WAAW,mBAAoB,SAAQ,aAAa,CAAC,oBAAoB,EAAE,mBAAmB,CAAC;CAAG"}

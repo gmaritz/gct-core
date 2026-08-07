@@ -1,0 +1,1 @@
+{"version":3,"file":"payment-policy.d.ts","sourceRoot":"","sources":["../../../../../src/application/payments/policies/contracts/payment-policy.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,aAAa,CAAC,QAAQ,EAAE,OAAO;IAC9C,QAAQ,CAAC,OAAO,EAAE,QAAQ,GAAG,OAAO,CAAC;CACtC"}
