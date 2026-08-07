@@ -84,3 +84,21 @@ APP-008 Communications
 ↓
 
 APP-009 Payments
+
+APP-005 Pricing Capability
+
+APP-005.1 Pricing Aggregate
+
+APP-005.2 Pricing Model Library
+
+APP-005.3 Pricing Validation Pipeline
+
+APP-005.4 Pricing Policy Framework
+
+APP-005.5 Pricing Calculator Framework
+
+APP-005.6 Pricing Engine
+
+APP-005.7 Pricing Presentation Pipeline
+
+APP-005.8 Quote Integration

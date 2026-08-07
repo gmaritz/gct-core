@@ -14,4 +14,5 @@ export * from './merchandising';
 export * from './accommodation';
 export * from './journeys';
 export * from './reservations';
+export * from './pricing';
 export * from './application-service';
