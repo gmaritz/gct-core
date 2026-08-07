@@ -1,0 +1,1 @@
+{"version":3,"file":"reservation-validation-error.d.ts","sourceRoot":"","sources":["../../../../../src/application/reservations/validation/models/reservation-validation-error.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,8BAA8B,EAAE,MAAM,qCAAqC,CAAC;AAErF,MAAM,WAAW,0BAA0B;IACzC,QAAQ,CAAC,IAAI,EAAE,8BAA8B,CAAC;IAC9C,QAAQ,CAAC,OAAO,EAAE,MAAM,CAAC;CAC1B"}
