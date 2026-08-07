@@ -1,3 +1,15 @@
+import {
+  AccommodationSnapshot,
+  JourneySnapshot,
+  PaymentSnapshot,
+  PricingSnapshot,
+  ReservationMetadata,
+  ReservationTimeline,
+  ReservationTimelineEntry,
+  SupplierReference,
+  TravellerSnapshot,
+} from "../models";
+
 export enum ReservationStatus {
   CREATED = "CREATED",
   QUOTED = "QUOTED",
@@ -11,62 +23,6 @@ export interface ReservationIdentity {
   readonly id: string;
 }
 
-export interface JourneySnapshot {
-  readonly journeyId: string;
-  readonly title: string;
-  readonly startDate?: Date;
-  readonly endDate?: Date;
-  readonly summary?: string;
-}
-
-export interface TravellerSnapshot {
-  readonly travellerId: string;
-  readonly fullName: string;
-  readonly email?: string;
-  readonly phone?: string;
-  readonly dateOfBirth?: Date;
-}
-
-export interface AccommodationSnapshot {
-  readonly accommodationId: string;
-  readonly name: string;
-  readonly checkInDate?: Date;
-  readonly checkOutDate?: Date;
-  readonly roomType?: string;
-}
-
-export interface PricingSnapshot {
-  readonly currency: string;
-  readonly subtotal: number;
-  readonly taxes: number;
-  readonly total: number;
-}
-
-export interface PaymentSnapshot {
-  readonly status: string;
-  readonly method?: string;
-  readonly paidAmount?: number;
-  readonly currency?: string;
-  readonly transactionReference?: string;
-}
-
-export interface SupplierReference {
-  readonly supplier: string;
-  readonly reference: string;
-}
-
-export interface ReservationTimelineEntry {
-  readonly type: string;
-  readonly occurredAt: Date;
-  readonly note?: string;
-}
-
-export interface ReservationMetadata {
-  readonly createdAt: Date;
-  readonly updatedAt: Date;
-  readonly version: string;
-}
-
 export interface ReservationComposition {
   readonly identity: ReservationIdentity;
   readonly status: ReservationStatus;
@@ -76,7 +32,7 @@ export interface ReservationComposition {
   readonly pricingSnapshot?: PricingSnapshot;
   readonly paymentSnapshot?: PaymentSnapshot;
   readonly supplierReferences?: ReadonlyArray<SupplierReference>;
-  readonly timeline?: ReadonlyArray<ReservationTimelineEntry>;
+  readonly timeline?: ReservationTimeline;
   readonly metadata: ReservationMetadata;
 }
 
@@ -90,8 +46,15 @@ function freezeIdentity(identity: ReservationIdentity): ReservationIdentity {
 
 function freezeJourneySnapshot(snapshot: JourneySnapshot): JourneySnapshot {
   return Object.freeze({
+    snapshotId: snapshot.snapshotId,
+    capturedAt: cloneDate(snapshot.capturedAt),
+    version: snapshot.version,
     journeyId: snapshot.journeyId,
     title: snapshot.title,
+    destination: snapshot.destination,
+    duration: snapshot.duration,
+    accommodationSummary: snapshot.accommodationSummary,
+    experienceSummary: snapshot.experienceSummary,
     startDate: typeof snapshot.startDate === "undefined" ? undefined : cloneDate(snapshot.startDate),
     endDate: typeof snapshot.endDate === "undefined" ? undefined : cloneDate(snapshot.endDate),
     summary: snapshot.summary,
@@ -100,39 +63,50 @@ function freezeJourneySnapshot(snapshot: JourneySnapshot): JourneySnapshot {
 
 function freezeTravellerSnapshot(snapshot: TravellerSnapshot): TravellerSnapshot {
   return Object.freeze({
+    snapshotId: snapshot.snapshotId,
+    capturedAt: cloneDate(snapshot.capturedAt),
+    version: snapshot.version,
     travellerId: snapshot.travellerId,
     fullName: snapshot.fullName,
     email: snapshot.email,
     phone: snapshot.phone,
+    nationality: snapshot.nationality,
+    travellerType: snapshot.travellerType,
     dateOfBirth: typeof snapshot.dateOfBirth === "undefined" ? undefined : cloneDate(snapshot.dateOfBirth),
   });
 }
 
 function freezeAccommodationSnapshot(snapshot: AccommodationSnapshot): AccommodationSnapshot {
   return Object.freeze({
+    snapshotId: snapshot.snapshotId,
+    capturedAt: cloneDate(snapshot.capturedAt),
+    version: snapshot.version,
     accommodationId: snapshot.accommodationId,
-    name: snapshot.name,
+    propertyName: snapshot.propertyName,
+    roomType: snapshot.roomType,
+    mealBasis: snapshot.mealBasis,
     checkInDate: typeof snapshot.checkInDate === "undefined" ? undefined : cloneDate(snapshot.checkInDate),
     checkOutDate: typeof snapshot.checkOutDate === "undefined" ? undefined : cloneDate(snapshot.checkOutDate),
-    roomType: snapshot.roomType,
   });
 }
 
-function freezePricingSnapshot(snapshot: PricingSnapshot): PricingSnapshot {
-  return Object.freeze({ ...snapshot });
-}
-
-function freezePaymentSnapshot(snapshot: PaymentSnapshot): PaymentSnapshot {
-  return Object.freeze({ ...snapshot });
-}
-
 function freezeSupplierReference(reference: SupplierReference): SupplierReference {
-  return Object.freeze({ ...reference });
+  return Object.freeze({
+    snapshotId: reference.snapshotId,
+    capturedAt: cloneDate(reference.capturedAt),
+    version: reference.version,
+    providerId: reference.providerId,
+    supplierBookingReference: reference.supplierBookingReference,
+    confirmationNumber: reference.confirmationNumber,
+  });
 }
 
 function freezeTimelineEntry(entry: ReservationTimelineEntry): ReservationTimelineEntry {
   return Object.freeze({
-    type: entry.type,
+    snapshotId: entry.snapshotId,
+    capturedAt: cloneDate(entry.capturedAt),
+    version: entry.version,
+    milestone: entry.milestone,
     occurredAt: cloneDate(entry.occurredAt),
     note: entry.note,
   });
@@ -143,6 +117,31 @@ function freezeMetadata(metadata: ReservationMetadata): ReservationMetadata {
     createdAt: cloneDate(metadata.createdAt),
     updatedAt: cloneDate(metadata.updatedAt),
     version: metadata.version,
+  });
+}
+
+function freezePricingSnapshot(snapshot: PricingSnapshot): PricingSnapshot {
+  return Object.freeze({
+    snapshotId: snapshot.snapshotId,
+    capturedAt: cloneDate(snapshot.capturedAt),
+    version: snapshot.version,
+    currency: snapshot.currency,
+    totalPrice: snapshot.totalPrice,
+    taxes: snapshot.taxes,
+    discounts: snapshot.discounts,
+    fees: snapshot.fees,
+  });
+}
+
+function freezePaymentSnapshot(snapshot: PaymentSnapshot): PaymentSnapshot {
+  return Object.freeze({
+    snapshotId: snapshot.snapshotId,
+    capturedAt: cloneDate(snapshot.capturedAt),
+    version: snapshot.version,
+    paymentStatus: snapshot.paymentStatus,
+    paymentMethod: snapshot.paymentMethod,
+    amountReceived: snapshot.amountReceived,
+    balanceOutstanding: snapshot.balanceOutstanding,
   });
 }
 
@@ -160,11 +159,15 @@ function validateRequiredComposition(composition: ReservationComposition): void 
   ensureInvariant(!isBlank(composition.identity?.id), "Reservation identity is required.");
   ensureInvariant(typeof composition.status === "string", "Reservation status is required.");
   ensureInvariant(!isBlank(composition.journeySnapshot?.journeyId), "Journey snapshot is required.");
+  ensureInvariant(!isBlank(composition.journeySnapshot?.snapshotId), "Journey snapshot is required.");
   ensureInvariant(
     Array.isArray(composition.travellerSnapshots) && composition.travellerSnapshots.length > 0,
     "At least one traveller snapshot is required.",
   );
-  ensureInvariant(composition.travellerSnapshots.every((snapshot) => !isBlank(snapshot?.travellerId)), "Traveller snapshots are invalid.");
+  ensureInvariant(
+    composition.travellerSnapshots.every((snapshot) => !isBlank(snapshot?.travellerId) && !isBlank(snapshot?.snapshotId)),
+    "Traveller snapshots are invalid.",
+  );
   ensureInvariant(
     typeof composition.metadata === "object" && composition.metadata !== null,
     "Reservation metadata is required.",
@@ -181,7 +184,7 @@ export class Reservation {
   public readonly pricingSnapshot?: PricingSnapshot;
   public readonly paymentSnapshot?: PaymentSnapshot;
   public readonly supplierReferences: ReadonlyArray<SupplierReference>;
-  public readonly timeline: ReadonlyArray<ReservationTimelineEntry>;
+  public readonly timeline: ReservationTimeline;
   public readonly metadata: ReservationMetadata;
 
   private constructor(composition: ReservationComposition) {
