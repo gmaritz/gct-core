@@ -108,3 +108,18 @@ APP-006.7 Presentation Pipeline
 APP-006.8 Provider Integration
 
 Capability Summary
+
+
+APP-007.1 Invoice Aggregate
+
+APP-007.2 Invoice Model Library
+
+APP-007.3 Invoice Validation Pipeline
+
+APP-007.4 Invoice Policy Framework
+
+APP-007.5 Invoice Engine
+
+APP-007.6 Invoice Presentation Pipeline
+
+APP-007.7 Invoice Integration
