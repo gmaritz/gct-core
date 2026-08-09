@@ -1,0 +1,38 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.InvoiceValidationErrorCode = void 0;
+var InvoiceValidationErrorCode;
+(function (InvoiceValidationErrorCode) {
+    InvoiceValidationErrorCode["MISSING_REQUEST"] = "MISSING_REQUEST";
+    InvoiceValidationErrorCode["MISSING_INVOICE_IDENTIFIER"] = "MISSING_INVOICE_IDENTIFIER";
+    InvoiceValidationErrorCode["MISSING_RESERVATION_REFERENCE"] = "MISSING_RESERVATION_REFERENCE";
+    InvoiceValidationErrorCode["MISSING_CUSTOMER_REFERENCE"] = "MISSING_CUSTOMER_REFERENCE";
+    InvoiceValidationErrorCode["MISSING_QUOTE_REFERENCE"] = "MISSING_QUOTE_REFERENCE";
+    InvoiceValidationErrorCode["MISSING_PRICING_SNAPSHOT"] = "MISSING_PRICING_SNAPSHOT";
+    InvoiceValidationErrorCode["MISSING_FINANCIAL_OBLIGATION"] = "MISSING_FINANCIAL_OBLIGATION";
+    InvoiceValidationErrorCode["INVALID_CURRENCY"] = "INVALID_CURRENCY";
+    InvoiceValidationErrorCode["INVALID_TOTAL_AMOUNT"] = "INVALID_TOTAL_AMOUNT";
+    InvoiceValidationErrorCode["MISSING_RESERVATION"] = "MISSING_RESERVATION";
+    InvoiceValidationErrorCode["RESERVATION_NOT_CONFIRMED"] = "RESERVATION_NOT_CONFIRMED";
+    InvoiceValidationErrorCode["RESERVATION_CANCELLED"] = "RESERVATION_CANCELLED";
+    InvoiceValidationErrorCode["QUOTE_REFERENCE_INCONSISTENT"] = "QUOTE_REFERENCE_INCONSISTENT";
+    InvoiceValidationErrorCode["PRICING_REFERENCE_INCONSISTENT"] = "PRICING_REFERENCE_INCONSISTENT";
+    InvoiceValidationErrorCode["PRICING_CURRENCY_MISMATCH"] = "PRICING_CURRENCY_MISMATCH";
+    InvoiceValidationErrorCode["PRICING_TOTAL_MISMATCH"] = "PRICING_TOTAL_MISMATCH";
+    InvoiceValidationErrorCode["INVALID_DEPOSIT_REQUIREMENT"] = "INVALID_DEPOSIT_REQUIREMENT";
+    InvoiceValidationErrorCode["INVALID_PAYMENT_ALLOCATION"] = "INVALID_PAYMENT_ALLOCATION";
+    InvoiceValidationErrorCode["PAYMENT_ALLOCATION_TOTAL_MISMATCH"] = "PAYMENT_ALLOCATION_TOTAL_MISMATCH";
+    InvoiceValidationErrorCode["INVALID_AMOUNT_PAID"] = "INVALID_AMOUNT_PAID";
+    InvoiceValidationErrorCode["INVALID_BALANCE_DUE"] = "INVALID_BALANCE_DUE";
+    InvoiceValidationErrorCode["INVALID_REFUNDABLE_AMOUNT"] = "INVALID_REFUNDABLE_AMOUNT";
+    InvoiceValidationErrorCode["INVALID_ADJUSTMENT"] = "INVALID_ADJUSTMENT";
+    InvoiceValidationErrorCode["INVALID_CANCELLATION_SNAPSHOT"] = "INVALID_CANCELLATION_SNAPSHOT";
+    InvoiceValidationErrorCode["INVALID_DUE_DATE"] = "INVALID_DUE_DATE";
+    InvoiceValidationErrorCode["INVALID_INVOICE_STATUS"] = "INVALID_INVOICE_STATUS";
+    InvoiceValidationErrorCode["INVOICE_NOT_READY"] = "INVOICE_NOT_READY";
+    InvoiceValidationErrorCode["INVOICE_ALREADY_VOID"] = "INVOICE_ALREADY_VOID";
+    InvoiceValidationErrorCode["INVOICE_ALREADY_CANCELLED"] = "INVOICE_ALREADY_CANCELLED";
+    InvoiceValidationErrorCode["INVALID_EXTERNAL_REFERENCE"] = "INVALID_EXTERNAL_REFERENCE";
+    InvoiceValidationErrorCode["INVALID_METADATA"] = "INVALID_METADATA";
+})(InvoiceValidationErrorCode || (exports.InvoiceValidationErrorCode = InvoiceValidationErrorCode = {}));
+//# sourceMappingURL=invoice-validation-error-code.js.map
