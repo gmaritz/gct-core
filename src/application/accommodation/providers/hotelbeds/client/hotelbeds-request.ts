@@ -7,4 +7,6 @@ export interface HotelbedsRequest {
   readonly path: string;
   readonly query?: Readonly<Record<string, string | number | boolean>>;
   readonly body?: unknown;
+  readonly correlationId?: string;
+  readonly requestId?: string;
 }

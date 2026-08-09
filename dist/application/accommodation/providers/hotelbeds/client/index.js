@@ -18,4 +18,10 @@ __exportStar(require("./hotelbeds-client"), exports);
 __exportStar(require("./hotelbeds-request"), exports);
 __exportStar(require("./hotelbeds-response"), exports);
 __exportStar(require("./hotelbeds-authentication"), exports);
+__exportStar(require("./hotelbeds-integration-config"), exports);
+__exportStar(require("./hotelbeds-integration-error"), exports);
+__exportStar(require("./hotelbeds-integration-result"), exports);
+__exportStar(require("./hotelbeds-transport"), exports);
+__exportStar(require("./hotelbeds-error-mapper"), exports);
+__exportStar(require("./hotelbeds-gateway"), exports);
 //# sourceMappingURL=index.js.map

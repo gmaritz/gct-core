@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DefaultHotelbedsClient = void 0;
-const hotelbeds_authentication_1 = require("./hotelbeds-authentication");
+const hotelbeds_gateway_1 = require("./hotelbeds-gateway");
+const hotelbeds_integration_error_1 = require("./hotelbeds-integration-error");
 function createPlaceholderHotel() {
     return {
         code: 1000,
@@ -49,32 +50,61 @@ function createPlaceholderHotel() {
         ],
     };
 }
-function createResponse(request, data, authentication) {
+function createResponse(request, data, status = 200) {
     return {
         request,
-        status: 200,
+        status,
         data,
-        headers: authentication.prepareHeaders(request),
     };
 }
+function toClientError(request, code, message) {
+    const error = new Error(`Hotelbeds ${request.operation} failed: ${message}`);
+    error.code = code;
+    return error;
+}
+async function executeAndUnwrap(gateway, request) {
+    const result = await gateway.execute(request);
+    if (!result.success || result.data === null) {
+        const firstError = result.errors[0];
+        const code = firstError?.code ?? hotelbeds_integration_error_1.HotelbedsIntegrationErrorCode.UNKNOWN_ERROR;
+        const message = firstError?.message ?? "Unknown Hotelbeds provider failure.";
+        throw toClientError(request, code, message);
+    }
+    return createResponse(request, result.data, result.providerResponse?.status ?? 200);
+}
 class DefaultHotelbedsClient {
-    constructor(authentication = new hotelbeds_authentication_1.DefaultHotelbedsAuthentication()) {
-        this.authentication = authentication;
+    constructor(gateway = new hotelbeds_gateway_1.DefaultHotelbedsGateway()) {
+        this.gateway = gateway;
     }
     async searchHotels(request) {
-        return createResponse(request, [createPlaceholderHotel()], this.authentication);
+        if (request.path.startsWith("/placeholder")) {
+            return createResponse(request, [createPlaceholderHotel()]);
+        }
+        return executeAndUnwrap(this.gateway, request);
     }
     async getHotelDetails(request) {
-        return createResponse(request, createPlaceholderHotel(), this.authentication);
+        if (request.path.startsWith("/placeholder")) {
+            return createResponse(request, createPlaceholderHotel());
+        }
+        return executeAndUnwrap(this.gateway, request);
     }
     async getHotelContent(request) {
-        return createResponse(request, createPlaceholderHotel(), this.authentication);
+        if (request.path.startsWith("/placeholder")) {
+            return createResponse(request, createPlaceholderHotel());
+        }
+        return executeAndUnwrap(this.gateway, request);
     }
     async getHotelImages(request) {
-        return createResponse(request, createPlaceholderHotel().images ?? [], this.authentication);
+        if (request.path.startsWith("/placeholder")) {
+            return createResponse(request, createPlaceholderHotel().images ?? []);
+        }
+        return executeAndUnwrap(this.gateway, request);
     }
     async getHotelRates(request) {
-        return createResponse(request, createPlaceholderHotel().rooms?.[0]?.rates ?? [], this.authentication);
+        if (request.path.startsWith("/placeholder")) {
+            return createResponse(request, createPlaceholderHotel().rooms?.[0]?.rates ?? []);
+        }
+        return executeAndUnwrap(this.gateway, request);
     }
 }
 exports.DefaultHotelbedsClient = DefaultHotelbedsClient;
