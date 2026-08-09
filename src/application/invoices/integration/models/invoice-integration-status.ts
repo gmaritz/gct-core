@@ -1,0 +1,7 @@
+export enum InvoiceIntegrationStatus {
+  SUCCESS = "SUCCESS",
+  FAILED = "FAILED",
+  RETRYABLE_FAILURE = "RETRYABLE_FAILURE",
+  REJECTED = "REJECTED",
+  PENDING = "PENDING",
+}

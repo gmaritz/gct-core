@@ -5,3 +5,4 @@ export * from "./validation/invoice-validation-pipeline";
 export * from "./policies";
 export * from "./engine";
 export * from "./presentation";
+export * from "./integration";

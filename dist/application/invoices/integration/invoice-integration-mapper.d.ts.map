@@ -1,0 +1,1 @@
+{"version":3,"file":"invoice-integration-mapper.d.ts","sourceRoot":"","sources":["../../../../src/application/invoices/integration/invoice-integration-mapper.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,MAAM,cAAc,CAAC;AACvC,OAAO,EAEL,iCAAiC,EACjC,2BAA2B,EAC5B,MAAM,UAAU,CAAC;AAElB,qBAAa,wBAAwB;IAC5B,UAAU,CACf,OAAO,EAAE,OAAO,EAChB,SAAS,EAAE,2BAA2B,GACrC,iCAAiC;CA6BrC"}
