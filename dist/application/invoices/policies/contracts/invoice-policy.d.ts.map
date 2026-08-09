@@ -1,0 +1,1 @@
+{"version":3,"file":"invoice-policy.d.ts","sourceRoot":"","sources":["../../../../../src/application/invoices/policies/contracts/invoice-policy.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,aAAa,CAAC,QAAQ,EAAE,OAAO;IAC9C,QAAQ,CAAC,OAAO,EAAE,QAAQ,GAAG,OAAO,CAAC;CACtC"}
