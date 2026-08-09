@@ -32,5 +32,6 @@ __exportStar(require("./journeys"), exports);
 __exportStar(require("./reservations"), exports);
 __exportStar(require("./pricing"), exports);
 __exportStar(require("./payments"), exports);
+__exportStar(require("./invoices"), exports);
 __exportStar(require("./application-service"), exports);
 //# sourceMappingURL=index.js.map

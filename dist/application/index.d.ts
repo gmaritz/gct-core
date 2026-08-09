@@ -16,5 +16,6 @@ export * from './journeys';
 export * from './reservations';
 export * from './pricing';
 export * from './payments';
+export * from './invoices';
 export * from './application-service';
 //# sourceMappingURL=index.d.ts.map
