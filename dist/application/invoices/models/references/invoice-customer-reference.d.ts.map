@@ -1,0 +1,1 @@
+{"version":3,"file":"invoice-customer-reference.d.ts","sourceRoot":"","sources":["../../../../../src/application/invoices/models/references/invoice-customer-reference.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,wBAAwB;IACvC,QAAQ,CAAC,UAAU,CAAC,EAAE,MAAM,CAAC;IAC7B,QAAQ,CAAC,WAAW,CAAC,EAAE,MAAM,CAAC;CAC/B;AAED,wBAAgB,8BAA8B,CAAC,SAAS,EAAE,wBAAwB,GAAG,wBAAwB,CAK5G"}

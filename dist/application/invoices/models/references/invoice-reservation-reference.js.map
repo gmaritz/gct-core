@@ -1,0 +1,1 @@
+{"version":3,"file":"invoice-reservation-reference.js","sourceRoot":"","sources":["../../../../../src/application/invoices/models/references/invoice-reservation-reference.ts"],"names":[],"mappings":";;AAIA,8EAMC;AAND,SAAgB,iCAAiC,CAC/C,SAAsC;IAEtC,OAAO,MAAM,CAAC,MAAM,CAAC;QACnB,aAAa,EAAE,SAAS,CAAC,aAAa;KACvC,CAAC,CAAC;AACL,CAAC"}

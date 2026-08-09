@@ -1,0 +1,1 @@
+{"version":3,"file":"invoice-deposit-requirement.js","sourceRoot":"","sources":["../../../../../src/application/invoices/models/deposit/invoice-deposit-requirement.ts"],"names":[],"mappings":";;AAOA,0EAOC;AAPD,SAAgB,+BAA+B,CAC7C,WAAsC;IAEtC,OAAO,MAAM,CAAC,MAAM,CAAC;QACnB,IAAI,EAAE,WAAW,CAAC,IAAI;QACtB,KAAK,EAAE,WAAW,CAAC,KAAK;KACzB,CAAC,CAAC;AACL,CAAC"}

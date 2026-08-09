@@ -1,0 +1,1 @@
+{"version":3,"file":"invoice-external-reference.js","sourceRoot":"","sources":["../../../../../src/application/invoices/models/accounting/invoice-external-reference.ts"],"names":[],"mappings":";;AAKA,wEAKC;AALD,SAAgB,8BAA8B,CAAC,SAAmC;IAChF,OAAO,MAAM,CAAC,MAAM,CAAC;QACnB,MAAM,EAAE,SAAS,CAAC,MAAM;QACxB,SAAS,EAAE,SAAS,CAAC,SAAS;KAC/B,CAAC,CAAC;AACL,CAAC"}

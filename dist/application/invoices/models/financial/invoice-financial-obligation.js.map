@@ -1,0 +1,1 @@
+{"version":3,"file":"invoice-financial-obligation.js","sourceRoot":"","sources":["../../../../../src/application/invoices/models/financial/invoice-financial-obligation.ts"],"names":[],"mappings":";;AAKA,4EAOC;AAPD,SAAgB,gCAAgC,CAC9C,UAAsC;IAEtC,OAAO,MAAM,CAAC,MAAM,CAAC;QACnB,WAAW,EAAE,UAAU,CAAC,WAAW;QACnC,QAAQ,EAAE,UAAU,CAAC,QAAQ;KAC9B,CAAC,CAAC;AACL,CAAC"}

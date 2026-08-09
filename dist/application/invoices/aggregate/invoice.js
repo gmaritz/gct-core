@@ -1,16 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Invoice = exports.InvoiceStatus = void 0;
-var InvoiceStatus;
-(function (InvoiceStatus) {
-    InvoiceStatus["DRAFT"] = "DRAFT";
-    InvoiceStatus["ISSUED"] = "ISSUED";
-    InvoiceStatus["PARTIALLY_PAID"] = "PARTIALLY_PAID";
-    InvoiceStatus["PAID"] = "PAID";
-    InvoiceStatus["OVERDUE"] = "OVERDUE";
-    InvoiceStatus["CANCELLED"] = "CANCELLED";
-    InvoiceStatus["VOID"] = "VOID";
-})(InvoiceStatus || (exports.InvoiceStatus = InvoiceStatus = {}));
+const models_1 = require("../models");
+Object.defineProperty(exports, "InvoiceStatus", { enumerable: true, get: function () { return models_1.InvoiceStatus; } });
 function isBlank(value) {
     return typeof value !== "string" || value.trim().length === 0;
 }
@@ -27,91 +19,6 @@ function ensureInvariant(condition, message) {
     if (!condition) {
         throw new Error(message);
     }
-}
-function freezeIdentity(identity) {
-    return Object.freeze({
-        id: identity.id,
-    });
-}
-function freezeReservationReference(reference) {
-    return Object.freeze({
-        reservationId: reference.reservationId,
-    });
-}
-function freezeCustomerReference(reference) {
-    return Object.freeze({
-        customerId: reference.customerId,
-        travellerId: reference.travellerId,
-    });
-}
-function freezeQuoteReference(reference) {
-    return Object.freeze({
-        quoteId: reference.quoteId,
-        quoteVersion: reference.quoteVersion,
-    });
-}
-function freezePricingSnapshot(snapshot) {
-    return Object.freeze({
-        snapshotId: snapshot.snapshotId,
-        pricingId: snapshot.pricingId,
-        capturedAt: cloneDate(snapshot.capturedAt),
-        version: snapshot.version,
-        currency: snapshot.currency,
-        totalAmount: snapshot.totalAmount,
-    });
-}
-function freezeFinancialObligation(obligation) {
-    return Object.freeze({
-        totalAmount: obligation.totalAmount,
-        currency: obligation.currency,
-    });
-}
-function freezeDepositRequirement(deposit) {
-    return Object.freeze({
-        type: deposit.type,
-        value: deposit.value,
-    });
-}
-function freezePaymentAllocation(allocation) {
-    return Object.freeze({
-        paymentId: allocation.paymentId,
-        allocatedAmount: allocation.allocatedAmount,
-        allocatedAt: cloneDate(allocation.allocatedAt),
-        externalReference: allocation.externalReference,
-    });
-}
-function freezeAdjustment(adjustment) {
-    return Object.freeze({
-        id: adjustment.id,
-        type: adjustment.type,
-        amount: adjustment.amount,
-        reason: adjustment.reason,
-        appliedAt: cloneDate(adjustment.appliedAt),
-    });
-}
-function freezeCancellationSnapshot(snapshot) {
-    return Object.freeze({
-        policyReference: snapshot.policyReference,
-        policyVersion: snapshot.policyVersion,
-        effectiveFrom: typeof snapshot.effectiveFrom === "undefined" ? undefined : cloneDate(snapshot.effectiveFrom),
-        effectiveTo: typeof snapshot.effectiveTo === "undefined" ? undefined : cloneDate(snapshot.effectiveTo),
-        cancellationDate: cloneDate(snapshot.cancellationDate),
-        cancellationCharge: snapshot.cancellationCharge,
-        refundableAmount: snapshot.refundableAmount,
-    });
-}
-function freezeExternalReference(reference) {
-    return Object.freeze({
-        system: reference.system,
-        reference: reference.reference,
-    });
-}
-function freezeMetadata(metadata) {
-    return Object.freeze({
-        createdAt: cloneDate(metadata.createdAt),
-        updatedAt: cloneDate(metadata.updatedAt),
-        version: metadata.version,
-    });
 }
 function validateIdentity(identity) {
     ensureInvariant(typeof identity === "object" && identity !== null, "Invoice identity is required.");
@@ -150,7 +57,7 @@ function validatePricingSnapshot(snapshot) {
 }
 function validateStatus(status) {
     ensureInvariant(typeof status === "string", "Invoice status is required.");
-    ensureInvariant(Object.values(InvoiceStatus).includes(status), "Invoice status is invalid.");
+    ensureInvariant(Object.values(models_1.InvoiceStatus).includes(status), "Invoice status is invalid.");
 }
 function validateFinancialObligation(obligation) {
     ensureInvariant(typeof obligation === "object" && obligation !== null, "Invoice financial obligation is required.");
@@ -258,53 +165,53 @@ function validateRequiredComposition(composition) {
 class Invoice {
     constructor(composition) {
         validateRequiredComposition(composition);
-        this.identity = freezeIdentity(composition.identity);
-        this.reservationReference = freezeReservationReference(composition.reservationReference);
-        this.customerReference = freezeCustomerReference(composition.customerReference);
-        this.quoteReference = freezeQuoteReference(composition.quoteReference);
+        this.identity = (0, models_1.createInvoiceIdentity)(composition.identity);
+        this.reservationReference = (0, models_1.createInvoiceReservationReference)(composition.reservationReference);
+        this.customerReference = (0, models_1.createInvoiceCustomerReference)(composition.customerReference);
+        this.quoteReference = (0, models_1.createInvoiceQuoteReference)(composition.quoteReference);
         this.status = composition.status;
-        this.financialObligation = freezeFinancialObligation(composition.financialObligation);
+        this.financialObligation = (0, models_1.createInvoiceFinancialObligation)(composition.financialObligation);
         this.depositRequirement =
             typeof composition.depositRequirement === "undefined"
                 ? undefined
-                : freezeDepositRequirement(composition.depositRequirement);
+                : (0, models_1.createInvoiceDepositRequirement)(composition.depositRequirement);
         this.amountPaid = composition.amountPaid ?? 0;
         this.balanceDue = composition.balanceDue ?? composition.financialObligation.totalAmount;
         this.refundableAmount = composition.refundableAmount ?? 0;
-        this.pricingSnapshotState = freezePricingSnapshot(composition.pricingSnapshot);
-        this.paymentAllocationsState = Object.freeze((composition.paymentAllocations ?? []).map(freezePaymentAllocation));
+        this.pricingSnapshotState = (0, models_1.createInvoicePricingSnapshot)(composition.pricingSnapshot);
+        this.paymentAllocationsState = Object.freeze((composition.paymentAllocations ?? []).map(models_1.createInvoicePaymentAllocation));
         this.dueDateState = typeof composition.dueDate === "undefined" ? undefined : cloneDate(composition.dueDate);
-        this.adjustmentsState = Object.freeze((composition.adjustments ?? []).map(freezeAdjustment));
+        this.adjustmentsState = Object.freeze((composition.adjustments ?? []).map(models_1.createInvoiceAdjustment));
         this.cancellationSnapshotState =
             typeof composition.cancellationSnapshot === "undefined"
                 ? undefined
-                : freezeCancellationSnapshot(composition.cancellationSnapshot);
-        this.externalReferencesState = Object.freeze((composition.externalReferences ?? []).map(freezeExternalReference));
-        this.metadataState = freezeMetadata(composition.metadata);
+                : (0, models_1.createInvoiceCancellationSnapshot)(composition.cancellationSnapshot);
+        this.externalReferencesState = Object.freeze((composition.externalReferences ?? []).map(models_1.createInvoiceExternalReference));
+        this.metadataState = (0, models_1.createInvoiceMetadata)(composition.metadata);
         Object.freeze(this);
     }
     get pricingSnapshot() {
-        return freezePricingSnapshot(this.pricingSnapshotState);
+        return (0, models_1.createInvoicePricingSnapshot)(this.pricingSnapshotState);
     }
     get paymentAllocations() {
-        return Object.freeze(this.paymentAllocationsState.map(freezePaymentAllocation));
+        return Object.freeze(this.paymentAllocationsState.map(models_1.createInvoicePaymentAllocation));
     }
     get dueDate() {
         return typeof this.dueDateState === "undefined" ? undefined : cloneDate(this.dueDateState);
     }
     get adjustments() {
-        return Object.freeze(this.adjustmentsState.map(freezeAdjustment));
+        return Object.freeze(this.adjustmentsState.map(models_1.createInvoiceAdjustment));
     }
     get cancellationSnapshot() {
         return typeof this.cancellationSnapshotState === "undefined"
             ? undefined
-            : freezeCancellationSnapshot(this.cancellationSnapshotState);
+            : (0, models_1.createInvoiceCancellationSnapshot)(this.cancellationSnapshotState);
     }
     get externalReferences() {
-        return Object.freeze(this.externalReferencesState.map(freezeExternalReference));
+        return Object.freeze(this.externalReferencesState.map(models_1.createInvoiceExternalReference));
     }
     get metadata() {
-        return freezeMetadata(this.metadataState);
+        return (0, models_1.createInvoiceMetadata)(this.metadataState);
     }
     static create(composition) {
         return new Invoice(composition);

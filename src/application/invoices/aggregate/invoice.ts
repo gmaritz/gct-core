@@ -1,85 +1,49 @@
-export interface InvoiceIdentity {
-  readonly id: string;
-}
+import {
+  createInvoiceAdjustment,
+  createInvoiceCancellationSnapshot,
+  createInvoiceCustomerReference,
+  createInvoiceDepositRequirement,
+  createInvoiceExternalReference,
+  createInvoiceFinancialObligation,
+  createInvoiceIdentity,
+  createInvoiceMetadata,
+  createInvoicePaymentAllocation,
+  createInvoicePricingSnapshot,
+  createInvoiceQuoteReference,
+  createInvoiceReservationReference,
+  InvoiceAdjustment,
+  InvoiceCancellationSnapshot,
+  InvoiceCustomerReference,
+  InvoiceDepositRequirement,
+  InvoiceExternalReference,
+  InvoiceFinancialObligation,
+  InvoiceIdentity,
+  InvoiceMetadata,
+  InvoicePaymentAllocation,
+  InvoicePricingSnapshot,
+  InvoiceQuoteReference,
+  InvoiceReservationReference,
+  InvoiceStatus,
+} from "../models";
 
-export enum InvoiceStatus {
-  DRAFT = "DRAFT",
-  ISSUED = "ISSUED",
-  PARTIALLY_PAID = "PARTIALLY_PAID",
-  PAID = "PAID",
-  OVERDUE = "OVERDUE",
-  CANCELLED = "CANCELLED",
-  VOID = "VOID",
-}
+export {
+  InvoiceStatus,
+};
 
-export interface InvoiceFinancialObligation {
-  readonly totalAmount: number;
-  readonly currency: string;
-}
-
-export interface InvoiceReservationReference {
-  readonly reservationId: string;
-}
-
-export interface InvoiceCustomerReference {
-  readonly customerId?: string;
-  readonly travellerId?: string;
-}
-
-export interface InvoiceQuoteReference {
-  readonly quoteId: string;
-  readonly quoteVersion: string;
-}
-
-export interface InvoicePricingSnapshot {
-  readonly snapshotId: string;
-  readonly pricingId: string;
-  readonly capturedAt: Date;
-  readonly version: string;
-  readonly currency: string;
-  readonly totalAmount: number;
-}
-
-export interface InvoiceDepositRequirement {
-  readonly type: "FIXED" | "PERCENTAGE";
-  readonly value: number;
-}
-
-export interface InvoicePaymentAllocation {
-  readonly paymentId: string;
-  readonly allocatedAmount: number;
-  readonly allocatedAt: Date;
-  readonly externalReference?: string;
-}
-
-export interface InvoiceAdjustment {
-  readonly id: string;
-  readonly type: string;
-  readonly amount: number;
-  readonly reason: string;
-  readonly appliedAt: Date;
-}
-
-export interface InvoiceCancellationSnapshot {
-  readonly policyReference: string;
-  readonly policyVersion?: string;
-  readonly effectiveFrom?: Date;
-  readonly effectiveTo?: Date;
-  readonly cancellationDate: Date;
-  readonly cancellationCharge: number;
-  readonly refundableAmount: number;
-}
-
-export interface InvoiceExternalReference {
-  readonly system: string;
-  readonly reference: string;
-}
-
-export interface InvoiceMetadata {
-  readonly createdAt: Date;
-  readonly updatedAt: Date;
-  readonly version: string;
-}
+export type {
+  InvoiceAdjustment,
+  InvoiceCancellationSnapshot,
+  InvoiceCustomerReference,
+  InvoiceDepositRequirement,
+  InvoiceExternalReference,
+  InvoiceFinancialObligation,
+  InvoiceIdentity,
+  InvoiceMetadata,
+  InvoicePaymentAllocation,
+  InvoicePricingSnapshot,
+  InvoiceQuoteReference,
+  InvoiceReservationReference,
+};
 
 export interface InvoiceComposition {
   readonly identity: InvoiceIdentity;
@@ -121,103 +85,6 @@ function ensureInvariant(condition: boolean, message: string): void {
   if (!condition) {
     throw new Error(message);
   }
-}
-
-function freezeIdentity(identity: InvoiceIdentity): InvoiceIdentity {
-  return Object.freeze({
-    id: identity.id,
-  });
-}
-
-function freezeReservationReference(reference: InvoiceReservationReference): InvoiceReservationReference {
-  return Object.freeze({
-    reservationId: reference.reservationId,
-  });
-}
-
-function freezeCustomerReference(reference: InvoiceCustomerReference): InvoiceCustomerReference {
-  return Object.freeze({
-    customerId: reference.customerId,
-    travellerId: reference.travellerId,
-  });
-}
-
-function freezeQuoteReference(reference: InvoiceQuoteReference): InvoiceQuoteReference {
-  return Object.freeze({
-    quoteId: reference.quoteId,
-    quoteVersion: reference.quoteVersion,
-  });
-}
-
-function freezePricingSnapshot(snapshot: InvoicePricingSnapshot): InvoicePricingSnapshot {
-  return Object.freeze({
-    snapshotId: snapshot.snapshotId,
-    pricingId: snapshot.pricingId,
-    capturedAt: cloneDate(snapshot.capturedAt),
-    version: snapshot.version,
-    currency: snapshot.currency,
-    totalAmount: snapshot.totalAmount,
-  });
-}
-
-function freezeFinancialObligation(obligation: InvoiceFinancialObligation): InvoiceFinancialObligation {
-  return Object.freeze({
-    totalAmount: obligation.totalAmount,
-    currency: obligation.currency,
-  });
-}
-
-function freezeDepositRequirement(deposit: InvoiceDepositRequirement): InvoiceDepositRequirement {
-  return Object.freeze({
-    type: deposit.type,
-    value: deposit.value,
-  });
-}
-
-function freezePaymentAllocation(allocation: InvoicePaymentAllocation): InvoicePaymentAllocation {
-  return Object.freeze({
-    paymentId: allocation.paymentId,
-    allocatedAmount: allocation.allocatedAmount,
-    allocatedAt: cloneDate(allocation.allocatedAt),
-    externalReference: allocation.externalReference,
-  });
-}
-
-function freezeAdjustment(adjustment: InvoiceAdjustment): InvoiceAdjustment {
-  return Object.freeze({
-    id: adjustment.id,
-    type: adjustment.type,
-    amount: adjustment.amount,
-    reason: adjustment.reason,
-    appliedAt: cloneDate(adjustment.appliedAt),
-  });
-}
-
-function freezeCancellationSnapshot(snapshot: InvoiceCancellationSnapshot): InvoiceCancellationSnapshot {
-  return Object.freeze({
-    policyReference: snapshot.policyReference,
-    policyVersion: snapshot.policyVersion,
-    effectiveFrom: typeof snapshot.effectiveFrom === "undefined" ? undefined : cloneDate(snapshot.effectiveFrom),
-    effectiveTo: typeof snapshot.effectiveTo === "undefined" ? undefined : cloneDate(snapshot.effectiveTo),
-    cancellationDate: cloneDate(snapshot.cancellationDate),
-    cancellationCharge: snapshot.cancellationCharge,
-    refundableAmount: snapshot.refundableAmount,
-  });
-}
-
-function freezeExternalReference(reference: InvoiceExternalReference): InvoiceExternalReference {
-  return Object.freeze({
-    system: reference.system,
-    reference: reference.reference,
-  });
-}
-
-function freezeMetadata(metadata: InvoiceMetadata): InvoiceMetadata {
-  return Object.freeze({
-    createdAt: cloneDate(metadata.createdAt),
-    updatedAt: cloneDate(metadata.updatedAt),
-    version: metadata.version,
-  });
 }
 
 function validateIdentity(identity: InvoiceIdentity): void {
@@ -422,40 +289,40 @@ export class Invoice {
   private constructor(composition: InvoiceComposition) {
     validateRequiredComposition(composition);
 
-    this.identity = freezeIdentity(composition.identity);
-    this.reservationReference = freezeReservationReference(composition.reservationReference);
-    this.customerReference = freezeCustomerReference(composition.customerReference);
-    this.quoteReference = freezeQuoteReference(composition.quoteReference);
+    this.identity = createInvoiceIdentity(composition.identity);
+    this.reservationReference = createInvoiceReservationReference(composition.reservationReference);
+    this.customerReference = createInvoiceCustomerReference(composition.customerReference);
+    this.quoteReference = createInvoiceQuoteReference(composition.quoteReference);
     this.status = composition.status;
-    this.financialObligation = freezeFinancialObligation(composition.financialObligation);
+    this.financialObligation = createInvoiceFinancialObligation(composition.financialObligation);
     this.depositRequirement =
       typeof composition.depositRequirement === "undefined"
         ? undefined
-        : freezeDepositRequirement(composition.depositRequirement);
+        : createInvoiceDepositRequirement(composition.depositRequirement);
     this.amountPaid = composition.amountPaid ?? 0;
     this.balanceDue = composition.balanceDue ?? composition.financialObligation.totalAmount;
     this.refundableAmount = composition.refundableAmount ?? 0;
 
-    this.pricingSnapshotState = freezePricingSnapshot(composition.pricingSnapshot);
-    this.paymentAllocationsState = Object.freeze((composition.paymentAllocations ?? []).map(freezePaymentAllocation));
+    this.pricingSnapshotState = createInvoicePricingSnapshot(composition.pricingSnapshot);
+    this.paymentAllocationsState = Object.freeze((composition.paymentAllocations ?? []).map(createInvoicePaymentAllocation));
     this.dueDateState = typeof composition.dueDate === "undefined" ? undefined : cloneDate(composition.dueDate);
-    this.adjustmentsState = Object.freeze((composition.adjustments ?? []).map(freezeAdjustment));
+    this.adjustmentsState = Object.freeze((composition.adjustments ?? []).map(createInvoiceAdjustment));
     this.cancellationSnapshotState =
       typeof composition.cancellationSnapshot === "undefined"
         ? undefined
-        : freezeCancellationSnapshot(composition.cancellationSnapshot);
-    this.externalReferencesState = Object.freeze((composition.externalReferences ?? []).map(freezeExternalReference));
-    this.metadataState = freezeMetadata(composition.metadata);
+        : createInvoiceCancellationSnapshot(composition.cancellationSnapshot);
+    this.externalReferencesState = Object.freeze((composition.externalReferences ?? []).map(createInvoiceExternalReference));
+    this.metadataState = createInvoiceMetadata(composition.metadata);
 
     Object.freeze(this);
   }
 
   public get pricingSnapshot(): InvoicePricingSnapshot {
-    return freezePricingSnapshot(this.pricingSnapshotState);
+    return createInvoicePricingSnapshot(this.pricingSnapshotState);
   }
 
   public get paymentAllocations(): ReadonlyArray<InvoicePaymentAllocation> {
-    return Object.freeze(this.paymentAllocationsState.map(freezePaymentAllocation));
+    return Object.freeze(this.paymentAllocationsState.map(createInvoicePaymentAllocation));
   }
 
   public get dueDate(): Date | undefined {
@@ -463,21 +330,21 @@ export class Invoice {
   }
 
   public get adjustments(): ReadonlyArray<InvoiceAdjustment> {
-    return Object.freeze(this.adjustmentsState.map(freezeAdjustment));
+    return Object.freeze(this.adjustmentsState.map(createInvoiceAdjustment));
   }
 
   public get cancellationSnapshot(): InvoiceCancellationSnapshot | undefined {
     return typeof this.cancellationSnapshotState === "undefined"
       ? undefined
-      : freezeCancellationSnapshot(this.cancellationSnapshotState);
+      : createInvoiceCancellationSnapshot(this.cancellationSnapshotState);
   }
 
   public get externalReferences(): ReadonlyArray<InvoiceExternalReference> {
-    return Object.freeze(this.externalReferencesState.map(freezeExternalReference));
+    return Object.freeze(this.externalReferencesState.map(createInvoiceExternalReference));
   }
 
   public get metadata(): InvoiceMetadata {
-    return freezeMetadata(this.metadataState);
+    return createInvoiceMetadata(this.metadataState);
   }
 
   public static create(composition: InvoiceComposition): Invoice {

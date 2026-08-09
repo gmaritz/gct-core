@@ -1,0 +1,1 @@
+{"version":3,"file":"invoice-identity.js","sourceRoot":"","sources":["../../../../../src/application/invoices/models/identity/invoice-identity.ts"],"names":[],"mappings":";;AAIA,sDAIC;AAJD,SAAgB,qBAAqB,CAAC,QAAyB;IAC7D,OAAO,MAAM,CAAC,MAAM,CAAC;QACnB,EAAE,EAAE,QAAQ,CAAC,EAAE;KAChB,CAAC,CAAC;AACL,CAAC"}

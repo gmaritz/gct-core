@@ -1,0 +1,1 @@
+{"version":3,"file":"invoice-quote-reference.js","sourceRoot":"","sources":["../../../../../src/application/invoices/models/references/invoice-quote-reference.ts"],"names":[],"mappings":";;AAKA,kEAKC;AALD,SAAgB,2BAA2B,CAAC,SAAgC;IAC1E,OAAO,MAAM,CAAC,MAAM,CAAC;QACnB,OAAO,EAAE,SAAS,CAAC,OAAO;QAC1B,YAAY,EAAE,SAAS,CAAC,YAAY;KACrC,CAAC,CAAC;AACL,CAAC"}

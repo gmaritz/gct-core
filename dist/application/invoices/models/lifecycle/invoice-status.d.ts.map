@@ -1,0 +1,1 @@
+{"version":3,"file":"invoice-status.d.ts","sourceRoot":"","sources":["../../../../../src/application/invoices/models/lifecycle/invoice-status.ts"],"names":[],"mappings":"AAAA,oBAAY,aAAa;IACvB,KAAK,UAAU;IACf,MAAM,WAAW;IACjB,cAAc,mBAAmB;IACjC,IAAI,SAAS;IACb,OAAO,YAAY;IACnB,SAAS,cAAc;IACvB,IAAI,SAAS;CACd"}

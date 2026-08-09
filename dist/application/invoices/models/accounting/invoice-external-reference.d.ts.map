@@ -1,0 +1,1 @@
+{"version":3,"file":"invoice-external-reference.d.ts","sourceRoot":"","sources":["../../../../../src/application/invoices/models/accounting/invoice-external-reference.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,wBAAwB;IACvC,QAAQ,CAAC,MAAM,EAAE,MAAM,CAAC;IACxB,QAAQ,CAAC,SAAS,EAAE,MAAM,CAAC;CAC5B;AAED,wBAAgB,8BAA8B,CAAC,SAAS,EAAE,wBAAwB,GAAG,wBAAwB,CAK5G"}

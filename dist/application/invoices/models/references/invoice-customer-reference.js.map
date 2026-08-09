@@ -1,0 +1,1 @@
+{"version":3,"file":"invoice-customer-reference.js","sourceRoot":"","sources":["../../../../../src/application/invoices/models/references/invoice-customer-reference.ts"],"names":[],"mappings":";;AAKA,wEAKC;AALD,SAAgB,8BAA8B,CAAC,SAAmC;IAChF,OAAO,MAAM,CAAC,MAAM,CAAC;QACnB,UAAU,EAAE,SAAS,CAAC,UAAU;QAChC,WAAW,EAAE,SAAS,CAAC,WAAW;KACnC,CAAC,CAAC;AACL,CAAC"}

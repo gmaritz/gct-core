@@ -1,0 +1,1 @@
+{"version":3,"file":"invoice-quote-reference.d.ts","sourceRoot":"","sources":["../../../../../src/application/invoices/models/references/invoice-quote-reference.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,qBAAqB;IACpC,QAAQ,CAAC,OAAO,EAAE,MAAM,CAAC;IACzB,QAAQ,CAAC,YAAY,EAAE,MAAM,CAAC;CAC/B;AAED,wBAAgB,2BAA2B,CAAC,SAAS,EAAE,qBAAqB,GAAG,qBAAqB,CAKnG"}
