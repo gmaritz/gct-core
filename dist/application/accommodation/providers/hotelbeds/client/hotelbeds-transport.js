@@ -1,11 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FetchHotelbedsTransport = exports.HotelbedsTransportError = exports.HotelbedsTransportErrorKind = void 0;
+const zlib_1 = require("zlib");
 var HotelbedsTransportErrorKind;
 (function (HotelbedsTransportErrorKind) {
     HotelbedsTransportErrorKind["TIMEOUT"] = "TIMEOUT";
     HotelbedsTransportErrorKind["NETWORK"] = "NETWORK";
     HotelbedsTransportErrorKind["MALFORMED_RESPONSE"] = "MALFORMED_RESPONSE";
+    HotelbedsTransportErrorKind["TLS_CONFIGURATION"] = "TLS_CONFIGURATION";
     HotelbedsTransportErrorKind["UNKNOWN"] = "UNKNOWN";
 })(HotelbedsTransportErrorKind || (exports.HotelbedsTransportErrorKind = HotelbedsTransportErrorKind = {}));
 class HotelbedsTransportError extends Error {
@@ -29,7 +31,7 @@ function resolveFetch(fetchOverride) {
 function mapHeaders(headers) {
     const mapped = {};
     headers.forEach((value, key) => {
-        mapped[key] = value;
+        mapped[key.toLowerCase()] = value;
     });
     return Object.freeze(mapped);
 }
@@ -51,6 +53,36 @@ function parseResponseBody(rawBody) {
         throw new HotelbedsTransportError(HotelbedsTransportErrorKind.MALFORMED_RESPONSE, "Hotelbeds returned malformed JSON.");
     }
 }
+function isGzip(headers) {
+    const encoding = headers["content-encoding"];
+    return typeof encoding === "string" && encoding.toLowerCase().includes("gzip");
+}
+async function decodeResponseBody(response, headers) {
+    if (!isGzip(headers) || !response.arrayBuffer) {
+        return response.text();
+    }
+    try {
+        const buffer = await response.arrayBuffer();
+        return (0, zlib_1.gunzipSync)(Buffer.from(buffer)).toString("utf8");
+    }
+    catch {
+        throw new HotelbedsTransportError(HotelbedsTransportErrorKind.MALFORMED_RESPONSE, "Hotelbeds returned an invalid gzip payload.");
+    }
+}
+function resolveTlsConfig(config) {
+    if (!config.tls) {
+        return undefined;
+    }
+    const { clientCertificate, privateKey, trustedCa } = config.tls;
+    if (!clientCertificate || !privateKey || !trustedCa) {
+        throw new HotelbedsTransportError(HotelbedsTransportErrorKind.TLS_CONFIGURATION, "Hotelbeds TLS configuration is incomplete.");
+    }
+    return {
+        clientCertificate,
+        privateKey,
+        trustedCa,
+    };
+}
 class FetchHotelbedsTransport {
     constructor(fetchClient) {
         this.fetchClient = resolveFetch(fetchClient);
@@ -70,12 +102,14 @@ class FetchHotelbedsTransport {
                 headers: { ...(request.headers ?? {}) },
                 body: request.body === undefined ? undefined : JSON.stringify(request.body),
                 signal: controller.signal,
+                tls: resolveTlsConfig(config),
             });
-            const rawBody = await response.text();
+            const headers = mapHeaders(response.headers);
+            const rawBody = await decodeResponseBody(response, headers);
             const body = parseResponseBody(rawBody);
             return {
                 status: response.status,
-                headers: mapHeaders(response.headers),
+                headers,
                 body,
                 durationMs: Date.now() - startedAt,
             };

@@ -2,12 +2,18 @@ export declare enum HotelbedsEnvironment {
     TEST = "TEST",
     PRODUCTION = "PRODUCTION"
 }
+export interface HotelbedsTlsConfig {
+    readonly clientCertificate: string;
+    readonly privateKey: string;
+    readonly trustedCa: string;
+}
 export interface HotelbedsIntegrationConfig {
     readonly environment: HotelbedsEnvironment;
     readonly apiKey: string;
     readonly secret: string;
     readonly baseUrl: string;
     readonly timeoutMs: number;
+    readonly tls?: HotelbedsTlsConfig;
     readonly selectedHotelCodes?: ReadonlyArray<string>;
     readonly contentBatchSize?: number;
     readonly contentMaxQps?: number;

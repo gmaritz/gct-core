@@ -84,6 +84,23 @@ function parseSelectedHotelCodes(rawCodes) {
     }
     return Object.freeze([...new Set(rawCodes.split(",").map((code) => code.trim()).filter((code) => code.length > 0))]);
 }
+function parseTlsConfig(env) {
+    const clientCertificate = env.HOTELBEDS_TLS_CLIENT_CERTIFICATE?.trim();
+    const privateKey = env.HOTELBEDS_TLS_PRIVATE_KEY?.trim();
+    const trustedCa = env.HOTELBEDS_TLS_TRUSTED_CA?.trim();
+    const definedValues = [clientCertificate, privateKey, trustedCa].filter((value) => typeof value === "string" && value.length > 0).length;
+    if (definedValues === 0) {
+        return undefined;
+    }
+    if (definedValues !== 3) {
+        throw new HotelbedsConfigurationError("HOTELBEDS_TLS_CLIENT_CERTIFICATE, HOTELBEDS_TLS_PRIVATE_KEY, and HOTELBEDS_TLS_TRUSTED_CA must be provided together.");
+    }
+    return Object.freeze({
+        clientCertificate: clientCertificate ?? "",
+        privateKey: privateKey ?? "",
+        trustedCa: trustedCa ?? "",
+    });
+}
 function createHotelbedsIntegrationConfig(input) {
     if (isBlank(input.apiKey)) {
         throw new HotelbedsConfigurationError("Hotelbeds API key is required.");
@@ -100,6 +117,13 @@ function createHotelbedsIntegrationConfig(input) {
         secret: input.secret.trim(),
         baseUrl: validateUrl(input.baseUrl),
         timeoutMs: input.timeoutMs,
+        tls: input.tls
+            ? Object.freeze({
+                clientCertificate: input.tls.clientCertificate,
+                privateKey: input.tls.privateKey,
+                trustedCa: input.tls.trustedCa,
+            })
+            : undefined,
         selectedHotelCodes: Object.freeze([...(input.selectedHotelCodes ?? [])]),
         contentBatchSize: input.contentBatchSize ?? exports.DEFAULT_CONTENT_BATCH_SIZE,
         contentMaxQps: input.contentMaxQps ?? exports.DEFAULT_CONTENT_MAX_QPS,
@@ -116,6 +140,7 @@ function loadHotelbedsIntegrationConfig(env = process.env) {
         secret: env.HOTELBEDS_SECRET ?? "",
         baseUrl,
         timeoutMs: parseTimeout(env.HOTELBEDS_TIMEOUT_MS),
+        tls: parseTlsConfig(env),
         selectedHotelCodes: parseSelectedHotelCodes(env.HOTELBEDS_SELECTED_HOTEL_CODES),
         contentBatchSize: parsePositiveInteger(env.HOTELBEDS_CONTENT_BATCH_SIZE, exports.DEFAULT_CONTENT_BATCH_SIZE, "HOTELBEDS_CONTENT_BATCH_SIZE"),
         contentMaxQps: parsePositiveInteger(env.HOTELBEDS_CONTENT_MAX_QPS, exports.DEFAULT_CONTENT_MAX_QPS, "HOTELBEDS_CONTENT_MAX_QPS"),

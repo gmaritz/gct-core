@@ -10,3 +10,5 @@ export * from "./hotelbeds-error-mapper";
 export * from "./hotelbeds-gateway";
 export * from "./hotelbeds-availability-request";
 export * from "./hotelbeds-availability-request-builder";
+export * from "./hotelbeds-availability-execution-result";
+export * from "./hotelbeds-availability-executor";

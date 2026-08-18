@@ -1,6 +1,7 @@
 export type HotelbedsRequestMethod = "GET" | "POST";
 export type HotelbedsOperation =
   | "search"
+  | "availability"
   | "details"
   | "content"
   | "images"

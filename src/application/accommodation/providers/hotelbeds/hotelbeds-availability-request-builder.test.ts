@@ -41,7 +41,7 @@ describe("HotelbedsAvailabilityRequestBuilder", () => {
 
     expect(requests).toHaveLength(1);
     expect(requests[0]).toEqual({
-      operation: "search",
+      operation: "availability",
       method: "POST",
       path: "/hotel-api/1.0/hotels",
       body: {

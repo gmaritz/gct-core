@@ -87,6 +87,14 @@ function mapHotelbedsTransportError(error) {
             message: error.message,
         });
     }
+    if (error.kind === hotelbeds_transport_1.HotelbedsTransportErrorKind.TLS_CONFIGURATION) {
+        return (0, hotelbeds_integration_error_1.createHotelbedsIntegrationError)({
+            code: hotelbeds_integration_error_1.HotelbedsIntegrationErrorCode.CONFIGURATION_ERROR,
+            retryable: false,
+            providerCode: error.providerCode,
+            message: error.message,
+        });
+    }
     return (0, hotelbeds_integration_error_1.createHotelbedsIntegrationError)({
         code: hotelbeds_integration_error_1.HotelbedsIntegrationErrorCode.UNKNOWN_ERROR,
         retryable: false,

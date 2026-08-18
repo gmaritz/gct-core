@@ -177,7 +177,7 @@ export class HotelbedsAvailabilityRequestBuilder {
     return Object.freeze(
       batches.map((batch) =>
         Object.freeze({
-          operation: "search",
+          operation: "availability",
           method: "POST",
           path: "/hotel-api/1.0/hotels",
           body: Object.freeze({

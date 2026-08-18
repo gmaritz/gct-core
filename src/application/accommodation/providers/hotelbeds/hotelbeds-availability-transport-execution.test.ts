@@ -1,0 +1,480 @@
+import { gzipSync } from "zlib";
+
+import {
+  createHotelbedsSignature,
+  DefaultHotelbedsAuthentication,
+  DefaultHotelbedsAvailabilityExecutor,
+  FetchHotelbedsTransport,
+  HotelbedsAvailabilityExecutionResult,
+  HotelbedsAvailabilityRequest,
+  HotelbedsEnvironment,
+  HotelbedsIntegrationConfig,
+  HotelbedsTransport,
+  HotelbedsTransportError,
+  HotelbedsTransportErrorKind,
+  HotelbedsTransportRequest,
+} from "@application/accommodation";
+
+function createAvailabilityRequest(
+  requestId: string,
+  hotelCodes: ReadonlyArray<number>,
+): HotelbedsAvailabilityRequest {
+  return {
+    operation: "availability",
+    method: "POST",
+    path: "/hotel-api/1.0/hotels",
+    requestId,
+    body: {
+      stay: {
+        checkIn: "2026-09-10",
+        checkOut: "2026-09-14",
+      },
+      sourceMarket: "ZA",
+      occupancies: [
+        {
+          rooms: 1,
+          adults: 2,
+          children: 0,
+          paxes: [{ type: "AD" }, { type: "AD" }],
+        },
+      ],
+      hotels: {
+        codes: hotelCodes,
+      },
+    },
+  };
+}
+
+function createConfig(overrides: Partial<HotelbedsIntegrationConfig> = {}): HotelbedsIntegrationConfig {
+  return {
+    environment: HotelbedsEnvironment.TEST,
+    apiKey: "test-api-key",
+    secret: "test-secret",
+    baseUrl: "https://api.test.hotelbeds.com",
+    timeoutMs: 1500,
+    ...overrides,
+  };
+}
+
+function createHeaders(values?: Record<string, string>): {
+  forEach(callback: (value: string, key: string) => void): void;
+} {
+  const store = values ?? { "content-type": "application/json" };
+
+  return {
+    forEach(callback) {
+      Object.entries(store).forEach(([key, value]) => callback(value, key));
+    },
+  };
+}
+
+describe("APP-008.3-R4 Hotelbeds availability transport execution", () => {
+  it("executes deterministic multi-batch requests via explicit provider availability operation", async () => {
+    const calls: ReadonlyArray<{ path: string; method: string; body: unknown }> = [];
+    const transport: HotelbedsTransport = {
+      execute: async (_config, request) => {
+        (calls as Array<{ path: string; method: string; body: unknown }>).push({
+          path: request.path,
+          method: request.method,
+          body: request.body,
+        });
+        return {
+          status: 200,
+          headers: { "content-type": "application/json" },
+          body: { ok: true },
+          durationMs: 10,
+        };
+      },
+    };
+
+    const executor = new DefaultHotelbedsAvailabilityExecutor(
+      () => createConfig(),
+      new DefaultHotelbedsAuthentication(
+        () => createConfig(),
+        { now: () => new Date("2026-08-09T00:00:00.000Z") },
+      ),
+      transport,
+    );
+
+    const requestA = createAvailabilityRequest("req-a", [101, 102]);
+    const requestB = createAvailabilityRequest("req-b", [103]);
+
+    const result = await executor.execute([requestA, requestB]);
+
+    expect(calls).toEqual([
+      { path: "/hotel-api/1.0/hotels", method: "POST", body: requestA.body },
+      { path: "/hotel-api/1.0/hotels", method: "POST", body: requestB.body },
+    ]);
+    expect(result.responses.map((response) => response.requestIndex)).toEqual([0, 1]);
+    expect(result.responses[0]?.request).toEqual(requestA);
+    expect(result.responses[1]?.request).toEqual(requestB);
+    expect(result.responses.every((response) => response.success)).toBe(true);
+  });
+
+  it("returns an empty response set for an empty request collection", async () => {
+    const transport: HotelbedsTransport = {
+      execute: async () => {
+        throw new Error("should not execute");
+      },
+    };
+
+    const executor = new DefaultHotelbedsAvailabilityExecutor(
+      () => createConfig(),
+      new DefaultHotelbedsAuthentication(() => createConfig()),
+      transport,
+    );
+
+    const result = await executor.execute([]);
+
+    expect(result.responses).toEqual([]);
+  });
+
+  it("sends API-key, X-Signature and explicit gzip support headers", async () => {
+    let capturedRequest: HotelbedsTransportRequest | undefined;
+    const transport: HotelbedsTransport = {
+      execute: async (_config, request) => {
+        capturedRequest = request;
+        return {
+          status: 200,
+          headers: { "content-type": "application/json" },
+          body: { ok: true },
+          durationMs: 12,
+        };
+      },
+    };
+
+    const now = new Date("2026-08-09T00:00:00.000Z");
+    const executor = new DefaultHotelbedsAvailabilityExecutor(
+      () => createConfig(),
+      new DefaultHotelbedsAuthentication(() => createConfig(), { now: () => now }),
+      transport,
+    );
+
+    await executor.execute([createAvailabilityRequest("req-auth", [1001])]);
+
+    const timestamp = Math.floor(now.getTime() / 1000).toString();
+    expect(capturedRequest?.headers?.["Api-key"]).toBe("test-api-key");
+    expect(capturedRequest?.headers?.["X-Timestamp"]).toBe(timestamp);
+    expect(capturedRequest?.headers?.["X-Signature"]).toBe(
+      createHotelbedsSignature("test-api-key", "test-secret", timestamp),
+    );
+    expect(capturedRequest?.headers?.["Accept-Encoding"]).toBe("gzip");
+  });
+
+  it("retries retryable supplier failures and succeeds before exhaustion", async () => {
+    let attempts = 0;
+    const transport: HotelbedsTransport = {
+      execute: async () => {
+        attempts += 1;
+
+        if (attempts === 1) {
+          return {
+            status: 503,
+            headers: { "content-type": "application/json" },
+            body: { error: { code: "UNAVAILABLE", message: "try later" } },
+            durationMs: 11,
+          };
+        }
+
+        return {
+          status: 200,
+          headers: { "content-type": "application/json" },
+          body: { hotels: [] },
+          durationMs: 9,
+        };
+      },
+    };
+
+    const executor = new DefaultHotelbedsAvailabilityExecutor(
+      () => createConfig(),
+      new DefaultHotelbedsAuthentication(() => createConfig()),
+      transport,
+      { maxAttempts: 3 },
+    );
+
+    const result = await executor.execute([createAvailabilityRequest("req-retry", [1001])]);
+
+    expect(attempts).toBe(2);
+    expect(result.responses[0]?.success).toBe(true);
+    expect(result.responses[0]?.attempts).toBe(2);
+  });
+
+  it("stops on non-retryable supplier failures and preserves supplier error payload", async () => {
+    let attempts = 0;
+    const transport: HotelbedsTransport = {
+      execute: async () => {
+        attempts += 1;
+        return {
+          status: 400,
+          headers: { "content-type": "application/json", "x-request-id": "hb-400" },
+          body: { error: { code: "INVALID_REQUEST", message: "bad payload" } },
+          durationMs: 8,
+        };
+      },
+    };
+
+    const executor = new DefaultHotelbedsAvailabilityExecutor(
+      () => createConfig(),
+      new DefaultHotelbedsAuthentication(() => createConfig()),
+      transport,
+      { maxAttempts: 3 },
+    );
+
+    const result = await executor.execute([createAvailabilityRequest("req-400", [1001])]);
+
+    expect(attempts).toBe(1);
+    expect(result.responses[0]?.success).toBe(false);
+    expect(result.responses[0]?.retryable).toBe(false);
+    expect(result.responses[0]?.httpStatus).toBe(400);
+    expect(result.responses[0]?.headers?.["x-request-id"]).toBe("hb-400");
+    expect(result.responses[0]?.supplierError?.code).toBe("INVALID_REQUEST");
+    expect(result.responses[0]?.supplierError?.payload).toEqual({
+      error: { code: "INVALID_REQUEST", message: "bad payload" },
+    });
+  });
+
+  it("exhausts retry attempts for retryable failures", async () => {
+    let attempts = 0;
+    const transport: HotelbedsTransport = {
+      execute: async () => {
+        attempts += 1;
+        return {
+          status: 503,
+          headers: { "content-type": "application/json" },
+          body: { error: { code: "UNAVAILABLE", message: "still down" } },
+          durationMs: 13,
+        };
+      },
+    };
+
+    const executor = new DefaultHotelbedsAvailabilityExecutor(
+      () => createConfig(),
+      new DefaultHotelbedsAuthentication(() => createConfig()),
+      transport,
+      { maxAttempts: 2 },
+    );
+
+    const result = await executor.execute([createAvailabilityRequest("req-exhaust", [1001])]);
+
+    expect(attempts).toBe(2);
+    expect(result.responses[0]?.success).toBe(false);
+    expect(result.responses[0]?.attempts).toBe(2);
+    expect(result.responses[0]?.retryable).toBe(true);
+  });
+
+  it("preserves transport failure information and retries transient transport errors", async () => {
+    let attempts = 0;
+    const transport: HotelbedsTransport = {
+      execute: async () => {
+        attempts += 1;
+
+        if (attempts === 1) {
+          throw new HotelbedsTransportError(
+            HotelbedsTransportErrorKind.TIMEOUT,
+            "timeout",
+            "ETIMEDOUT",
+          );
+        }
+
+        return {
+          status: 200,
+          headers: { "content-type": "application/json" },
+          body: { hotels: [] },
+          durationMs: 7,
+        };
+      },
+    };
+
+    const executor = new DefaultHotelbedsAvailabilityExecutor(
+      () => createConfig(),
+      new DefaultHotelbedsAuthentication(() => createConfig()),
+      transport,
+      { maxAttempts: 2 },
+    );
+
+    const result = await executor.execute([createAvailabilityRequest("req-timeout", [1001])]);
+
+    expect(attempts).toBe(2);
+    expect(result.responses[0]?.success).toBe(true);
+    expect(result.responses[0]?.attempts).toBe(2);
+  });
+
+  it("does not retry non-retryable transport failures", async () => {
+    let attempts = 0;
+    const transport: HotelbedsTransport = {
+      execute: async () => {
+        attempts += 1;
+        throw new HotelbedsTransportError(
+          HotelbedsTransportErrorKind.TLS_CONFIGURATION,
+          "missing tls",
+        );
+      },
+    };
+
+    const executor = new DefaultHotelbedsAvailabilityExecutor(
+      () => createConfig(),
+      new DefaultHotelbedsAuthentication(() => createConfig()),
+      transport,
+      { maxAttempts: 3 },
+    );
+
+    const result = await executor.execute([createAvailabilityRequest("req-tls", [1001])]);
+
+    expect(attempts).toBe(1);
+    expect(result.responses[0]?.success).toBe(false);
+    expect(result.responses[0]?.retryable).toBe(false);
+    expect(result.responses[0]?.transportFailure?.kind).toBe("TLS_CONFIGURATION");
+  });
+
+  it("marks invalid operation requests as non-retryable without invoking transport", async () => {
+    let calls = 0;
+    const transport: HotelbedsTransport = {
+      execute: async () => {
+        calls += 1;
+        return {
+          status: 200,
+          headers: {},
+          body: { ok: true },
+          durationMs: 0,
+        };
+      },
+    };
+
+    const executor = new DefaultHotelbedsAvailabilityExecutor(
+      () => createConfig(),
+      new DefaultHotelbedsAuthentication(() => createConfig()),
+      transport,
+    );
+
+    const invalidRequest = {
+      ...createAvailabilityRequest("req-invalid", [1001]),
+      operation: "search",
+    } as HotelbedsAvailabilityRequest;
+
+    const result = await executor.execute([invalidRequest]);
+
+    expect(calls).toBe(0);
+    expect(result.responses[0]?.success).toBe(false);
+    expect(result.responses[0]?.errors[0]?.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("decompresses explicit gzip transport responses", async () => {
+    const compressedBody = gzipSync(
+      Buffer.from(JSON.stringify({ hotels: [{ code: 10, name: "Compressed" }] }), "utf8"),
+    );
+
+    const transport = new FetchHotelbedsTransport(async () => ({
+      status: 200,
+      headers: createHeaders({ "content-type": "application/json", "content-encoding": "gzip" }),
+      text: async () => {
+        throw new Error("text() should not be used when gzip encoding is explicit");
+      },
+      arrayBuffer: async () =>
+        compressedBody.buffer.slice(
+          compressedBody.byteOffset,
+          compressedBody.byteOffset + compressedBody.byteLength,
+        ),
+    }));
+
+    const response = await transport.execute(createConfig(), {
+      method: "POST",
+      path: "/hotel-api/1.0/hotels",
+      body: { request: true },
+      headers: { "Accept-Encoding": "gzip" },
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ hotels: [{ code: 10, name: "Compressed" }] });
+  });
+
+  it("passes mTLS material to the underlying transport implementation", async () => {
+    let capturedTls: unknown;
+    const transport = new FetchHotelbedsTransport(async (_input, init) => {
+      capturedTls = init.tls;
+      return {
+        status: 200,
+        headers: createHeaders({ "content-type": "application/json" }),
+        text: async () => JSON.stringify({ hotels: [] }),
+      };
+    });
+
+    await transport.execute(
+      createConfig({
+        tls: {
+          clientCertificate: "cert-data",
+          privateKey: "private-key-data",
+          trustedCa: "ca-data",
+        },
+      }),
+      {
+        method: "POST",
+        path: "/hotel-api/1.0/hotels",
+        body: { request: true },
+      },
+    );
+
+    expect(capturedTls).toEqual({
+      clientCertificate: "cert-data",
+      privateKey: "private-key-data",
+      trustedCa: "ca-data",
+    });
+  });
+
+  it("fails for incomplete mTLS transport configuration", async () => {
+    const transport = new FetchHotelbedsTransport(async () => ({
+      status: 200,
+      headers: createHeaders({ "content-type": "application/json" }),
+      text: async () => JSON.stringify({ hotels: [] }),
+    }));
+
+    await expect(
+      transport.execute(
+        createConfig({
+          tls: {
+            clientCertificate: "",
+            privateKey: "private-key-data",
+            trustedCa: "ca-data",
+          },
+        }),
+        {
+          method: "POST",
+          path: "/hotel-api/1.0/hotels",
+          body: { request: true },
+        },
+      ),
+    ).rejects.toMatchObject({ kind: HotelbedsTransportErrorKind.TLS_CONFIGURATION });
+  });
+
+  it("preserves structured raw response boundaries", async () => {
+    const transport: HotelbedsTransport = {
+      execute: async () => ({
+        status: 429,
+        headers: { "content-type": "application/json", "x-correlation-id": "corr-hb" },
+        body: { error: { code: "RATE_LIMIT", message: "slow down" }, trace: "hb-trace-1" },
+        durationMs: 16,
+      }),
+    };
+
+    const executor = new DefaultHotelbedsAvailabilityExecutor(
+      () => createConfig(),
+      new DefaultHotelbedsAuthentication(() => createConfig()),
+      transport,
+      { maxAttempts: 1 },
+    );
+
+    const result: HotelbedsAvailabilityExecutionResult = await executor.execute([
+      createAvailabilityRequest("req-raw", [2001]),
+    ]);
+
+    const response = result.responses[0];
+    expect(response?.requestIndex).toBe(0);
+    expect(response?.httpStatus).toBe(429);
+    expect(response?.headers).toEqual({ "content-type": "application/json", "x-correlation-id": "corr-hb" });
+    expect(response?.body).toEqual({
+      error: { code: "RATE_LIMIT", message: "slow down" },
+      trace: "hb-trace-1",
+    });
+    expect(response?.supplierError?.code).toBe("RATE_LIMIT");
+    expect(response?.retryable).toBe(true);
+  });
+});

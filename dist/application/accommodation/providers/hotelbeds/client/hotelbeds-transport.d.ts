@@ -1,4 +1,9 @@
 import { HotelbedsIntegrationConfig } from "./hotelbeds-integration-config";
+export interface HotelbedsTransportTlsConfig {
+    readonly clientCertificate: string;
+    readonly privateKey: string;
+    readonly trustedCa: string;
+}
 export interface HotelbedsTransportRequest {
     readonly method: "GET" | "POST";
     readonly path: string;
@@ -17,6 +22,7 @@ export declare enum HotelbedsTransportErrorKind {
     TIMEOUT = "TIMEOUT",
     NETWORK = "NETWORK",
     MALFORMED_RESPONSE = "MALFORMED_RESPONSE",
+    TLS_CONFIGURATION = "TLS_CONFIGURATION",
     UNKNOWN = "UNKNOWN"
 }
 export declare class HotelbedsTransportError extends Error {
@@ -28,15 +34,19 @@ interface FetchLikeResponse {
     readonly status: number;
     readonly headers: {
         forEach(callback: (value: string, key: string) => void): void;
+        get?(key: string): string | null;
     };
     text(): Promise<string>;
+    arrayBuffer?(): Promise<ArrayBuffer>;
 }
-export type HotelbedsFetchLike = (input: string, init: {
+interface HotelbedsFetchInit {
     method: string;
     headers: Record<string, string>;
     body?: string;
     signal: AbortSignal;
-}) => Promise<FetchLikeResponse>;
+    tls?: HotelbedsTransportTlsConfig;
+}
+export type HotelbedsFetchLike = (input: string, init: HotelbedsFetchInit) => Promise<FetchLikeResponse>;
 export interface HotelbedsTransport {
     execute(config: HotelbedsIntegrationConfig, request: HotelbedsTransportRequest): Promise<HotelbedsTransportResponse>;
 }

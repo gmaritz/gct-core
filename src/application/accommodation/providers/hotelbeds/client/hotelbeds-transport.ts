@@ -1,4 +1,12 @@
+import { gunzipSync } from "zlib";
+
 import { HotelbedsIntegrationConfig } from "./hotelbeds-integration-config";
+
+export interface HotelbedsTransportTlsConfig {
+  readonly clientCertificate: string;
+  readonly privateKey: string;
+  readonly trustedCa: string;
+}
 
 export interface HotelbedsTransportRequest {
   readonly method: "GET" | "POST";
@@ -20,6 +28,7 @@ export enum HotelbedsTransportErrorKind {
   TIMEOUT = "TIMEOUT",
   NETWORK = "NETWORK",
   MALFORMED_RESPONSE = "MALFORMED_RESPONSE",
+  TLS_CONFIGURATION = "TLS_CONFIGURATION",
   UNKNOWN = "UNKNOWN",
 }
 
@@ -38,18 +47,23 @@ interface FetchLikeResponse {
   readonly status: number;
   readonly headers: {
     forEach(callback: (value: string, key: string) => void): void;
+    get?(key: string): string | null;
   };
   text(): Promise<string>;
+  arrayBuffer?(): Promise<ArrayBuffer>;
+}
+
+interface HotelbedsFetchInit {
+  method: string;
+  headers: Record<string, string>;
+  body?: string;
+  signal: AbortSignal;
+  tls?: HotelbedsTransportTlsConfig;
 }
 
 export type HotelbedsFetchLike = (
   input: string,
-  init: {
-    method: string;
-    headers: Record<string, string>;
-    body?: string;
-    signal: AbortSignal;
-  },
+  init: HotelbedsFetchInit,
 ) => Promise<FetchLikeResponse>;
 
 export interface HotelbedsTransport {
@@ -77,7 +91,7 @@ function resolveFetch(fetchOverride?: HotelbedsFetchLike): HotelbedsFetchLike {
 function mapHeaders(headers: FetchLikeResponse["headers"]): Readonly<Record<string, string>> {
   const mapped: Record<string, string> = {};
   headers.forEach((value, key) => {
-    mapped[key] = value;
+    mapped[key.toLowerCase()] = value;
   });
 
   return Object.freeze(mapped);
@@ -107,6 +121,50 @@ function parseResponseBody(rawBody: string): unknown {
   }
 }
 
+function isGzip(headers: Readonly<Record<string, string>>): boolean {
+  const encoding = headers["content-encoding"];
+  return typeof encoding === "string" && encoding.toLowerCase().includes("gzip");
+}
+
+async function decodeResponseBody(
+  response: FetchLikeResponse,
+  headers: Readonly<Record<string, string>>,
+): Promise<string> {
+  if (!isGzip(headers) || !response.arrayBuffer) {
+    return response.text();
+  }
+
+  try {
+    const buffer = await response.arrayBuffer();
+    return gunzipSync(Buffer.from(buffer)).toString("utf8");
+  } catch {
+    throw new HotelbedsTransportError(
+      HotelbedsTransportErrorKind.MALFORMED_RESPONSE,
+      "Hotelbeds returned an invalid gzip payload.",
+    );
+  }
+}
+
+function resolveTlsConfig(config: HotelbedsIntegrationConfig): HotelbedsTransportTlsConfig | undefined {
+  if (!config.tls) {
+    return undefined;
+  }
+
+  const { clientCertificate, privateKey, trustedCa } = config.tls;
+  if (!clientCertificate || !privateKey || !trustedCa) {
+    throw new HotelbedsTransportError(
+      HotelbedsTransportErrorKind.TLS_CONFIGURATION,
+      "Hotelbeds TLS configuration is incomplete.",
+    );
+  }
+
+  return {
+    clientCertificate,
+    privateKey,
+    trustedCa,
+  };
+}
+
 export class FetchHotelbedsTransport implements HotelbedsTransport {
   private readonly fetchClient: HotelbedsFetchLike;
 
@@ -134,13 +192,16 @@ export class FetchHotelbedsTransport implements HotelbedsTransport {
         headers: { ...(request.headers ?? {}) },
         body: request.body === undefined ? undefined : JSON.stringify(request.body),
         signal: controller.signal,
+        tls: resolveTlsConfig(config),
       });
-      const rawBody = await response.text();
+
+      const headers = mapHeaders(response.headers);
+      const rawBody = await decodeResponseBody(response, headers);
       const body = parseResponseBody(rawBody);
 
       return {
         status: response.status,
-        headers: mapHeaders(response.headers),
+        headers,
         body,
         durationMs: Date.now() - startedAt,
       };

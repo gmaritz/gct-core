@@ -21,7 +21,15 @@ import { AccommodationSearchCriteria } from "../../../discovery";
 
 import { AccommodationProvider } from "../../accommodation-provider";
 import { HotelMapper } from "../mapper";
-import { DefaultHotelbedsClient, HotelbedsClient, HotelbedsRequest } from "../client";
+import {
+  DefaultHotelbedsAvailabilityExecutor,
+  DefaultHotelbedsClient,
+  HotelbedsAvailabilityExecutionResult,
+  HotelbedsAvailabilityExecutor,
+  HotelbedsAvailabilityRequest,
+  HotelbedsClient,
+  HotelbedsRequest,
+} from "../client";
 import { HotelbedsHotel, HotelbedsRate } from "../models";
 
 function parseAmount(value: string | undefined): number {
@@ -147,6 +155,8 @@ export class HotelbedsProvider implements AccommodationProvider {
   public constructor(
     private readonly client: HotelbedsClient = new DefaultHotelbedsClient(),
     private readonly mapper: HotelbedsAccommodationMapper = new HotelMapper(),
+    private readonly availabilityExecutor: HotelbedsAvailabilityExecutor =
+      new DefaultHotelbedsAvailabilityExecutor(),
   ) {}
 
   public async search(criteria: AccommodationSearchCriteria): Promise<AccommodationSearchResult> {
@@ -213,5 +223,11 @@ export class HotelbedsProvider implements AccommodationProvider {
       rates: response.data.map((rate) => mapRate(rate, query.context.currency)),
       metadata: createMetadata(),
     };
+  }
+
+  public async executeAvailabilityRequests(
+    requests: ReadonlyArray<HotelbedsAvailabilityRequest>,
+  ): Promise<HotelbedsAvailabilityExecutionResult> {
+    return this.availabilityExecutor.execute(requests);
   }
 }

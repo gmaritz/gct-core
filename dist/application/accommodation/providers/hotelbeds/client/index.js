@@ -26,4 +26,6 @@ __exportStar(require("./hotelbeds-error-mapper"), exports);
 __exportStar(require("./hotelbeds-gateway"), exports);
 __exportStar(require("./hotelbeds-availability-request"), exports);
 __exportStar(require("./hotelbeds-availability-request-builder"), exports);
+__exportStar(require("./hotelbeds-availability-execution-result"), exports);
+__exportStar(require("./hotelbeds-availability-executor"), exports);
 //# sourceMappingURL=index.js.map

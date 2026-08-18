@@ -3,12 +3,19 @@ export enum HotelbedsEnvironment {
   PRODUCTION = "PRODUCTION",
 }
 
+export interface HotelbedsTlsConfig {
+  readonly clientCertificate: string;
+  readonly privateKey: string;
+  readonly trustedCa: string;
+}
+
 export interface HotelbedsIntegrationConfig {
   readonly environment: HotelbedsEnvironment;
   readonly apiKey: string;
   readonly secret: string;
   readonly baseUrl: string;
   readonly timeoutMs: number;
+  readonly tls?: HotelbedsTlsConfig;
   readonly selectedHotelCodes?: ReadonlyArray<string>;
   readonly contentBatchSize?: number;
   readonly contentMaxQps?: number;
@@ -107,6 +114,32 @@ function parseSelectedHotelCodes(rawCodes: string | undefined): ReadonlyArray<st
   );
 }
 
+function parseTlsConfig(env: NodeJS.ProcessEnv): HotelbedsTlsConfig | undefined {
+  const clientCertificate = env.HOTELBEDS_TLS_CLIENT_CERTIFICATE?.trim();
+  const privateKey = env.HOTELBEDS_TLS_PRIVATE_KEY?.trim();
+  const trustedCa = env.HOTELBEDS_TLS_TRUSTED_CA?.trim();
+
+  const definedValues = [clientCertificate, privateKey, trustedCa].filter(
+    (value) => typeof value === "string" && value.length > 0,
+  ).length;
+
+  if (definedValues === 0) {
+    return undefined;
+  }
+
+  if (definedValues !== 3) {
+    throw new HotelbedsConfigurationError(
+      "HOTELBEDS_TLS_CLIENT_CERTIFICATE, HOTELBEDS_TLS_PRIVATE_KEY, and HOTELBEDS_TLS_TRUSTED_CA must be provided together.",
+    );
+  }
+
+  return Object.freeze({
+    clientCertificate: clientCertificate ?? "",
+    privateKey: privateKey ?? "",
+    trustedCa: trustedCa ?? "",
+  });
+}
+
 export function createHotelbedsIntegrationConfig(input: HotelbedsIntegrationConfig): HotelbedsIntegrationConfig {
   if (isBlank(input.apiKey)) {
     throw new HotelbedsConfigurationError("Hotelbeds API key is required.");
@@ -126,6 +159,13 @@ export function createHotelbedsIntegrationConfig(input: HotelbedsIntegrationConf
     secret: input.secret.trim(),
     baseUrl: validateUrl(input.baseUrl),
     timeoutMs: input.timeoutMs,
+    tls: input.tls
+      ? Object.freeze({
+          clientCertificate: input.tls.clientCertificate,
+          privateKey: input.tls.privateKey,
+          trustedCa: input.tls.trustedCa,
+        })
+      : undefined,
     selectedHotelCodes: Object.freeze([...(input.selectedHotelCodes ?? [])]),
     contentBatchSize: input.contentBatchSize ?? DEFAULT_CONTENT_BATCH_SIZE,
     contentMaxQps: input.contentMaxQps ?? DEFAULT_CONTENT_MAX_QPS,
@@ -144,6 +184,7 @@ export function loadHotelbedsIntegrationConfig(env: NodeJS.ProcessEnv = process.
     secret: env.HOTELBEDS_SECRET ?? "",
     baseUrl,
     timeoutMs: parseTimeout(env.HOTELBEDS_TIMEOUT_MS),
+    tls: parseTlsConfig(env),
     selectedHotelCodes: parseSelectedHotelCodes(env.HOTELBEDS_SELECTED_HOTEL_CODES),
     contentBatchSize: parsePositiveInteger(env.HOTELBEDS_CONTENT_BATCH_SIZE, DEFAULT_CONTENT_BATCH_SIZE, "HOTELBEDS_CONTENT_BATCH_SIZE"),
     contentMaxQps: parsePositiveInteger(env.HOTELBEDS_CONTENT_MAX_QPS, DEFAULT_CONTENT_MAX_QPS, "HOTELBEDS_CONTENT_MAX_QPS"),

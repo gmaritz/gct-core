@@ -7,6 +7,9 @@ import {
   AccommodationRateResult,
   AccommodationSearchCriteria,
   AccommodationSearchResult,
+  HotelbedsAvailabilityExecutionResult,
+  HotelbedsAvailabilityExecutor,
+  HotelbedsAvailabilityRequest,
   HotelbedsClient,
   HotelbedsHotel,
   HotelbedsProvider,
@@ -252,6 +255,74 @@ describe("Hotelbeds provider implementation", () => {
     expect(images.images).toHaveLength(1);
     expect(rates.accommodationId).toBe("888");
     expect(rates.rates[0]?.currency).toBe(AccommodationCurrency.EUR);
+  });
+
+  it("provides explicit R3 to R4 availability entrypoint without invoking legacy GET search", async () => {
+    const searchHotels = jest.fn();
+    const client: HotelbedsClient = {
+      async searchHotels(request) {
+        searchHotels(request);
+        return createResponse(request, []);
+      },
+      async getHotelDetails(request) {
+        return createResponse(request, createHotel(1, "unused"));
+      },
+      async getHotelContent(request) {
+        return createResponse(request, createHotel(1, "unused"));
+      },
+      async getHotelImages(request) {
+        return createResponse(request, []);
+      },
+      async getHotelRates(request) {
+        return createResponse(request, []);
+      },
+    };
+
+    const capturedRequests: HotelbedsAvailabilityRequest[][] = [];
+    const availabilityExecutor: HotelbedsAvailabilityExecutor = {
+      async execute(requests): Promise<HotelbedsAvailabilityExecutionResult> {
+        capturedRequests.push([...requests]);
+        return {
+          provider: "hotelbeds",
+          operation: "availability",
+          completedAt: new Date("2026-08-18T00:00:00.000Z"),
+          responses: [],
+        };
+      },
+    };
+
+    const provider = new HotelbedsProvider(client, undefined, availabilityExecutor);
+    const requests: ReadonlyArray<HotelbedsAvailabilityRequest> = [
+      {
+        operation: "availability",
+        method: "POST",
+        path: "/hotel-api/1.0/hotels",
+        body: {
+          stay: {
+            checkIn: "2026-09-10",
+            checkOut: "2026-09-14",
+          },
+          sourceMarket: "ZA",
+          occupancies: [
+            {
+              rooms: 1,
+              adults: 2,
+              children: 0,
+              paxes: [{ type: "AD" }, { type: "AD" }],
+            },
+          ],
+          hotels: {
+            codes: [1001],
+          },
+        },
+      },
+    ];
+
+    const result = await provider.executeAvailabilityRequests(requests);
+
+    expect(searchHotels).not.toHaveBeenCalled();
+    expect(capturedRequests).toEqual([[requests[0]]]);
+    expect(result.operation).toBe("availability");
   });
 
   it("compiles provider exports through the accommodation namespace", () => {

@@ -79,9 +79,10 @@ function createRequest(operation, path) {
     };
 }
 class HotelbedsProvider {
-    constructor(client = new client_1.DefaultHotelbedsClient(), mapper = new mapper_1.HotelMapper()) {
+    constructor(client = new client_1.DefaultHotelbedsClient(), mapper = new mapper_1.HotelMapper(), availabilityExecutor = new client_1.DefaultHotelbedsAvailabilityExecutor()) {
         this.client = client;
         this.mapper = mapper;
+        this.availabilityExecutor = availabilityExecutor;
         this.providerId = "hotelbeds";
         this.capabilities = createCapabilities();
     }
@@ -134,6 +135,9 @@ class HotelbedsProvider {
             rates: response.data.map((rate) => mapRate(rate, query.context.currency)),
             metadata: createMetadata(),
         };
+    }
+    async executeAvailabilityRequests(requests) {
+        return this.availabilityExecutor.execute(requests);
     }
 }
 exports.HotelbedsProvider = HotelbedsProvider;

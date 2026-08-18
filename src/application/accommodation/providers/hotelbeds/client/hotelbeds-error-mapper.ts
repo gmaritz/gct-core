@@ -121,6 +121,15 @@ export function mapHotelbedsTransportError(error: unknown): HotelbedsIntegration
     });
   }
 
+  if (error.kind === HotelbedsTransportErrorKind.TLS_CONFIGURATION) {
+    return createHotelbedsIntegrationError({
+      code: HotelbedsIntegrationErrorCode.CONFIGURATION_ERROR,
+      retryable: false,
+      providerCode: error.providerCode,
+      message: error.message,
+    });
+  }
+
   return createHotelbedsIntegrationError({
     code: HotelbedsIntegrationErrorCode.UNKNOWN_ERROR,
     retryable: false,
