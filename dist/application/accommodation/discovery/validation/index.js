@@ -18,4 +18,5 @@ __exportStar(require("./accommodation-query-validator"), exports);
 __exportStar(require("./accommodation-validation-error"), exports);
 __exportStar(require("./accommodation-validation-error-code"), exports);
 __exportStar(require("./accommodation-validation-result"), exports);
+__exportStar(require("./hotel-code-validation"), exports);
 //# sourceMappingURL=index.js.map

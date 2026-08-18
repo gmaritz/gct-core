@@ -8,4 +8,6 @@ export * from "./hotelbeds-integration-result";
 export * from "./hotelbeds-transport";
 export * from "./hotelbeds-error-mapper";
 export * from "./hotelbeds-gateway";
+export * from "./hotelbeds-availability-request";
+export * from "./hotelbeds-availability-request-builder";
 //# sourceMappingURL=index.d.ts.map

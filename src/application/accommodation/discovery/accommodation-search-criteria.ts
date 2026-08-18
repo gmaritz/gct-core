@@ -1,9 +1,12 @@
 import { AccommodationAmenity, AccommodationCategory } from "../models";
+import { AccommodationOccupancyGroup } from "./accommodation-occupancy-group";
 
 export interface AccommodationSearchCriteria {
   readonly destination: string;
   readonly checkInDate: Date;
   readonly checkOutDate: Date;
+  readonly sourceMarket?: string;
+  readonly occupancies?: ReadonlyArray<AccommodationOccupancyGroup>;
   readonly adults: number;
   readonly children: number;
   readonly rooms: number;

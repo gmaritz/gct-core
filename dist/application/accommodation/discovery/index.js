@@ -20,5 +20,6 @@ __exportStar(require("./accommodation-search-query"), exports);
 __exportStar(require("./accommodation-search-context"), exports);
 __exportStar(require("./accommodation-search-source"), exports);
 __exportStar(require("./accommodation-discovery-result"), exports);
+__exportStar(require("./accommodation-occupancy-group"), exports);
 __exportStar(require("./validation"), exports);
 //# sourceMappingURL=index.js.map
