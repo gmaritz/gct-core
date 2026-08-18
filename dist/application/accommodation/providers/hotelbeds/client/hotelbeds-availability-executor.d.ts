@@ -6,8 +6,18 @@ import { HotelbedsTransport } from "./hotelbeds-transport";
 export interface HotelbedsAvailabilityExecutor {
     execute(requests: ReadonlyArray<HotelbedsAvailabilityRequest>): Promise<HotelbedsAvailabilityExecutionResult>;
 }
+export interface HotelbedsSupplierProtectionSettings {
+    readonly maxQps: number;
+    readonly maxConcurrency: number;
+    readonly now: () => number;
+    readonly sleep: (delayMs: number) => Promise<void>;
+}
 interface HotelbedsAvailabilityExecutorOptions {
     readonly maxAttempts: number;
+    readonly maxQps: number;
+    readonly maxConcurrency: number;
+    readonly now: () => number;
+    readonly sleep: (delayMs: number) => Promise<void>;
 }
 export declare class DefaultHotelbedsAvailabilityExecutor implements HotelbedsAvailabilityExecutor {
     private readonly configLoader;

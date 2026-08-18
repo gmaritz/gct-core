@@ -21,6 +21,8 @@ export interface HotelbedsIntegrationConfig {
   readonly contentMaxQps?: number;
   readonly contentMaxRetries?: number;
   readonly contentRetryBaseDelayMs?: number;
+  readonly availabilityMaxQps?: number;
+  readonly availabilityMaxConcurrency?: number;
 }
 
 export class HotelbedsConfigurationError extends Error {
@@ -37,6 +39,8 @@ export const DEFAULT_CONTENT_BATCH_SIZE = 50;
 export const DEFAULT_CONTENT_MAX_QPS = 1;
 export const DEFAULT_CONTENT_MAX_RETRIES = 3;
 export const DEFAULT_CONTENT_RETRY_BASE_DELAY_MS = 1000;
+export const DEFAULT_AVAILABILITY_MAX_QPS = 20;
+export const DEFAULT_AVAILABILITY_MAX_CONCURRENCY = 20;
 const DEFAULT_BASE_URLS: Record<HotelbedsEnvironment, string> = {
   [HotelbedsEnvironment.TEST]: "https://api.test.hotelbeds.com",
   [HotelbedsEnvironment.PRODUCTION]: "https://api.hotelbeds.com",
@@ -153,6 +157,17 @@ export function createHotelbedsIntegrationConfig(input: HotelbedsIntegrationConf
     throw new HotelbedsConfigurationError("Hotelbeds timeout must be greater than zero.");
   }
 
+  const availabilityMaxQps = input.availabilityMaxQps ?? DEFAULT_AVAILABILITY_MAX_QPS;
+  const availabilityMaxConcurrency = input.availabilityMaxConcurrency ?? DEFAULT_AVAILABILITY_MAX_CONCURRENCY;
+
+  if (!Number.isInteger(availabilityMaxQps) || availabilityMaxQps <= 0) {
+    throw new HotelbedsConfigurationError("Hotelbeds availability max QPS must be a positive integer.");
+  }
+
+  if (!Number.isInteger(availabilityMaxConcurrency) || availabilityMaxConcurrency <= 0) {
+    throw new HotelbedsConfigurationError("Hotelbeds availability max concurrency must be a positive integer.");
+  }
+
   return Object.freeze({
     environment: input.environment,
     apiKey: input.apiKey.trim(),
@@ -171,6 +186,8 @@ export function createHotelbedsIntegrationConfig(input: HotelbedsIntegrationConf
     contentMaxQps: input.contentMaxQps ?? DEFAULT_CONTENT_MAX_QPS,
     contentMaxRetries: input.contentMaxRetries ?? DEFAULT_CONTENT_MAX_RETRIES,
     contentRetryBaseDelayMs: input.contentRetryBaseDelayMs ?? DEFAULT_CONTENT_RETRY_BASE_DELAY_MS,
+    availabilityMaxQps,
+    availabilityMaxConcurrency,
   });
 }
 
@@ -190,5 +207,7 @@ export function loadHotelbedsIntegrationConfig(env: NodeJS.ProcessEnv = process.
     contentMaxQps: parsePositiveInteger(env.HOTELBEDS_CONTENT_MAX_QPS, DEFAULT_CONTENT_MAX_QPS, "HOTELBEDS_CONTENT_MAX_QPS"),
     contentMaxRetries: parseNonNegativeInteger(env.HOTELBEDS_CONTENT_MAX_RETRIES, DEFAULT_CONTENT_MAX_RETRIES, "HOTELBEDS_CONTENT_MAX_RETRIES"),
     contentRetryBaseDelayMs: parsePositiveInteger(env.HOTELBEDS_CONTENT_RETRY_BASE_DELAY_MS, DEFAULT_CONTENT_RETRY_BASE_DELAY_MS, "HOTELBEDS_CONTENT_RETRY_BASE_DELAY_MS"),
+    availabilityMaxQps: parsePositiveInteger(env.HOTELBEDS_AVAILABILITY_MAX_QPS, DEFAULT_AVAILABILITY_MAX_QPS, "HOTELBEDS_AVAILABILITY_MAX_QPS"),
+    availabilityMaxConcurrency: parsePositiveInteger(env.HOTELBEDS_AVAILABILITY_MAX_CONCURRENCY, DEFAULT_AVAILABILITY_MAX_CONCURRENCY, "HOTELBEDS_AVAILABILITY_MAX_CONCURRENCY"),
   });
 }

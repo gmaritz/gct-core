@@ -19,6 +19,8 @@ export interface HotelbedsIntegrationConfig {
     readonly contentMaxQps?: number;
     readonly contentMaxRetries?: number;
     readonly contentRetryBaseDelayMs?: number;
+    readonly availabilityMaxQps?: number;
+    readonly availabilityMaxConcurrency?: number;
 }
 export declare class HotelbedsConfigurationError extends Error {
     readonly code = "CONFIGURATION_ERROR";
@@ -28,6 +30,8 @@ export declare const DEFAULT_CONTENT_BATCH_SIZE = 50;
 export declare const DEFAULT_CONTENT_MAX_QPS = 1;
 export declare const DEFAULT_CONTENT_MAX_RETRIES = 3;
 export declare const DEFAULT_CONTENT_RETRY_BASE_DELAY_MS = 1000;
+export declare const DEFAULT_AVAILABILITY_MAX_QPS = 20;
+export declare const DEFAULT_AVAILABILITY_MAX_CONCURRENCY = 20;
 export declare function createHotelbedsIntegrationConfig(input: HotelbedsIntegrationConfig): HotelbedsIntegrationConfig;
 export declare function loadHotelbedsIntegrationConfig(env?: NodeJS.ProcessEnv): HotelbedsIntegrationConfig;
 //# sourceMappingURL=hotelbeds-integration-config.d.ts.map

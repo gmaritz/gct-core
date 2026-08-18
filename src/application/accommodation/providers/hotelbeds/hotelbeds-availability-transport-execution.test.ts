@@ -477,4 +477,112 @@ describe("APP-008.3-R4 Hotelbeds availability transport execution", () => {
     expect(response?.supplierError?.code).toBe("RATE_LIMIT");
     expect(response?.retryable).toBe(true);
   });
+
+  it("applies configured QPS and concurrency protection before supplier execution", async () => {
+    const config = createConfig({
+      availabilityMaxQps: 2,
+      availabilityMaxConcurrency: 2,
+    });
+    let now = 0;
+    const sleepCalls: number[] = [];
+    const started: number[] = [];
+    const transport: HotelbedsTransport = {
+      execute: async () => {
+        now += 100;
+        started.push(now);
+        return {
+          status: 200,
+          headers: { "content-type": "application/json" },
+          body: { ok: true },
+          durationMs: 1,
+        };
+      },
+    };
+
+    const executor = new DefaultHotelbedsAvailabilityExecutor(
+      () => config,
+      new DefaultHotelbedsAuthentication(() => config),
+      transport,
+      {
+        maxAttempts: 1,
+        maxQps: 2,
+        maxConcurrency: 2,
+        now: () => now,
+        sleep: async (delayMs) => {
+          sleepCalls.push(delayMs);
+          now += delayMs;
+        },
+      },
+    );
+
+    const result = await executor.execute([
+      createAvailabilityRequest("req-qps-1", [3001]),
+      createAvailabilityRequest("req-qps-2", [3002]),
+      createAvailabilityRequest("req-qps-3", [3003]),
+    ]);
+
+    expect(result.responses.map((response) => response.requestIndex)).toEqual([0, 1, 2]);
+    expect(result.responses.every((response) => response.success)).toBe(true);
+    expect(sleepCalls.length).toBeGreaterThan(0);
+    expect(started.length).toBe(3);
+  });
+
+  it("preserves retry attempts behind supplier protection and rejects invalid resilience settings", async () => {
+    const config = createConfig({
+      availabilityMaxQps: 3,
+      availabilityMaxConcurrency: 1,
+    });
+    let now = 0;
+    let attemptCount = 0;
+    const transport: HotelbedsTransport = {
+      execute: async () => {
+        attemptCount += 1;
+        if (attemptCount === 1) {
+          return {
+            status: 503,
+            headers: { "content-type": "application/json" },
+            body: { error: { code: "UNAVAILABLE", message: "try later" } },
+            durationMs: 1,
+          };
+        }
+
+        return {
+          status: 200,
+          headers: { "content-type": "application/json" },
+          body: { ok: true },
+          durationMs: 1,
+        };
+      },
+    };
+
+    const executor = new DefaultHotelbedsAvailabilityExecutor(
+      () => config,
+      new DefaultHotelbedsAuthentication(() => config),
+      transport,
+      {
+        maxAttempts: 2,
+        maxQps: 3,
+        maxConcurrency: 1,
+        now: () => now,
+        sleep: async (delayMs) => {
+          now += delayMs;
+        },
+      },
+    );
+
+    const result = await executor.execute([createAvailabilityRequest("req-retry-protected", [4001])]);
+
+    expect(result.responses[0]?.success).toBe(true);
+    expect(result.responses[0]?.attempts).toBe(2);
+    expect(attemptCount).toBe(2);
+
+    await expect(
+      new DefaultHotelbedsAvailabilityExecutor(
+        () => createConfig({ availabilityMaxQps: 0 }),
+        new DefaultHotelbedsAuthentication(() => createConfig()),
+        ({ execute: async () => ({ status: 200, headers: {}, body: { ok: true }, durationMs: 1 }) }),
+        { maxAttempts: 1, maxQps: 0, maxConcurrency: 1 },
+      ).execute([createAvailabilityRequest("req-invalid-qps", [4002])]),
+    ).rejects.toThrow("must be a positive integer");
+  });
 });
