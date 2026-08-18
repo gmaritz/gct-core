@@ -1,3 +1,5 @@
+import { IncomingHttpHeaders } from "http";
+import { request as httpsRequest, RequestOptions } from "https";
 import { gunzipSync } from "zlib";
 
 import { HotelbedsIntegrationConfig } from "./hotelbeds-integration-config";
@@ -43,28 +45,26 @@ export class HotelbedsTransportError extends Error {
   }
 }
 
-interface FetchLikeResponse {
-  readonly status: number;
-  readonly headers: {
-    forEach(callback: (value: string, key: string) => void): void;
-    get?(key: string): string | null;
-  };
-  text(): Promise<string>;
-  arrayBuffer?(): Promise<ArrayBuffer>;
+export interface HotelbedsHttpsResponse {
+  readonly statusCode?: number;
+  readonly headers: IncomingHttpHeaders;
+  on(event: "data", listener: (chunk: Buffer) => void): this;
+  on(event: "end", listener: () => void): this;
+  on(event: "error", listener: (error: Error) => void): this;
 }
 
-interface HotelbedsFetchInit {
-  method: string;
-  headers: Record<string, string>;
-  body?: string;
-  signal: AbortSignal;
-  tls?: HotelbedsTransportTlsConfig;
+export interface HotelbedsHttpsRequest {
+  on(event: "error", listener: (error: Error) => void): this;
+  setTimeout(timeoutMs: number, callback: () => void): this;
+  write(body: string): boolean;
+  end(): void;
+  destroy(error?: Error): void;
 }
 
-export type HotelbedsFetchLike = (
-  input: string,
-  init: HotelbedsFetchInit,
-) => Promise<FetchLikeResponse>;
+export type HotelbedsHttpsRequestLike = (
+  options: RequestOptions,
+  callback: (response: HotelbedsHttpsResponse) => void,
+) => HotelbedsHttpsRequest;
 
 export interface HotelbedsTransport {
   execute(
@@ -73,25 +73,14 @@ export interface HotelbedsTransport {
   ): Promise<HotelbedsTransportResponse>;
 }
 
-function resolveFetch(fetchOverride?: HotelbedsFetchLike): HotelbedsFetchLike {
-  if (fetchOverride) {
-    return fetchOverride;
-  }
-
-  if (typeof globalThis.fetch !== "function") {
-    throw new HotelbedsTransportError(
-      HotelbedsTransportErrorKind.UNKNOWN,
-      "No fetch implementation is available for Hotelbeds transport.",
-    );
-  }
-
-  return globalThis.fetch as unknown as HotelbedsFetchLike;
-}
-
-function mapHeaders(headers: FetchLikeResponse["headers"]): Readonly<Record<string, string>> {
+function mapHeaders(headers: IncomingHttpHeaders): Readonly<Record<string, string>> {
   const mapped: Record<string, string> = {};
-  headers.forEach((value, key) => {
-    mapped[key.toLowerCase()] = value;
+  Object.entries(headers).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      mapped[key.toLowerCase()] = value.join(", ");
+    } else if (value !== undefined) {
+      mapped[key.toLowerCase()] = String(value);
+    }
   });
 
   return Object.freeze(mapped);
@@ -126,17 +115,13 @@ function isGzip(headers: Readonly<Record<string, string>>): boolean {
   return typeof encoding === "string" && encoding.toLowerCase().includes("gzip");
 }
 
-async function decodeResponseBody(
-  response: FetchLikeResponse,
-  headers: Readonly<Record<string, string>>,
-): Promise<string> {
-  if (!isGzip(headers) || !response.arrayBuffer) {
-    return response.text();
-  }
-
+function decodeResponseBody(rawBody: Buffer, headers: Readonly<Record<string, string>>): string {
   try {
-    const buffer = await response.arrayBuffer();
-    return gunzipSync(Buffer.from(buffer)).toString("utf8");
+    if (isGzip(headers)) {
+      return gunzipSync(rawBody).toString("utf8");
+    }
+
+    return rawBody.toString("utf8");
   } catch {
     throw new HotelbedsTransportError(
       HotelbedsTransportErrorKind.MALFORMED_RESPONSE,
@@ -151,10 +136,10 @@ function resolveTlsConfig(config: HotelbedsIntegrationConfig): HotelbedsTranspor
   }
 
   const { clientCertificate, privateKey, trustedCa } = config.tls;
-  if (!clientCertificate || !privateKey || !trustedCa) {
+  if (!clientCertificate || !privateKey) {
     throw new HotelbedsTransportError(
       HotelbedsTransportErrorKind.TLS_CONFIGURATION,
-      "Hotelbeds TLS configuration is incomplete.",
+      "Hotelbeds TLS certificate and private key are required together.",
     );
   }
 
@@ -166,10 +151,10 @@ function resolveTlsConfig(config: HotelbedsIntegrationConfig): HotelbedsTranspor
 }
 
 export class FetchHotelbedsTransport implements HotelbedsTransport {
-  private readonly fetchClient: HotelbedsFetchLike;
+  private readonly requestClient: HotelbedsHttpsRequestLike;
 
-  public constructor(fetchClient?: HotelbedsFetchLike) {
-    this.fetchClient = resolveFetch(fetchClient);
+  public constructor(requestClient: HotelbedsHttpsRequestLike = httpsRequest) {
+    this.requestClient = requestClient;
   }
 
   public async execute(
@@ -177,36 +162,90 @@ export class FetchHotelbedsTransport implements HotelbedsTransport {
     request: HotelbedsTransportRequest,
   ): Promise<HotelbedsTransportResponse> {
     const timeoutMs = request.timeoutMs ?? config.timeoutMs;
-    const controller = new AbortController();
     let timedOut = false;
-    const timeout = setTimeout(() => {
-      timedOut = true;
-      controller.abort();
-    }, timeoutMs);
-
     const startedAt = Date.now();
 
     try {
-      const response = await this.fetchClient(buildUrl(config.baseUrl, request), {
-        method: request.method,
-        headers: { ...(request.headers ?? {}) },
-        body: request.body === undefined ? undefined : JSON.stringify(request.body),
-        signal: controller.signal,
-        tls: resolveTlsConfig(config),
-      });
+      const url = new URL(buildUrl(config.baseUrl, request));
+      const tls = resolveTlsConfig(config);
+      const response = await new Promise<{ statusCode: number; headers: IncomingHttpHeaders; body: Buffer }>(
+        (resolve, reject) => {
+          let settled = false;
+          const settleReject = (error: Error): void => {
+            if (!settled) {
+              settled = true;
+              reject(error);
+            }
+          };
+          const settleResolve = (value: { statusCode: number; headers: IncomingHttpHeaders; body: Buffer }): void => {
+            if (!settled) {
+              settled = true;
+              resolve(value);
+            }
+          };
+
+          const clientRequest = this.requestClient({
+            protocol: url.protocol,
+            hostname: url.hostname,
+            port: url.port || undefined,
+            path: `${url.pathname}${url.search}`,
+            method: request.method,
+            headers: { ...(request.headers ?? {}) },
+            ...(tls
+              ? {
+                  cert: tls.clientCertificate,
+                  key: tls.privateKey,
+                  ...(tls.trustedCa ? { ca: tls.trustedCa } : {}),
+                }
+              : {}),
+          }, (incomingResponse) => {
+            const chunks: Buffer[] = [];
+            incomingResponse.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+            incomingResponse.on("end", () => {
+              if (typeof incomingResponse.statusCode !== "number") {
+                settleReject(new HotelbedsTransportError(
+                  HotelbedsTransportErrorKind.MALFORMED_RESPONSE,
+                  "Hotelbeds response did not include an HTTP status.",
+                ));
+                return;
+              }
+              settleResolve({
+                statusCode: incomingResponse.statusCode,
+                headers: incomingResponse.headers,
+                body: Buffer.concat(chunks),
+              });
+            });
+            incomingResponse.on("error", settleReject);
+          });
+
+          clientRequest.setTimeout(timeoutMs, () => {
+            timedOut = true;
+            settleReject(new HotelbedsTransportError(
+              HotelbedsTransportErrorKind.TIMEOUT,
+              "Hotelbeds request timed out.",
+            ));
+            clientRequest.destroy();
+          });
+          clientRequest.on("error", settleReject);
+
+          if (request.body !== undefined) {
+            clientRequest.write(JSON.stringify(request.body));
+          }
+          clientRequest.end();
+        },
+      );
 
       const headers = mapHeaders(response.headers);
-      const rawBody = await decodeResponseBody(response, headers);
-      const body = parseResponseBody(rawBody);
+      const body = parseResponseBody(decodeResponseBody(response.body, headers));
 
       return {
-        status: response.status,
+        status: response.statusCode,
         headers,
         body,
         durationMs: Date.now() - startedAt,
       };
     } catch (error) {
-      if (timedOut) {
+      if (timedOut || error instanceof HotelbedsTransportError && error.kind === HotelbedsTransportErrorKind.TIMEOUT) {
         throw new HotelbedsTransportError(
           HotelbedsTransportErrorKind.TIMEOUT,
           "Hotelbeds request timed out.",
@@ -224,8 +263,6 @@ export class FetchHotelbedsTransport implements HotelbedsTransport {
       const message = error instanceof Error ? error.message : "Unknown transport error.";
 
       throw new HotelbedsTransportError(HotelbedsTransportErrorKind.NETWORK, message, providerCode);
-    } finally {
-      clearTimeout(timeout);
     }
   }
 }

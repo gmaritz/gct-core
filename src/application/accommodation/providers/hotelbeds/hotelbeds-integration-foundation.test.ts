@@ -15,6 +15,8 @@ import {
   HotelbedsTransportError,
   HotelbedsTransportErrorKind,
   HotelbedsTransport,
+  HotelbedsHttpsRequestLike,
+  HotelbedsHttpsResponse,
 } from "@application/accommodation";
 
 function createRequest(overrides?: Partial<HotelbedsRequest>): HotelbedsRequest {
@@ -40,15 +42,34 @@ function createConfig(overrides?: Partial<HotelbedsIntegrationConfig>): Hotelbed
   };
 }
 
-function createHeaders(values?: Record<string, string>): {
-  forEach(callback: (value: string, key: string) => void): void;
-} {
-  const store = values ?? { "content-type": "application/json" };
-
+function createHttpsResponse(
+  statusCode: number,
+  body: string,
+  headers = { "content-type": "application/json" },
+): HotelbedsHttpsResponse {
   return {
-    forEach(callback) {
-      Object.entries(store).forEach(([key, value]) => callback(value, key));
+    statusCode,
+    headers,
+    on(event, listener) {
+      if (event === "data") (listener as (chunk: Buffer) => void)(Buffer.from(body));
+      if (event === "end") (listener as () => void)();
+      return this;
     },
+  };
+}
+
+function createHttpsRequest(
+  responseFactory: (options: Record<string, unknown>) => HotelbedsHttpsResponse,
+): HotelbedsHttpsRequestLike {
+  return (options, callback) => {
+    const request = {
+      on: () => request,
+      setTimeout: () => request,
+      write: () => true,
+      end: () => callback(responseFactory(options as Record<string, unknown>)),
+      destroy: () => undefined,
+    };
+    return request;
   };
 }
 
@@ -110,6 +131,37 @@ describe("APP-008.1 Hotelbeds integration foundation", () => {
       ).toThrow(HotelbedsConfigurationError);
     });
 
+    it("accepts certificate and private key without a trusted CA", () => {
+      const config = loadHotelbedsIntegrationConfig({
+        HOTELBEDS_ENV: "TEST",
+        HOTELBEDS_API_KEY: "api-key",
+        HOTELBEDS_SECRET: "secret-key",
+        HOTELBEDS_TLS_CLIENT_CERTIFICATE: "cert-pem",
+        HOTELBEDS_TLS_PRIVATE_KEY: "key-pem",
+      });
+
+      expect(config.tls).toEqual({
+        clientCertificate: "cert-pem",
+        privateKey: "key-pem",
+        trustedCa: "",
+      });
+    });
+
+    it.each([
+      ["HOTELBEDS_TLS_CLIENT_CERTIFICATE", "cert-pem", ""],
+      ["HOTELBEDS_TLS_PRIVATE_KEY", "", "key-pem"],
+      ["HOTELBEDS_TLS_TRUSTED_CA", "", ""],
+    ])("fails safely for incomplete TLS configuration: %s", (variable, certificate, privateKey) => {
+      expect(() => loadHotelbedsIntegrationConfig({
+        HOTELBEDS_ENV: "TEST",
+        HOTELBEDS_API_KEY: "api-key",
+        HOTELBEDS_SECRET: "secret-key",
+        HOTELBEDS_TLS_CLIENT_CERTIFICATE: certificate,
+        HOTELBEDS_TLS_PRIVATE_KEY: privateKey,
+        HOTELBEDS_TLS_TRUSTED_CA: variable === "HOTELBEDS_TLS_TRUSTED_CA" ? "ca-pem" : undefined,
+      })).toThrow(HotelbedsConfigurationError);
+    });
+
     it("selects production environment by node environment", () => {
       const config = loadHotelbedsIntegrationConfig({
         NODE_ENV: "production",
@@ -168,11 +220,9 @@ describe("APP-008.1 Hotelbeds integration foundation", () => {
 
   describe("transport", () => {
     it("returns successful responses with parsed JSON payload", async () => {
-      const transport = new FetchHotelbedsTransport(async () => ({
-        status: 200,
-        headers: createHeaders(),
-        text: async () => JSON.stringify({ hotels: [] }),
-      }));
+      const transport = new FetchHotelbedsTransport(createHttpsRequest(() =>
+        createHttpsResponse(200, JSON.stringify({ hotels: [] })),
+      ));
 
       const response = await transport.execute(createConfig(), {
         method: "GET",
@@ -185,16 +235,12 @@ describe("APP-008.1 Hotelbeds integration foundation", () => {
     });
 
     it("returns 4xx and 5xx transport responses to be mapped by gateway", async () => {
-      const badRequestTransport = new FetchHotelbedsTransport(async () => ({
-        status: 400,
-        headers: createHeaders(),
-        text: async () => JSON.stringify({ error: { code: "INVALID_REQUEST" } }),
-      }));
-      const providerErrorTransport = new FetchHotelbedsTransport(async () => ({
-        status: 503,
-        headers: createHeaders(),
-        text: async () => JSON.stringify({ error: { code: "UNAVAILABLE" } }),
-      }));
+      const badRequestTransport = new FetchHotelbedsTransport(createHttpsRequest(() =>
+        createHttpsResponse(400, JSON.stringify({ error: { code: "INVALID_REQUEST" } })),
+      ));
+      const providerErrorTransport = new FetchHotelbedsTransport(createHttpsRequest(() =>
+        createHttpsResponse(503, JSON.stringify({ error: { code: "UNAVAILABLE" } })),
+      ));
 
       const badRequest = await badRequestTransport.execute(createConfig(), {
         method: "GET",
@@ -210,14 +256,21 @@ describe("APP-008.1 Hotelbeds integration foundation", () => {
     });
 
     it("maps timeout failures", async () => {
-      const transport = new FetchHotelbedsTransport(
-        (_input, init) =>
-          new Promise((_resolve, reject) => {
-            init.signal.addEventListener("abort", () => {
-              reject(new Error("aborted"));
-            });
-          }),
-      );
+      const transport = new FetchHotelbedsTransport((options, callback) => {
+        const request = {
+          on: () => request,
+          setTimeout: (_timeoutMs: number, handler: () => void) => {
+            handler();
+            return request;
+          },
+          write: () => true,
+          end: () => undefined,
+          destroy: () => undefined,
+        };
+        void options;
+        void callback;
+        return request;
+      });
 
       await expect(
         transport.execute(createConfig({ timeoutMs: 1 }), {
@@ -228,10 +281,21 @@ describe("APP-008.1 Hotelbeds integration foundation", () => {
     });
 
     it("maps network failures", async () => {
-      const transport = new FetchHotelbedsTransport(async () => {
-        const error = new Error("network down") as Error & { code?: string };
-        error.code = "ECONNRESET";
-        throw error;
+      const transport = new FetchHotelbedsTransport((options, _callback) => {
+        const request = {
+          on: (_event: "error", listener: (error: Error) => void) => {
+            const error = new Error("network down") as Error & { code?: string };
+            error.code = "ECONNRESET";
+            listener(error);
+            return request;
+          },
+          setTimeout: () => request,
+          write: () => true,
+          end: () => undefined,
+          destroy: () => undefined,
+        };
+        void options;
+        return request;
       });
 
       await expect(
@@ -246,11 +310,9 @@ describe("APP-008.1 Hotelbeds integration foundation", () => {
     });
 
     it("maps malformed response failures", async () => {
-      const transport = new FetchHotelbedsTransport(async () => ({
-        status: 200,
-        headers: createHeaders(),
-        text: async () => "{not-json}",
-      }));
+      const transport = new FetchHotelbedsTransport(createHttpsRequest(() =>
+        createHttpsResponse(200, "{not-json}"),
+      ));
 
       await expect(
         transport.execute(createConfig(), {

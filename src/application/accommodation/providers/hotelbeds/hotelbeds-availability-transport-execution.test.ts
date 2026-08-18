@@ -13,6 +13,8 @@ import {
   HotelbedsTransportError,
   HotelbedsTransportErrorKind,
   HotelbedsTransportRequest,
+  HotelbedsHttpsRequestLike,
+  HotelbedsHttpsResponse,
 } from "@application/accommodation";
 
 function createAvailabilityRequest(
@@ -56,15 +58,34 @@ function createConfig(overrides: Partial<HotelbedsIntegrationConfig> = {}): Hote
   };
 }
 
-function createHeaders(values?: Record<string, string>): {
-  forEach(callback: (value: string, key: string) => void): void;
-} {
-  const store = values ?? { "content-type": "application/json" };
-
+function createHttpsResponse(
+  statusCode: number,
+  body: Buffer,
+  headers: Record<string, string> = { "content-type": "application/json" },
+): HotelbedsHttpsResponse {
   return {
-    forEach(callback) {
-      Object.entries(store).forEach(([key, value]) => callback(value, key));
+    statusCode,
+    headers,
+    on(event, listener) {
+      if (event === "data") (listener as (chunk: Buffer) => void)(body);
+      if (event === "end") (listener as () => void)();
+      return this;
     },
+  };
+}
+
+function createHttpsRequest(
+  responseFactory: (options: Record<string, unknown>) => HotelbedsHttpsResponse,
+): HotelbedsHttpsRequestLike {
+  return (options, callback) => {
+    const request = {
+      on: () => request,
+      setTimeout: () => request,
+      write: () => true,
+      end: () => callback(responseFactory(options as Record<string, unknown>)),
+      destroy: () => undefined,
+    };
+    return request;
   };
 }
 
@@ -363,18 +384,13 @@ describe("APP-008.3-R4 Hotelbeds availability transport execution", () => {
       Buffer.from(JSON.stringify({ hotels: [{ code: 10, name: "Compressed" }] }), "utf8"),
     );
 
-    const transport = new FetchHotelbedsTransport(async () => ({
-      status: 200,
-      headers: createHeaders({ "content-type": "application/json", "content-encoding": "gzip" }),
-      text: async () => {
-        throw new Error("text() should not be used when gzip encoding is explicit");
-      },
-      arrayBuffer: async () =>
-        compressedBody.buffer.slice(
-          compressedBody.byteOffset,
-          compressedBody.byteOffset + compressedBody.byteLength,
-        ),
-    }));
+    const transport = new FetchHotelbedsTransport(createHttpsRequest(() =>
+      createHttpsResponse(
+        200,
+        compressedBody,
+        { "content-type": "application/json", "content-encoding": "gzip" },
+      ),
+    ));
 
     const response = await transport.execute(createConfig(), {
       method: "POST",
@@ -387,16 +403,12 @@ describe("APP-008.3-R4 Hotelbeds availability transport execution", () => {
     expect(response.body).toEqual({ hotels: [{ code: 10, name: "Compressed" }] });
   });
 
-  it("passes mTLS material to the underlying transport implementation", async () => {
-    let capturedTls: unknown;
-    const transport = new FetchHotelbedsTransport(async (_input, init) => {
-      capturedTls = init.tls;
-      return {
-        status: 200,
-        headers: createHeaders({ "content-type": "application/json" }),
-        text: async () => JSON.stringify({ hotels: [] }),
-      };
-    });
+  it("passes mTLS material to HTTPS request options", async () => {
+    let capturedOptions: Record<string, unknown> | undefined;
+    const transport = new FetchHotelbedsTransport(createHttpsRequest((options) => {
+      capturedOptions = options;
+      return createHttpsResponse(200, Buffer.from(JSON.stringify({ hotels: [] })));
+    }));
 
     await transport.execute(
       createConfig({
@@ -413,19 +425,16 @@ describe("APP-008.3-R4 Hotelbeds availability transport execution", () => {
       },
     );
 
-    expect(capturedTls).toEqual({
-      clientCertificate: "cert-data",
-      privateKey: "private-key-data",
-      trustedCa: "ca-data",
-    });
+    expect(capturedOptions?.cert).toBe("cert-data");
+    expect(capturedOptions?.key).toBe("private-key-data");
+    expect(capturedOptions?.ca).toBe("ca-data");
+    expect(capturedOptions?.rejectUnauthorized).not.toBe(false);
   });
 
   it("fails for incomplete mTLS transport configuration", async () => {
-    const transport = new FetchHotelbedsTransport(async () => ({
-      status: 200,
-      headers: createHeaders({ "content-type": "application/json" }),
-      text: async () => JSON.stringify({ hotels: [] }),
-    }));
+    const transport = new FetchHotelbedsTransport(createHttpsRequest(() =>
+      createHttpsResponse(200, Buffer.from(JSON.stringify({ hotels: [] }))),
+    ));
 
     await expect(
       transport.execute(

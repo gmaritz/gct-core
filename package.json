@@ -18,7 +18,8 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
-    "hotelbeds:content:initial": "ts-node src/scripts/hotelbeds/initial-content-sync.ts"
+    "hotelbeds:content:initial": "ts-node src/scripts/hotelbeds/initial-content-sync.ts",
+    "hotelbeds:availability:live-verify": "ts-node src/scripts/hotelbeds/availability-live-verification.ts"
   },
   "repository": {
     "type": "git",

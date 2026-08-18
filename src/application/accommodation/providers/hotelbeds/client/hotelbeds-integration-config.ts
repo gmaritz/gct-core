@@ -123,17 +123,13 @@ function parseTlsConfig(env: NodeJS.ProcessEnv): HotelbedsTlsConfig | undefined 
   const privateKey = env.HOTELBEDS_TLS_PRIVATE_KEY?.trim();
   const trustedCa = env.HOTELBEDS_TLS_TRUSTED_CA?.trim();
 
-  const definedValues = [clientCertificate, privateKey, trustedCa].filter(
-    (value) => typeof value === "string" && value.length > 0,
-  ).length;
-
-  if (definedValues === 0) {
+  if (!clientCertificate && !privateKey && !trustedCa) {
     return undefined;
   }
 
-  if (definedValues !== 3) {
+  if (!clientCertificate || !privateKey) {
     throw new HotelbedsConfigurationError(
-      "HOTELBEDS_TLS_CLIENT_CERTIFICATE, HOTELBEDS_TLS_PRIVATE_KEY, and HOTELBEDS_TLS_TRUSTED_CA must be provided together.",
+      "HOTELBEDS_TLS_CLIENT_CERTIFICATE and HOTELBEDS_TLS_PRIVATE_KEY must be provided together; HOTELBEDS_TLS_TRUSTED_CA is optional.",
     );
   }
 
@@ -142,6 +138,28 @@ function parseTlsConfig(env: NodeJS.ProcessEnv): HotelbedsTlsConfig | undefined 
     privateKey: privateKey ?? "",
     trustedCa: trustedCa ?? "",
   });
+}
+
+function validateTlsConfig(tls: HotelbedsTlsConfig | undefined): HotelbedsTlsConfig | undefined {
+  if (!tls) {
+    return undefined;
+  }
+
+  const clientCertificate = tls.clientCertificate.trim();
+  const privateKey = tls.privateKey.trim();
+  const trustedCa = tls.trustedCa.trim();
+
+  if (!clientCertificate && !privateKey && !trustedCa) {
+    return undefined;
+  }
+
+  if (!clientCertificate || !privateKey) {
+    throw new HotelbedsConfigurationError(
+      "Hotelbeds TLS client certificate and private key must be provided together; trusted CA is optional.",
+    );
+  }
+
+  return Object.freeze({ clientCertificate, privateKey, trustedCa });
 }
 
 export function createHotelbedsIntegrationConfig(input: HotelbedsIntegrationConfig): HotelbedsIntegrationConfig {
@@ -174,13 +192,7 @@ export function createHotelbedsIntegrationConfig(input: HotelbedsIntegrationConf
     secret: input.secret.trim(),
     baseUrl: validateUrl(input.baseUrl),
     timeoutMs: input.timeoutMs,
-    tls: input.tls
-      ? Object.freeze({
-          clientCertificate: input.tls.clientCertificate,
-          privateKey: input.tls.privateKey,
-          trustedCa: input.tls.trustedCa,
-        })
-      : undefined,
+    tls: validateTlsConfig(input.tls),
     selectedHotelCodes: Object.freeze([...(input.selectedHotelCodes ?? [])]),
     contentBatchSize: input.contentBatchSize ?? DEFAULT_CONTENT_BATCH_SIZE,
     contentMaxQps: input.contentMaxQps ?? DEFAULT_CONTENT_MAX_QPS,
