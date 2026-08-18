@@ -4,6 +4,7 @@ import { AccommodationSearchSource } from "../accommodation-search-source";
 import { AccommodationValidationErrorCode } from "./accommodation-validation-error-code";
 import { AccommodationValidationError } from "./accommodation-validation-error";
 import { AccommodationValidationResult } from "./accommodation-validation-result";
+import { isValidExplicitHotelCode } from "./hotel-code-validation";
 
 function isBlank(value: unknown): boolean {
   return typeof value !== "string" || value.trim().length === 0;
@@ -101,6 +102,18 @@ export class AccommodationQueryValidator {
           "Rooms must be at least 1.",
         ),
       );
+    }
+
+    for (const [index, hotelCode] of (criteria.hotelCodes ?? []).entries()) {
+      if (!isValidExplicitHotelCode(hotelCode)) {
+        errors.push(
+          createError(
+            AccommodationValidationErrorCode.INVALID_HOTEL_CODE,
+            `criteria.hotelCodes[${index}]`,
+            "Explicit hotel codes must be positive safe integers represented as digits only.",
+          ),
+        );
+      }
     }
 
     if (isBlank(context.requestId)) {

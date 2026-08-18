@@ -6,8 +6,9 @@ export declare enum AccommodationValidationErrorCode {
     INVALID_ADULT_COUNT = 4,
     INVALID_CHILD_COUNT = 5,
     INVALID_ROOM_COUNT = 6,
-    MISSING_REQUEST_ID = 7,
-    MISSING_SOURCE = 8,
-    MISSING_TIMESTAMP = 9
+    INVALID_HOTEL_CODE = 7,
+    MISSING_REQUEST_ID = 8,
+    MISSING_SOURCE = 9,
+    MISSING_TIMESTAMP = 10
 }
 //# sourceMappingURL=accommodation-validation-error-code.d.ts.map

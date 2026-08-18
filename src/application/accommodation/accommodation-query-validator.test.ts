@@ -145,4 +145,25 @@ describe("AccommodationQueryValidator", () => {
       AccommodationValidationErrorCode.MISSING_TIMESTAMP,
     ]);
   });
+
+  it.each([
+    ["123abc"],
+    ["abc123"],
+    ["12abc34"],
+    ["123.45"],
+    [""],
+    ["   "],
+    ["-1"],
+    ["1.5"],
+    ["9007199254740992"],
+  ])("returns invalid hotel code for malformed explicit code %p", (hotelCode) => {
+    const validator = new AccommodationQueryValidator();
+
+    const result = validator.validate(createQuery({ hotelCodes: [hotelCode] }));
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]?.code).toBe(AccommodationValidationErrorCode.INVALID_HOTEL_CODE);
+    expect(result.errors[0]?.field).toBe("criteria.hotelCodes[0]");
+  });
 });

@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AccommodationQueryValidator = void 0;
 const accommodation_validation_error_code_1 = require("./accommodation-validation-error-code");
+const hotel_code_validation_1 = require("./hotel-code-validation");
 function isBlank(value) {
     return typeof value !== "string" || value.trim().length === 0;
 }
@@ -40,6 +41,11 @@ class AccommodationQueryValidator {
         }
         if (!isValidCount(criteria.rooms, 1)) {
             errors.push(createError(accommodation_validation_error_code_1.AccommodationValidationErrorCode.INVALID_ROOM_COUNT, "criteria.rooms", "Rooms must be at least 1."));
+        }
+        for (const [index, hotelCode] of (criteria.hotelCodes ?? []).entries()) {
+            if (!(0, hotel_code_validation_1.isValidExplicitHotelCode)(hotelCode)) {
+                errors.push(createError(accommodation_validation_error_code_1.AccommodationValidationErrorCode.INVALID_HOTEL_CODE, `criteria.hotelCodes[${index}]`, "Explicit hotel codes must be positive safe integers represented as digits only."));
+            }
         }
         if (isBlank(context.requestId)) {
             errors.push(createError(accommodation_validation_error_code_1.AccommodationValidationErrorCode.MISSING_REQUEST_ID, "context.requestId", "Request ID is required."));

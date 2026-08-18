@@ -10,8 +10,9 @@ var AccommodationValidationErrorCode;
     AccommodationValidationErrorCode[AccommodationValidationErrorCode["INVALID_ADULT_COUNT"] = 4] = "INVALID_ADULT_COUNT";
     AccommodationValidationErrorCode[AccommodationValidationErrorCode["INVALID_CHILD_COUNT"] = 5] = "INVALID_CHILD_COUNT";
     AccommodationValidationErrorCode[AccommodationValidationErrorCode["INVALID_ROOM_COUNT"] = 6] = "INVALID_ROOM_COUNT";
-    AccommodationValidationErrorCode[AccommodationValidationErrorCode["MISSING_REQUEST_ID"] = 7] = "MISSING_REQUEST_ID";
-    AccommodationValidationErrorCode[AccommodationValidationErrorCode["MISSING_SOURCE"] = 8] = "MISSING_SOURCE";
-    AccommodationValidationErrorCode[AccommodationValidationErrorCode["MISSING_TIMESTAMP"] = 9] = "MISSING_TIMESTAMP";
+    AccommodationValidationErrorCode[AccommodationValidationErrorCode["INVALID_HOTEL_CODE"] = 7] = "INVALID_HOTEL_CODE";
+    AccommodationValidationErrorCode[AccommodationValidationErrorCode["MISSING_REQUEST_ID"] = 8] = "MISSING_REQUEST_ID";
+    AccommodationValidationErrorCode[AccommodationValidationErrorCode["MISSING_SOURCE"] = 9] = "MISSING_SOURCE";
+    AccommodationValidationErrorCode[AccommodationValidationErrorCode["MISSING_TIMESTAMP"] = 10] = "MISSING_TIMESTAMP";
 })(AccommodationValidationErrorCode || (exports.AccommodationValidationErrorCode = AccommodationValidationErrorCode = {}));
 //# sourceMappingURL=accommodation-validation-error-code.js.map

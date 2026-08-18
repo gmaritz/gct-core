@@ -6,10 +6,13 @@ export interface HotelCatalogueSelection {
     readonly hotelCodes: ReadonlyArray<string>;
     readonly selectionMode: HotelCatalogueSelectionMode;
 }
+type HotelSelectionCriteria = Pick<AccommodationSearchCriteria, "hotelCodes" | "destinationCode" | "zoneCode" | "starGrading">;
 export declare class HotelCatalogueService {
     private readonly repository;
     constructor(repository: HotelCatalogueRepository);
-    select(criteria: Pick<AccommodationSearchCriteria, "hotelCodes" | "destinationCode" | "zoneCode" | "starGrading">): Promise<HotelCatalogueSelection>;
-    find(criteria: Pick<AccommodationSearchCriteria, "hotelCodes" | "destinationCode" | "zoneCode" | "starGrading">): Promise<ReadonlyArray<HotelCatalogueEntry>>;
+    private resolveEntries;
+    select(criteria: HotelSelectionCriteria): Promise<HotelCatalogueSelection>;
+    find(criteria: HotelSelectionCriteria): Promise<ReadonlyArray<HotelCatalogueEntry>>;
 }
+export {};
 //# sourceMappingURL=hotel-catalogue-service.d.ts.map
