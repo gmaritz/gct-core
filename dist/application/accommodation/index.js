@@ -25,4 +25,5 @@ __exportStar(require("./results"), exports);
 __exportStar(require("./content"), exports);
 __exportStar(require("./inventory"), exports);
 __exportStar(require("./rates"), exports);
+__exportStar(require("./catalogue"), exports);
 //# sourceMappingURL=index.js.map

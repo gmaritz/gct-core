@@ -24,12 +24,16 @@ export interface HotelbedsSupplier {
 export interface HotelbedsUpselling {
     readonly rooms?: ReadonlyArray<HotelbedsRoom>;
 }
+export interface HotelbedsTextValue {
+    readonly content?: string;
+    readonly languageCode?: string;
+}
 export interface HotelbedsHotel {
     readonly checkIn?: string;
     readonly checkOut?: string;
-    readonly code?: number;
-    readonly name?: string;
-    readonly description?: string;
+    readonly code?: number | string;
+    readonly name?: string | number | HotelbedsTextValue;
+    readonly description?: string | number | HotelbedsTextValue | ReadonlyArray<HotelbedsTextValue>;
     readonly S2C?: string;
     readonly ranking?: number;
     readonly accommodationTypeCode?: string;

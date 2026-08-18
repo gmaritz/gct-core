@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.HotelbedsConfigurationError = exports.HotelbedsEnvironment = void 0;
+exports.DEFAULT_CONTENT_RETRY_BASE_DELAY_MS = exports.DEFAULT_CONTENT_MAX_RETRIES = exports.DEFAULT_CONTENT_MAX_QPS = exports.DEFAULT_CONTENT_BATCH_SIZE = exports.HotelbedsConfigurationError = exports.HotelbedsEnvironment = void 0;
 exports.createHotelbedsIntegrationConfig = createHotelbedsIntegrationConfig;
 exports.loadHotelbedsIntegrationConfig = loadHotelbedsIntegrationConfig;
 var HotelbedsEnvironment;
@@ -17,6 +17,10 @@ class HotelbedsConfigurationError extends Error {
 }
 exports.HotelbedsConfigurationError = HotelbedsConfigurationError;
 const DEFAULT_TIMEOUT_MS = 10000;
+exports.DEFAULT_CONTENT_BATCH_SIZE = 50;
+exports.DEFAULT_CONTENT_MAX_QPS = 1;
+exports.DEFAULT_CONTENT_MAX_RETRIES = 3;
+exports.DEFAULT_CONTENT_RETRY_BASE_DELAY_MS = 1000;
 const DEFAULT_BASE_URLS = {
     [HotelbedsEnvironment.TEST]: "https://api.test.hotelbeds.com",
     [HotelbedsEnvironment.PRODUCTION]: "https://api.hotelbeds.com",
@@ -44,6 +48,24 @@ function parseTimeout(rawTimeout) {
     }
     return parsed;
 }
+function parsePositiveInteger(rawValue, fallback, variableName) {
+    if (!rawValue || rawValue.trim().length === 0)
+        return fallback;
+    const parsed = Number.parseInt(rawValue, 10);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+        throw new HotelbedsConfigurationError(`${variableName} must be a positive integer.`);
+    }
+    return parsed;
+}
+function parseNonNegativeInteger(rawValue, fallback, variableName) {
+    if (!rawValue || rawValue.trim().length === 0)
+        return fallback;
+    const parsed = Number.parseInt(rawValue, 10);
+    if (!Number.isInteger(parsed) || parsed < 0) {
+        throw new HotelbedsConfigurationError(`${variableName} must be a non-negative integer.`);
+    }
+    return parsed;
+}
 function validateUrl(value) {
     try {
         const parsed = new URL(value);
@@ -55,6 +77,12 @@ function validateUrl(value) {
     catch {
         throw new HotelbedsConfigurationError("HOTELBEDS_BASE_URL must be a valid absolute URL.");
     }
+}
+function parseSelectedHotelCodes(rawCodes) {
+    if (!rawCodes || rawCodes.trim().length === 0) {
+        return [];
+    }
+    return Object.freeze([...new Set(rawCodes.split(",").map((code) => code.trim()).filter((code) => code.length > 0))]);
 }
 function createHotelbedsIntegrationConfig(input) {
     if (isBlank(input.apiKey)) {
@@ -72,6 +100,11 @@ function createHotelbedsIntegrationConfig(input) {
         secret: input.secret.trim(),
         baseUrl: validateUrl(input.baseUrl),
         timeoutMs: input.timeoutMs,
+        selectedHotelCodes: Object.freeze([...(input.selectedHotelCodes ?? [])]),
+        contentBatchSize: input.contentBatchSize ?? exports.DEFAULT_CONTENT_BATCH_SIZE,
+        contentMaxQps: input.contentMaxQps ?? exports.DEFAULT_CONTENT_MAX_QPS,
+        contentMaxRetries: input.contentMaxRetries ?? exports.DEFAULT_CONTENT_MAX_RETRIES,
+        contentRetryBaseDelayMs: input.contentRetryBaseDelayMs ?? exports.DEFAULT_CONTENT_RETRY_BASE_DELAY_MS,
     });
 }
 function loadHotelbedsIntegrationConfig(env = process.env) {
@@ -83,6 +116,11 @@ function loadHotelbedsIntegrationConfig(env = process.env) {
         secret: env.HOTELBEDS_SECRET ?? "",
         baseUrl,
         timeoutMs: parseTimeout(env.HOTELBEDS_TIMEOUT_MS),
+        selectedHotelCodes: parseSelectedHotelCodes(env.HOTELBEDS_SELECTED_HOTEL_CODES),
+        contentBatchSize: parsePositiveInteger(env.HOTELBEDS_CONTENT_BATCH_SIZE, exports.DEFAULT_CONTENT_BATCH_SIZE, "HOTELBEDS_CONTENT_BATCH_SIZE"),
+        contentMaxQps: parsePositiveInteger(env.HOTELBEDS_CONTENT_MAX_QPS, exports.DEFAULT_CONTENT_MAX_QPS, "HOTELBEDS_CONTENT_MAX_QPS"),
+        contentMaxRetries: parseNonNegativeInteger(env.HOTELBEDS_CONTENT_MAX_RETRIES, exports.DEFAULT_CONTENT_MAX_RETRIES, "HOTELBEDS_CONTENT_MAX_RETRIES"),
+        contentRetryBaseDelayMs: parsePositiveInteger(env.HOTELBEDS_CONTENT_RETRY_BASE_DELAY_MS, exports.DEFAULT_CONTENT_RETRY_BASE_DELAY_MS, "HOTELBEDS_CONTENT_RETRY_BASE_DELAY_MS"),
     });
 }
 //# sourceMappingURL=hotelbeds-integration-config.js.map

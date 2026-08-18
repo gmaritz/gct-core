@@ -11,4 +11,8 @@ export interface AccommodationSearchCriteria {
   readonly minimumRating?: number;
   readonly amenities?: ReadonlyArray<AccommodationAmenity>;
   readonly collections?: ReadonlyArray<string>;
+  readonly hotelCodes?: ReadonlyArray<string>;
+  readonly destinationCode?: string;
+  readonly zoneCode?: string;
+  readonly starGrading?: number;
 }

@@ -20,4 +20,5 @@ __exportStar(require("./accommodation-content-locale"), exports);
 __exportStar(require("./accommodation-content-query"), exports);
 __exportStar(require("./accommodation-content-request"), exports);
 __exportStar(require("./accommodation-content-source"), exports);
+__exportStar(require("./hotel-content-record"), exports);
 //# sourceMappingURL=index.js.map

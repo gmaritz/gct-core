@@ -9,4 +9,5 @@ export * from "./room.mapper";
 export * from "./rate.mapper";
 export * from "./destination.mapper";
 export * from "./provider-reference.mapper";
+export * from "./hotel-content.mapper";
 //# sourceMappingURL=index.d.ts.map

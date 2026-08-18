@@ -1013,6 +1013,54 @@ model Accommodation {
   @@map("accommodation")
 }
 
+model HotelContent {
+  id                String   @id @default(uuid())
+  provider          String
+  providerHotelCode String
+  name              String
+  payload           Json
+  lastUpdatedAt     DateTime
+  isActive          Boolean  @default(true)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([provider, providerHotelCode])
+  @@index([provider])
+  @@map("hotel_content")
+}
+
+model HotelCatalogueEntry {
+  id              String   @id @default(uuid())
+  hotelCode       String   @unique
+  starGrading     Int
+  destinationCode String
+  zoneCode        String
+  zoneName        String
+  active          Boolean  @default(true)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([destinationCode])
+  @@index([zoneCode])
+  @@index([starGrading])
+  @@index([destinationCode, zoneCode])
+  @@index([destinationCode, zoneCode, starGrading])
+  @@map("hotel_catalogue_entry")
+}
+
+model HotelContentSyncState {
+  id        String   @id @default(uuid())
+  syncKey   String   @unique
+  payload   Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("hotel_content_sync_state")
+}
+
 model Package {
   id               String           @id @default(uuid())
   productId        String           @unique

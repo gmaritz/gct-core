@@ -17,4 +17,5 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./models"), exports);
 __exportStar(require("./service/accommodation-content-service"), exports);
 __exportStar(require("./validation"), exports);
+__exportStar(require("./synchronization"), exports);
 //# sourceMappingURL=index.js.map

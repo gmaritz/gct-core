@@ -25,4 +25,5 @@ __exportStar(require("./room.mapper"), exports);
 __exportStar(require("./rate.mapper"), exports);
 __exportStar(require("./destination.mapper"), exports);
 __exportStar(require("./provider-reference.mapper"), exports);
+__exportStar(require("./hotel-content.mapper"), exports);
 //# sourceMappingURL=index.js.map
