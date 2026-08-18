@@ -79,10 +79,11 @@ function createRequest(operation, path) {
     };
 }
 class HotelbedsProvider {
-    constructor(client = new client_1.DefaultHotelbedsClient(), mapper = new mapper_1.HotelMapper(), availabilityExecutor = new client_1.DefaultHotelbedsAvailabilityExecutor()) {
+    constructor(client = new client_1.DefaultHotelbedsClient(), mapper = new mapper_1.HotelMapper(), availabilityExecutor = new client_1.DefaultHotelbedsAvailabilityExecutor(), availabilityMapper = new mapper_1.HotelbedsAvailabilityResponseMapper()) {
         this.client = client;
         this.mapper = mapper;
         this.availabilityExecutor = availabilityExecutor;
+        this.availabilityMapper = availabilityMapper;
         this.providerId = "hotelbeds";
         this.capabilities = createCapabilities();
     }
@@ -138,6 +139,9 @@ class HotelbedsProvider {
     }
     async executeAvailabilityRequests(requests) {
         return this.availabilityExecutor.execute(requests);
+    }
+    mapAvailabilityResponse(rawResponses) {
+        return this.availabilityMapper.mapAvailabilityResponse(rawResponses);
     }
 }
 exports.HotelbedsProvider = HotelbedsProvider;

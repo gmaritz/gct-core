@@ -5,6 +5,7 @@ import {
 } from "../../../capabilities";
 import { Accommodation } from "../../../models";
 import {
+  AccommodationAvailabilityResult,
   AccommodationContentResult,
   AccommodationDetailsResult,
   AccommodationImageResult,
@@ -20,7 +21,7 @@ import {
 import { AccommodationSearchCriteria } from "../../../discovery";
 
 import { AccommodationProvider } from "../../accommodation-provider";
-import { HotelMapper } from "../mapper";
+import { HotelMapper, HotelbedsAvailabilityResponseMapper } from "../mapper";
 import {
   DefaultHotelbedsAvailabilityExecutor,
   DefaultHotelbedsClient,
@@ -78,6 +79,10 @@ function mapRate(
 
 export interface HotelbedsAccommodationMapper {
   mapHotel(hotel: HotelbedsHotel): Accommodation;
+}
+
+export interface HotelbedsAvailabilityMapper {
+  mapAvailabilityResponse(rawResponses: ReadonlyArray<HotelbedsAvailabilityExecutionResult["responses"][number]>): AccommodationAvailabilityResult;
 }
 
 function createMetadata(): AccommodationResultMetadata {
@@ -157,6 +162,8 @@ export class HotelbedsProvider implements AccommodationProvider {
     private readonly mapper: HotelbedsAccommodationMapper = new HotelMapper(),
     private readonly availabilityExecutor: HotelbedsAvailabilityExecutor =
       new DefaultHotelbedsAvailabilityExecutor(),
+    private readonly availabilityMapper: HotelbedsAvailabilityMapper =
+      new HotelbedsAvailabilityResponseMapper(),
   ) {}
 
   public async search(criteria: AccommodationSearchCriteria): Promise<AccommodationSearchResult> {
@@ -229,5 +236,11 @@ export class HotelbedsProvider implements AccommodationProvider {
     requests: ReadonlyArray<HotelbedsAvailabilityRequest>,
   ): Promise<HotelbedsAvailabilityExecutionResult> {
     return this.availabilityExecutor.execute(requests);
+  }
+
+  public mapAvailabilityResponse(
+    rawResponses: ReadonlyArray<HotelbedsAvailabilityExecutionResult["responses"][number]>,
+  ): AccommodationAvailabilityResult {
+    return this.availabilityMapper.mapAvailabilityResponse(rawResponses);
   }
 }
