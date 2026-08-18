@@ -65,6 +65,7 @@ describe("Hotelbeds provider implementation", () => {
     expect(provider.capabilities.capabilities.map((capability) => capability.type)).toEqual([
       AccommodationProviderCapabilityType.SEARCH,
       AccommodationProviderCapabilityType.DETAILS,
+      AccommodationProviderCapabilityType.AVAILABILITY,
       AccommodationProviderCapabilityType.CONTENT,
       AccommodationProviderCapabilityType.IMAGES,
       AccommodationProviderCapabilityType.RATES,

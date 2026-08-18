@@ -127,6 +127,11 @@ function createCapabilities(): ProviderCapabilitySet {
         "Retrieves Hotelbeds accommodation details via the provider client.",
       ),
       createCapability(
+        AccommodationProviderCapabilityType.AVAILABILITY,
+        "Hotel Availability",
+        "Executes Hotelbeds real-time accommodation availability requests.",
+      ),
+      createCapability(
         AccommodationProviderCapabilityType.CONTENT,
         "Hotel Content",
         "Retrieves Hotelbeds content payloads via the provider client.",

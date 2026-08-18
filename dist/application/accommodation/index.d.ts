@@ -10,4 +10,5 @@ export * from "./content";
 export * from "./inventory";
 export * from "./rates";
 export * from "./catalogue";
+export * from "./availability";
 //# sourceMappingURL=index.d.ts.map

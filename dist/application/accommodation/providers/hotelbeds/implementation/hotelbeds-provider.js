@@ -65,6 +65,7 @@ function createCapabilities() {
         capabilities: [
             createCapability(capabilities_1.AccommodationProviderCapabilityType.SEARCH, "Hotel Search", "Searches Hotelbeds accommodation content via the provider client."),
             createCapability(capabilities_1.AccommodationProviderCapabilityType.DETAILS, "Hotel Details", "Retrieves Hotelbeds accommodation details via the provider client."),
+            createCapability(capabilities_1.AccommodationProviderCapabilityType.AVAILABILITY, "Hotel Availability", "Executes Hotelbeds real-time accommodation availability requests."),
             createCapability(capabilities_1.AccommodationProviderCapabilityType.CONTENT, "Hotel Content", "Retrieves Hotelbeds content payloads via the provider client."),
             createCapability(capabilities_1.AccommodationProviderCapabilityType.IMAGES, "Hotel Images", "Retrieves Hotelbeds image payloads via the provider client."),
             createCapability(capabilities_1.AccommodationProviderCapabilityType.RATES, "Hotel Rates", "Retrieves Hotelbeds rate payloads via the provider client."),
