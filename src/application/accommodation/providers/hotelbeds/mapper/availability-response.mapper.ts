@@ -131,7 +131,7 @@ function describeFailure(response: HotelbedsAvailabilityRawResponse): string {
 export class HotelbedsAvailabilityResponseMapper {
   public mapAvailabilityResponse(
     rawResponses: ReadonlyArray<HotelbedsAvailabilityRawResponse>,
-  ): AccommodationAvailabilityResult {
+  ): HotelbedsAvailabilityMappingResult {
     if (!rawResponses.length) {
       throw new Error("No Hotelbeds availability raw responses were supplied.");
     }
@@ -148,8 +148,13 @@ export class HotelbedsAvailabilityResponseMapper {
 
     let firstAccommodation: Accommodation | undefined;
     let anyQualifiedAvailability = false;
+    let noAvailabilityResponse = false;
 
     for (const response of successfulResponses) {
+      if (isNoAvailabilityResponse(response.body)) {
+        noAvailabilityResponse = true;
+        continue;
+      }
       const hotels = getHotelPayloadEntries(response.body);
 
       for (const hotel of hotels) {
@@ -163,14 +168,39 @@ export class HotelbedsAvailabilityResponseMapper {
       }
     }
 
+    if (!firstAccommodation && noAvailabilityResponse) {
+      return { kind: "NO_AVAILABILITY" };
+    }
+
     if (!firstAccommodation) {
       throw new Error("Malformed Hotelbeds availability response: no supplier hotel entries were found.");
     }
 
     return {
-      accommodation: firstAccommodation,
-      available: anyQualifiedAvailability,
-      metadata: createMetadata(),
+      kind: "ACCOMMODATION",
+      result: {
+        kind: "ACCOMMODATION",
+        accommodation: firstAccommodation,
+        available: anyQualifiedAvailability,
+        metadata: createMetadata(),
+      },
     };
   }
+}
+
+export type HotelbedsAvailabilityMappingResult =
+  | {
+      readonly kind: "ACCOMMODATION";
+      readonly result: AccommodationAvailabilityResult;
+    }
+  | {
+      readonly kind: "NO_AVAILABILITY";
+    };
+
+function isNoAvailabilityResponse(value: unknown): boolean {
+  if (!isObject(value) || !isObject(value.hotels)) {
+    return false;
+  }
+
+  return value.hotels.total === 0;
 }

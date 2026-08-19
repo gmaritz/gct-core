@@ -50,7 +50,16 @@ function cloneMetadata(metadata: AccommodationResultMetadata): AccommodationResu
 }
 
 function freezeAvailabilityResult(result: AccommodationAvailabilityResult): AccommodationAvailabilityResult {
+  if (result.kind === "NO_AVAILABILITY") {
+    return Object.freeze({
+      kind: "NO_AVAILABILITY",
+      available: false,
+      metadata: cloneMetadata(result.metadata),
+    });
+  }
+
   return Object.freeze({
+    kind: "ACCOMMODATION",
     accommodation: cloneAccommodation(result.accommodation),
     available: result.available,
     metadata: cloneMetadata(result.metadata),

@@ -5,7 +5,6 @@ import {
 } from "../../../capabilities";
 import { Accommodation } from "../../../models";
 import {
-  AccommodationAvailabilityResult,
   AccommodationContentResult,
   AccommodationDetailsResult,
   AccommodationImageResult,
@@ -21,7 +20,7 @@ import {
 import { AccommodationSearchCriteria } from "../../../discovery";
 
 import { AccommodationProvider } from "../../accommodation-provider";
-import { HotelMapper, HotelbedsAvailabilityResponseMapper } from "../mapper";
+import { HotelMapper, HotelbedsAvailabilityMappingResult, HotelbedsAvailabilityResponseMapper } from "../mapper";
 import {
   DefaultHotelbedsAvailabilityExecutor,
   DefaultHotelbedsClient,
@@ -82,7 +81,7 @@ export interface HotelbedsAccommodationMapper {
 }
 
 export interface HotelbedsAvailabilityMapper {
-  mapAvailabilityResponse(rawResponses: ReadonlyArray<HotelbedsAvailabilityExecutionResult["responses"][number]>): AccommodationAvailabilityResult;
+  mapAvailabilityResponse(rawResponses: ReadonlyArray<HotelbedsAvailabilityExecutionResult["responses"][number]>): HotelbedsAvailabilityMappingResult;
 }
 
 function createMetadata(): AccommodationResultMetadata {
@@ -245,7 +244,7 @@ export class HotelbedsProvider implements AccommodationProvider {
 
   public mapAvailabilityResponse(
     rawResponses: ReadonlyArray<HotelbedsAvailabilityExecutionResult["responses"][number]>,
-  ): AccommodationAvailabilityResult {
+  ): HotelbedsAvailabilityMappingResult {
     return this.availabilityMapper.mapAvailabilityResponse(rawResponses);
   }
 }

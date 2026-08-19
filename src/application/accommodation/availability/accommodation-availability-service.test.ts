@@ -36,6 +36,7 @@ function createQuery(overrides: Partial<AccommodationSearchCriteria> = {}): Acco
 
 function createAvailabilityResult(provider: string): AccommodationAvailabilityResult {
   return {
+    kind: "ACCOMMODATION",
     accommodation: {
       identity: {
         id: "101",
@@ -140,7 +141,7 @@ describe("Accommodation availability orchestration service", () => {
       },
       mapAvailabilityResponse(responses: unknown[]) {
         expect(responses).toEqual(rawResponses);
-        return createAvailabilityResult("hotelbeds");
+        return { kind: "ACCOMMODATION", result: createAvailabilityResult("hotelbeds") };
       },
     };
 
@@ -162,6 +163,7 @@ describe("Accommodation availability orchestration service", () => {
       starGrading: undefined,
     });
     expect(requestBuilder.build).toHaveBeenCalledWith(createCriteria(), [{ hotelCode: "101" }, { hotelCode: "102" }]);
+    expect(result.kind).toBe("ACCOMMODATION");
     expect(result.available).toBe(true);
     expect(result.metadata.provider).toBe("hotelbeds");
   });
@@ -175,8 +177,9 @@ describe("Accommodation availability orchestration service", () => {
 
     const result = await service.execute(createQuery());
 
+    expect(result.kind).toBe("ACCOMMODATION");
     expect(result.available).toBe(false);
-    expect(result.accommodation.identity.id).toBe("unavailable");
+    expect(result.accommodation!.identity.id).toBe("unavailable");
   });
 
   it("returns the canonical unavailable result when no supplier requests are built", async () => {
@@ -203,8 +206,38 @@ describe("Accommodation availability orchestration service", () => {
 
     const result = await service.execute(createQuery());
 
+    expect(result.kind).toBe("ACCOMMODATION");
     expect(result.available).toBe(false);
-    expect(result.accommodation.identity.id).toBe("unavailable");
+    expect(result.accommodation!.identity.id).toBe("unavailable");
+  });
+
+  it("converts a supplier NO_AVAILABILITY outcome without fabricating accommodation", async () => {
+    const registry: ProviderRegistry = new InMemoryProviderRegistry();
+    registry.register({
+      providerId: "hotelbeds",
+      capabilities: { capabilities: [] },
+      async search() {
+        return { accommodations: [], metadata: { generatedAt: new Date(), version: "1.0.0" } };
+      },
+      async executeAvailabilityRequests() {
+        return { provider: "hotelbeds", operation: "availability", completedAt: new Date(), responses: [] };
+      },
+      mapAvailabilityResponse() {
+        return { kind: "NO_AVAILABILITY" };
+      },
+    } as never);
+
+    const service = new DefaultAccommodationAvailabilityService(
+      registry,
+      { select: jest.fn().mockResolvedValue({ hotelCodes: ["101"], selectionMode: "EXPLICIT" }) } as never,
+      { build: jest.fn().mockReturnValue([{ operation: "availability", method: "POST", path: "/hotel-api/1.0/hotels", body: {} }]) } as never,
+    );
+
+    const result = await service.execute(createQuery());
+
+    expect(result.kind).toBe("NO_AVAILABILITY");
+    expect(result.available).toBe(false);
+    expect(result.accommodation).toBeUndefined();
   });
 
   it("propagates candidate resolution failures without invoking supplier execution", async () => {

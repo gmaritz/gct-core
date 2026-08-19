@@ -13,7 +13,9 @@ interface AvailabilityProvider {
     readonly completedAt: Date;
     readonly responses: ReadonlyArray<unknown>;
   }>;
-  mapAvailabilityResponse(rawResponses: ReadonlyArray<unknown>): AccommodationAvailabilityResult;
+  mapAvailabilityResponse(rawResponses: ReadonlyArray<unknown>):
+    | { readonly kind: "ACCOMMODATION"; readonly result: AccommodationAvailabilityResult }
+    | { readonly kind: "NO_AVAILABILITY" };
 }
 
 function hasAvailabilityExecution(provider: unknown): provider is AvailabilityProvider {
@@ -25,6 +27,7 @@ function hasAvailabilityExecution(provider: unknown): provider is AvailabilityPr
 
 function createUnavailableResult(provider: string): AccommodationAvailabilityResult {
   return Object.freeze({
+    kind: "ACCOMMODATION",
     accommodation: Object.freeze({
       identity: Object.freeze({ id: "unavailable", name: "Unavailable" }),
       category: "Guest House",
@@ -110,6 +113,19 @@ export class DefaultAccommodationAvailabilityService implements AccommodationAva
     }
 
     const executionResult = await provider.executeAvailabilityRequests(requests);
-    return provider.mapAvailabilityResponse(executionResult.responses);
+    const mappingResult = provider.mapAvailabilityResponse(executionResult.responses);
+    if (mappingResult.kind === "NO_AVAILABILITY") {
+      return Object.freeze({
+        kind: "NO_AVAILABILITY",
+        available: false,
+        metadata: Object.freeze({
+          provider: "hotelbeds",
+          generatedAt: new Date(),
+          version: "1.0.0",
+        }),
+      });
+    }
+
+    return mappingResult.result;
   }
 }

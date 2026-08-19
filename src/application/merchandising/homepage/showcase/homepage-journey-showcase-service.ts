@@ -162,6 +162,7 @@ function createContentResult(destination: string): AccommodationContentResult {
 
 function createAvailabilityResult(destination: string): AccommodationAvailabilityResult {
   return {
+    kind: "ACCOMMODATION",
     accommodation: createAccommodation(destination),
     available: true,
     metadata: Object.freeze({

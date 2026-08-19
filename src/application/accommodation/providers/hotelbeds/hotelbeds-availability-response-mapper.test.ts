@@ -67,11 +67,23 @@ describe("Hotelbeds availability response mapper", () => {
       }),
     ]);
 
-    expect(result.available).toBe(true);
-    expect(result.accommodation.identity.id).toBe("26996");
+    expect(result.kind).toBe("ACCOMMODATION");
+    if (result.kind !== "ACCOMMODATION") throw new Error("Expected accommodation result.");
+    expect(result.result.available).toBe(true);
+    expect(result.result.accommodation!.identity.id).toBe("26996");
   });
 
-  it("rejects a nested response with an empty hotel collection", () => {
+  it("maps the verified zero-result envelope without fabricating an accommodation", () => {
+    const mapper = new HotelbedsAvailabilityResponseMapper();
+
+    const result = mapper.mapAvailabilityResponse([
+      createRawResponse({ body: { hotels: { total: 0 } } }),
+    ]);
+
+    expect(result).toEqual({ kind: "NO_AVAILABILITY" });
+  });
+
+  it("rejects a nested response with an empty hotel collection without total zero", () => {
     const mapper = new HotelbedsAvailabilityResponseMapper();
 
     expect(() => mapper.mapAvailabilityResponse([
@@ -100,11 +112,13 @@ describe("Hotelbeds availability response mapper", () => {
       }),
     ]);
 
-    expect(result.accommodation.identity.id).toBe("123");
-    expect(result.accommodation.providerReference.providerAccommodationId).toBe("123");
-    expect(result.available).toBe(true);
-    expect(result.metadata.provider).toBe("hotelbeds");
-    expect(Object.keys(result)).toEqual(["accommodation", "available", "metadata"]);
+    expect(result.kind).toBe("ACCOMMODATION");
+    if (result.kind !== "ACCOMMODATION") throw new Error("Expected accommodation result.");
+    expect(result.result.accommodation!.identity.id).toBe("123");
+    expect(result.result.accommodation!.providerReference.providerAccommodationId).toBe("123");
+    expect(result.result.available).toBe(true);
+    expect(result.result.metadata.provider).toBe("hotelbeds");
+    expect(Object.keys(result.result)).toEqual(["kind", "accommodation", "available", "metadata"]);
   });
 
   it("maps a valid successful response with no qualifying availability to unavailable", () => {
@@ -128,8 +142,10 @@ describe("Hotelbeds availability response mapper", () => {
       }),
     ]);
 
-    expect(result.available).toBe(false);
-    expect(result.accommodation.identity.id).toBe("456");
+    expect(result.kind).toBe("ACCOMMODATION");
+    if (result.kind !== "ACCOMMODATION") throw new Error("Expected accommodation result.");
+    expect(result.result.available).toBe(false);
+    expect(result.result.accommodation!.identity.id).toBe("456");
   });
 
   it("aggregates multi-batch responses and resolves to available when any batch qualifies", () => {
@@ -161,7 +177,9 @@ describe("Hotelbeds availability response mapper", () => {
       }),
     ]);
 
-    expect(result.available).toBe(true);
+    expect(result.kind).toBe("ACCOMMODATION");
+    if (result.kind !== "ACCOMMODATION") throw new Error("Expected accommodation result.");
+    expect(result.result.available).toBe(true);
   });
 
   it("preserves supplier, HTTP, and transport failures as failures instead of false availability", () => {

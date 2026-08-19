@@ -33,6 +33,7 @@ function createEnvironment(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv
 
 function createResult(available: boolean): AccommodationAvailabilityResult {
   return {
+    kind: "ACCOMMODATION",
     accommodation: {
       identity: { id: "1000", name: "Test hotel" },
       category: "Guest House",
@@ -197,7 +198,7 @@ describe("Hotelbeds live availability verification harness", () => {
         responses: [],
       } as never);
     const map = jest.spyOn(HotelbedsProvider.prototype, "mapAvailabilityResponse")
-      .mockReturnValue(createResult(false));
+      .mockReturnValue({ kind: "ACCOMMODATION", result: createResult(false) });
 
     await service.execute(createAvailabilityQuery(parseLiveVerificationConfiguration(createEnvironment())));
 
