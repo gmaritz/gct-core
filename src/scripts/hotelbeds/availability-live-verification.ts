@@ -1,3 +1,7 @@
+import { accessSync, constants as fsConstants, readFileSync } from "fs";
+import { isAbsolute, join as joinPath, resolve as resolvePath } from "path";
+import { config as loadDotEnv } from "dotenv";
+
 import {
   AccommodationAvailabilityResult,
   AccommodationAvailabilityService,
@@ -6,8 +10,11 @@ import {
   AccommodationSearchQuery,
   AccommodationSearchSource,
   DefaultAccommodationAvailabilityService,
+  DefaultHotelbedsAuthentication,
+  DefaultHotelbedsAvailabilityExecutor,
   HotelbedsAvailabilityRequestBuilder,
   HotelbedsProvider,
+  HotelbedsTransport,
   HotelCatalogueEntry,
   HotelCatalogueFilter,
   HotelCatalogueRepository,
@@ -19,6 +26,9 @@ import {
   loadHotelbedsIntegrationConfig,
 } from "../../application/accommodation";
 import { HotelbedsAvailabilityRequest } from "../../application/accommodation/providers/hotelbeds/client";
+
+const PROJECT_ROOT = resolvePath(__dirname, "../../..");
+const DOTENV_PATH = joinPath(PROJECT_ROOT, ".env");
 
 export type LiveVerificationStatus = "DISABLED" | "COMPLETED";
 
@@ -60,6 +70,82 @@ export interface LiveVerificationDependencies {
     observation: LiveVerificationObservation,
   ) => AccommodationAvailabilityService;
   readonly validateSupplierConfiguration?: (environment: NodeJS.ProcessEnv) => void;
+}
+
+export function loadR8DotEnv(environment: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  const existingValues = new Map<string, string | undefined>(
+    Object.keys(environment).map((name) => [name, environment[name]]),
+  );
+  const result = loadDotEnv({
+    path: DOTENV_PATH,
+    processEnv: environment,
+    override: false,
+    quiet: true,
+  });
+
+  if (result.error && (result.error as NodeJS.ErrnoException).code !== "ENOENT") {
+    throw new Error("R8 environment configuration could not be loaded.");
+  }
+
+  existingValues.forEach((value, name) => {
+    if (value !== undefined) {
+      environment[name] = value;
+    }
+  });
+
+  return environment;
+}
+
+export function resolveR8Path(value: string): string {
+  return isAbsolute(value) ? value : resolvePath(PROJECT_ROOT, value);
+}
+
+function readR8TlsFile(environment: NodeJS.ProcessEnv, variableName: string): string {
+  const configuredPath = environment[variableName]?.trim();
+  if (!configuredPath) {
+    throw new Error(`Missing R8 TLS file configuration: ${variableName}.`);
+  }
+
+  try {
+    const resolvedPath = resolveR8Path(configuredPath);
+    accessSync(resolvedPath, fsConstants.R_OK);
+    return readFileSync(resolvedPath, "utf8");
+  } catch {
+    throw new Error(`R8 TLS file configuration is unreadable: ${variableName}.`);
+  }
+}
+
+export function createR8EffectiveEnvironment(environment: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  if (!environment.HOTELBEDS_API_KEY?.trim()) {
+    throw new Error("Missing Hotelbeds API key configuration.");
+  }
+  if (!environment.HOTELBEDS_SECRET?.trim()) {
+    throw new Error("Missing Hotelbeds secret configuration.");
+  }
+  if (!environment.HOTELBEDS_BASE_URL?.trim()) {
+    throw new Error("Missing Hotelbeds base URL configuration.");
+  }
+
+  const effectiveEnvironment: NodeJS.ProcessEnv = { ...environment };
+  effectiveEnvironment.HOTELBEDS_TLS_CLIENT_CERTIFICATE = readR8TlsFile(
+    environment,
+    "HOTELBEDS_TLS_CLIENT_CERTIFICATE",
+  );
+  effectiveEnvironment.HOTELBEDS_TLS_PRIVATE_KEY = readR8TlsFile(
+    environment,
+    "HOTELBEDS_TLS_PRIVATE_KEY",
+  );
+
+  if (environment.HOTELBEDS_TLS_TRUSTED_CA?.trim()) {
+    effectiveEnvironment.HOTELBEDS_TLS_TRUSTED_CA = readR8TlsFile(
+      environment,
+      "HOTELBEDS_TLS_TRUSTED_CA",
+    );
+  } else {
+    delete effectiveEnvironment.HOTELBEDS_TLS_TRUSTED_CA;
+  }
+
+  return effectiveEnvironment;
 }
 
 function readRequired(environment: NodeJS.ProcessEnv, name: string): string {
@@ -251,6 +337,8 @@ export function createAvailabilityQuery(configuration: LiveVerificationConfigura
 export function createLiveAvailabilityService(
   hotelCodes: ReadonlyArray<string>,
   observation: LiveVerificationObservation = { resolvedCandidateCount: 0, supplierRequestCount: 0 },
+  effectiveEnvironment: NodeJS.ProcessEnv = process.env,
+  transport?: HotelbedsTransport,
 ): AccommodationAvailabilityService {
   const catalogueRepository = new InMemoryHotelCatalogueRepository();
   hotelCodes.forEach((hotelCode) => {
@@ -278,7 +366,13 @@ export function createLiveAvailabilityService(
 
   const catalogueService = new HotelCatalogueService(observedRepository);
   const providerRegistry = new InMemoryProviderRegistry();
-  providerRegistry.register(new HotelbedsProvider());
+  const loadEffectiveConfiguration = () => loadHotelbedsIntegrationConfig(effectiveEnvironment);
+  const availabilityExecutor = new DefaultHotelbedsAvailabilityExecutor(
+    loadEffectiveConfiguration,
+    new DefaultHotelbedsAuthentication(loadEffectiveConfiguration),
+    transport,
+  );
+  providerRegistry.register(new HotelbedsProvider(undefined, undefined, availabilityExecutor));
 
   return new DefaultAccommodationAvailabilityService(
     providerRegistry,
@@ -317,7 +411,11 @@ export async function runLiveVerification(
     resolvedCandidateCount: 0,
     supplierRequestCount: 0,
   };
-  const service = dependencies.createService?.(configuration.hotelCodes, observation) ?? createLiveAvailabilityService(configuration.hotelCodes, observation);
+  const service = dependencies.createService?.(configuration.hotelCodes, observation) ?? createLiveAvailabilityService(
+    configuration.hotelCodes,
+    observation,
+    environment,
+  );
   const result = await service.execute(createAvailabilityQuery(configuration));
   const report: LiveVerificationReport = {
     executionTimestamp: new Date(),
@@ -334,11 +432,14 @@ export async function runLiveVerification(
 }
 
 async function main(): Promise<void> {
-  const outcome = await runLiveVerification();
-  if (outcome.status === "DISABLED") {
+  const environment = loadR8DotEnv();
+  if (!parseLiveVerificationFlag(environment.HOTELBEDS_AVAILABILITY_LIVE_VERIFY)) {
     console.log("Hotelbeds live availability verification is disabled.");
     return;
   }
+
+  const effectiveEnvironment = createR8EffectiveEnvironment(environment);
+  const outcome = await runLiveVerification(effectiveEnvironment);
 
   console.log(JSON.stringify({
     status: outcome.status,

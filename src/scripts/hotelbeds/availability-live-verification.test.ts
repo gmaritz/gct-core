@@ -1,12 +1,19 @@
 import {
   createAvailabilityQuery,
   createLiveAvailabilityService,
+  createR8EffectiveEnvironment,
+  loadR8DotEnv,
   parseLiveVerificationConfiguration,
   parseLiveVerificationFlag,
+  resolveR8Path,
   runLiveVerification,
   LiveVerificationObservation,
 } from "./availability-live-verification";
-import { AccommodationAvailabilityResult, HotelbedsProvider } from "../../application/accommodation";
+import {
+  AccommodationAvailabilityResult,
+  HotelbedsProvider,
+  HotelbedsTransport,
+} from "../../application/accommodation";
 
 function createEnvironment(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
   return {
@@ -202,6 +209,39 @@ describe("Hotelbeds live availability verification harness", () => {
     map.mockRestore();
   });
 
+  it("binds the effective PEM environment into the actual provider executor", async () => {
+    const sourceEnvironment = loadR8DotEnv({});
+    const effectiveEnvironment = createR8EffectiveEnvironment(sourceEnvironment);
+    let capturedConfig: { readonly tls?: { readonly privateKey: string; readonly privateKeyPassphrase?: string } } | undefined;
+    const transport: HotelbedsTransport = {
+      execute: async (config) => {
+        capturedConfig = config;
+        return {
+          status: 200,
+          headers: { "content-type": "application/json" },
+          body: {
+            hotels: [{ code: 26976, name: "Controlled test hotel", rooms: [] }],
+          },
+          durationMs: 1,
+        };
+      },
+    };
+    const service = createLiveAvailabilityService(
+      ["26976", "26996", "26999", "27517", "27758"],
+      { resolvedCandidateCount: 0, supplierRequestCount: 0 },
+      effectiveEnvironment,
+      transport,
+    );
+
+    await service.execute(createAvailabilityQuery(parseLiveVerificationConfiguration(sourceEnvironment)));
+
+    expect(capturedConfig?.tls?.privateKey).toMatch(/^-----BEGIN/);
+    expect(capturedConfig?.tls?.privateKey).not.toBe(sourceEnvironment.HOTELBEDS_TLS_PRIVATE_KEY);
+    expect(capturedConfig?.tls?.privateKeyPassphrase).toBe(
+      effectiveEnvironment.HOTELBEDS_TLS_PRIVATE_KEY_PASSPHRASE,
+    );
+  });
+
   it("resolves all configured catalogue candidates and reports one R3 request", async () => {
     const createService = jest.fn((_hotelCodes: ReadonlyArray<string>, observation: LiveVerificationObservation) => {
       observation.resolvedCandidateCount = 5;
@@ -238,5 +278,70 @@ describe("Hotelbeds live availability verification harness", () => {
 
   it("does not execute the harness during module import", () => {
     expect(parseLiveVerificationFlag(undefined)).toBe(false);
+  });
+
+  it("loads TLS PEM contents from project-root-relative paths without exposing them", () => {
+    const environment: NodeJS.ProcessEnv = {
+      HOTELBEDS_API_KEY: "test-api-key",
+      HOTELBEDS_SECRET: "test-secret",
+      HOTELBEDS_BASE_URL: "https://api-mtls.test.hotelbeds.com",
+      HOTELBEDS_TLS_CLIENT_CERTIFICATE: "certs/hotelbeds/hotelbeds-client.crt.pem",
+      HOTELBEDS_TLS_PRIVATE_KEY: "certs/hotelbeds/hotelbeds-client.key",
+      HOTELBEDS_TLS_PRIVATE_KEY_PASSPHRASE: "controlled-passphrase",
+    };
+
+    const effectiveEnvironment = createR8EffectiveEnvironment(environment);
+
+    expect(effectiveEnvironment.HOTELBEDS_TLS_CLIENT_CERTIFICATE).toMatch(/^-----BEGIN/);
+    expect(effectiveEnvironment.HOTELBEDS_TLS_PRIVATE_KEY).toMatch(/^-----BEGIN/);
+    expect(effectiveEnvironment.HOTELBEDS_TLS_PRIVATE_KEY).not.toBe(environment.HOTELBEDS_TLS_PRIVATE_KEY);
+    expect(effectiveEnvironment.HOTELBEDS_TLS_TRUSTED_CA).toBeUndefined();
+    expect(effectiveEnvironment.HOTELBEDS_TLS_PRIVATE_KEY_PASSPHRASE).toBe("controlled-passphrase");
+  });
+
+  it("accepts absolute TLS paths and optional CA files", () => {
+    const certificatePath = resolveR8Path("certs/hotelbeds/hotelbeds-client.crt.pem");
+    const keyPath = resolveR8Path("certs/hotelbeds/hotelbeds-client.key");
+    const effectiveEnvironment = createR8EffectiveEnvironment({
+      HOTELBEDS_API_KEY: "test-api-key",
+      HOTELBEDS_SECRET: "test-secret",
+      HOTELBEDS_BASE_URL: "https://api-mtls.test.hotelbeds.com",
+      HOTELBEDS_TLS_CLIENT_CERTIFICATE: certificatePath,
+      HOTELBEDS_TLS_PRIVATE_KEY: keyPath,
+      HOTELBEDS_TLS_TRUSTED_CA: certificatePath,
+    });
+
+    expect(effectiveEnvironment.HOTELBEDS_TLS_TRUSTED_CA).toMatch(/^-----BEGIN/);
+  });
+
+  it("fails safely for a missing TLS file", () => {
+    expect(() => createR8EffectiveEnvironment({
+      HOTELBEDS_API_KEY: "test-api-key",
+      HOTELBEDS_SECRET: "test-secret",
+      HOTELBEDS_BASE_URL: "https://api-mtls.test.hotelbeds.com",
+      HOTELBEDS_TLS_CLIENT_CERTIFICATE: "certs/hotelbeds/missing.crt.pem",
+      HOTELBEDS_TLS_PRIVATE_KEY: "certs/hotelbeds/hotelbeds-client.key",
+    })).toThrow("R8 TLS file configuration is unreadable");
+  });
+
+  it("preserves externally supplied environment values when loading dotenv", () => {
+    const externalEnvironment: NodeJS.ProcessEnv = {
+      HOTELBEDS_BASE_URL: "https://external.example.test",
+    };
+
+    loadR8DotEnv(externalEnvironment);
+
+    expect(externalEnvironment.HOTELBEDS_BASE_URL).toBe("https://external.example.test");
+  });
+
+  it("preserves an explicitly empty live flag over dotenv", () => {
+    const externalEnvironment: NodeJS.ProcessEnv = {
+      HOTELBEDS_AVAILABILITY_LIVE_VERIFY: "",
+    };
+
+    loadR8DotEnv(externalEnvironment);
+
+    expect(externalEnvironment.HOTELBEDS_AVAILABILITY_LIVE_VERIFY).toBe("");
+    expect(parseLiveVerificationFlag(externalEnvironment.HOTELBEDS_AVAILABILITY_LIVE_VERIFY)).toBe(false);
   });
 });
