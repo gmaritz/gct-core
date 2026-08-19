@@ -52,7 +52,7 @@ function freezeRequest(request: HotelbedsAvailabilityRequest): HotelbedsAvailabi
               }),
             ),
           ),
-          hotels: Object.freeze({ codes: Object.freeze([...request.body.hotels.codes]) }),
+          hotels: Object.freeze({ hotel: Object.freeze([...request.body.hotels.hotel]) }),
         })
       : request.body,
   });

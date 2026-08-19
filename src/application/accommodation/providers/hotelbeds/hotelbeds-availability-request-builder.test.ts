@@ -63,7 +63,7 @@ describe("HotelbedsAvailabilityRequestBuilder", () => {
           },
         ],
         hotels: {
-          codes: [1001],
+          hotel: [1001],
         },
       },
     });
@@ -103,7 +103,8 @@ describe("HotelbedsAvailabilityRequestBuilder", () => {
     );
 
     expect(requests).toHaveLength(1);
-    expect(requests[0]?.body.hotels.codes).toEqual([1003, 1001, 1002]);
+    expect(requests[0]?.body.hotels.hotel).toEqual([1003, 1001, 1002]);
+    expect(requests[0]?.body.hotels).not.toHaveProperty("codes");
   });
 
   it("returns no requests when candidate set is empty", () => {
@@ -120,11 +121,11 @@ describe("HotelbedsAvailabilityRequestBuilder", () => {
     const requests = builder.build(createCriteria(), createCandidates(candidateCodes));
 
     expect(requests).toHaveLength(2);
-    expect(requests[0]?.body.hotels.codes).toHaveLength(2000);
-    expect(requests[1]?.body.hotels.codes).toHaveLength(1);
-    expect(requests[0]?.body.hotels.codes[0]).toBe(1);
-    expect(requests[0]?.body.hotels.codes[1999]).toBe(2000);
-    expect(requests[1]?.body.hotels.codes[0]).toBe(2001);
+    expect(requests[0]?.body.hotels.hotel).toHaveLength(2000);
+    expect(requests[1]?.body.hotels.hotel).toHaveLength(1);
+    expect(requests[0]?.body.hotels.hotel[0]).toBe(1);
+    expect(requests[0]?.body.hotels.hotel[1999]).toBe(2000);
+    expect(requests[1]?.body.hotels.hotel[0]).toBe(2001);
   });
 
   it("rejects invalid source market", () => {

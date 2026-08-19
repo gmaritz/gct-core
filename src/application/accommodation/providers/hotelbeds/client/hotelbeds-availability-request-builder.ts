@@ -184,7 +184,7 @@ export class HotelbedsAvailabilityRequestBuilder {
             stay: Object.freeze({ checkIn, checkOut }),
             sourceMarket,
             occupancies: Object.freeze(rooms.map((room) => Object.freeze({ ...room }))),
-            hotels: Object.freeze({ codes: Object.freeze([...batch]) }),
+            hotels: Object.freeze({ hotel: Object.freeze([...batch]) }),
           }),
         }),
       ),

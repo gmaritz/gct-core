@@ -19,7 +19,7 @@ export interface HotelbedsAvailabilityRequestBody {
   };
   readonly occupancies: ReadonlyArray<HotelbedsAvailabilityOccupancy>;
   readonly hotels: {
-    readonly codes: ReadonlyArray<number>;
+    readonly hotel: ReadonlyArray<number>;
   };
   readonly sourceMarket: string;
 }

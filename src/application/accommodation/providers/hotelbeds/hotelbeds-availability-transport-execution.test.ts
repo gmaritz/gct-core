@@ -41,7 +41,7 @@ function createAvailabilityRequest(
         },
       ],
       hotels: {
-        codes: hotelCodes,
+        hotel: hotelCodes,
       },
     },
   };
