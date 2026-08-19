@@ -27,6 +27,10 @@ function getHotelPayloadEntries(value: unknown): ReadonlyArray<Record<string, un
 
   const candidate = value as Record<string, unknown>;
 
+  if (isObject(candidate.hotels) && Array.isArray(candidate.hotels.hotels)) {
+    return candidate.hotels.hotels.filter(isObject);
+  }
+
   if (Array.isArray(candidate.hotels)) {
     return candidate.hotels.filter(isObject);
   }

@@ -12,7 +12,7 @@ function createRequest() {
     body: {
       stay: { checkIn: "2026-09-10", checkOut: "2026-09-14" },
       occupancies: [{ rooms: 1 as const, adults: 2, children: 0, paxes: [{ type: "AD" as const }] }],
-      hotels: { codes: [123] },
+      hotels: { hotel: [123] },
       sourceMarket: "US",
     },
     correlationId: "corr-1",
@@ -35,6 +35,50 @@ function createRawResponse(
 }
 
 describe("Hotelbeds availability response mapper", () => {
+  it("maps the verified nested Hotelbeds hotels envelope and preserves hotel ordering", () => {
+    const mapper = new HotelbedsAvailabilityResponseMapper();
+    const result = mapper.mapAvailabilityResponse([
+      createRawResponse({
+        body: {
+          hotels: {
+            hotels: [
+              {
+                code: 26996,
+                name: "Cape Milner",
+                rooms: [{
+                  code: "DBL.LX",
+                  rates: [{
+                    rateKey: "controlled-rate",
+                    rateType: "BOOKABLE",
+                    allotment: 7,
+                    net: "863.49",
+                    boardCode: "BB",
+                    boardName: "BED AND BREAKFAST",
+                  }],
+                }],
+              },
+              { code: 26999, name: "Garden Court Victoria Junction", rooms: [] },
+            ],
+            checkIn: "2026-09-15",
+            checkOut: "2026-09-18",
+            total: 2,
+          },
+        },
+      }),
+    ]);
+
+    expect(result.available).toBe(true);
+    expect(result.accommodation.identity.id).toBe("26996");
+  });
+
+  it("rejects a nested response with an empty hotel collection", () => {
+    const mapper = new HotelbedsAvailabilityResponseMapper();
+
+    expect(() => mapper.mapAvailabilityResponse([
+      createRawResponse({ body: { hotels: { hotels: [] } } }),
+    ])).toThrow("no supplier hotel entries");
+  });
+
   it("maps a valid successful Hotelbeds response to the canonical availability result", () => {
     const mapper = new HotelbedsAvailabilityResponseMapper();
     const result = mapper.mapAvailabilityResponse([
