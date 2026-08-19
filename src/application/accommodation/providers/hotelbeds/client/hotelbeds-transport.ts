@@ -7,6 +7,7 @@ import { HotelbedsIntegrationConfig } from "./hotelbeds-integration-config";
 export interface HotelbedsTransportTlsConfig {
   readonly clientCertificate: string;
   readonly privateKey: string;
+  readonly privateKeyPassphrase?: string;
   readonly trustedCa: string;
 }
 
@@ -146,6 +147,7 @@ function resolveTlsConfig(config: HotelbedsIntegrationConfig): HotelbedsTranspor
   return {
     clientCertificate,
     privateKey,
+    privateKeyPassphrase: config.tls.privateKeyPassphrase,
     trustedCa,
   };
 }
@@ -195,6 +197,7 @@ export class FetchHotelbedsTransport implements HotelbedsTransport {
               ? {
                   cert: tls.clientCertificate,
                   key: tls.privateKey,
+                  ...(tls.privateKeyPassphrase ? { passphrase: tls.privateKeyPassphrase } : {}),
                   ...(tls.trustedCa ? { ca: tls.trustedCa } : {}),
                 }
               : {}),

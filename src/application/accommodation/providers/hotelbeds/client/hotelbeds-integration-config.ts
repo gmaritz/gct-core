@@ -1,3 +1,5 @@
+import { createPrivateKey } from "crypto";
+
 export enum HotelbedsEnvironment {
   TEST = "TEST",
   PRODUCTION = "PRODUCTION",
@@ -6,6 +8,7 @@ export enum HotelbedsEnvironment {
 export interface HotelbedsTlsConfig {
   readonly clientCertificate: string;
   readonly privateKey: string;
+  readonly privateKeyPassphrase?: string;
   readonly trustedCa: string;
 }
 
@@ -121,21 +124,25 @@ function parseSelectedHotelCodes(rawCodes: string | undefined): ReadonlyArray<st
 function parseTlsConfig(env: NodeJS.ProcessEnv): HotelbedsTlsConfig | undefined {
   const clientCertificate = env.HOTELBEDS_TLS_CLIENT_CERTIFICATE?.trim();
   const privateKey = env.HOTELBEDS_TLS_PRIVATE_KEY?.trim();
+  const privateKeyPassphrase = env.HOTELBEDS_TLS_PRIVATE_KEY_PASSPHRASE?.trim();
   const trustedCa = env.HOTELBEDS_TLS_TRUSTED_CA?.trim();
 
-  if (!clientCertificate && !privateKey && !trustedCa) {
+  if (!clientCertificate && !privateKey && !trustedCa && !privateKeyPassphrase) {
     return undefined;
   }
 
-  if (!clientCertificate || !privateKey) {
+  if (!clientCertificate || !privateKey || (privateKeyPassphrase && !privateKey)) {
     throw new HotelbedsConfigurationError(
-      "HOTELBEDS_TLS_CLIENT_CERTIFICATE and HOTELBEDS_TLS_PRIVATE_KEY must be provided together; HOTELBEDS_TLS_TRUSTED_CA is optional.",
+      "Hotelbeds TLS certificate and private key must be provided together; passphrase-only configuration is invalid.",
     );
   }
 
+  validatePrivateKey(privateKey, privateKeyPassphrase);
+
   return Object.freeze({
-    clientCertificate: clientCertificate ?? "",
-    privateKey: privateKey ?? "",
+    clientCertificate,
+    privateKey,
+    privateKeyPassphrase: privateKeyPassphrase || undefined,
     trustedCa: trustedCa ?? "",
   });
 }
@@ -147,19 +154,39 @@ function validateTlsConfig(tls: HotelbedsTlsConfig | undefined): HotelbedsTlsCon
 
   const clientCertificate = tls.clientCertificate.trim();
   const privateKey = tls.privateKey.trim();
+  const privateKeyPassphrase = tls.privateKeyPassphrase?.trim();
   const trustedCa = tls.trustedCa.trim();
 
-  if (!clientCertificate && !privateKey && !trustedCa) {
+  if (!clientCertificate && !privateKey && !trustedCa && !privateKeyPassphrase) {
     return undefined;
   }
 
-  if (!clientCertificate || !privateKey) {
+  if (!clientCertificate || !privateKey || (privateKeyPassphrase && !privateKey)) {
     throw new HotelbedsConfigurationError(
-      "Hotelbeds TLS client certificate and private key must be provided together; trusted CA is optional.",
+      "Hotelbeds TLS certificate and private key must be provided together; passphrase-only configuration is invalid.",
     );
   }
 
-  return Object.freeze({ clientCertificate, privateKey, trustedCa });
+  validatePrivateKey(privateKey, privateKeyPassphrase);
+
+  return Object.freeze({
+    clientCertificate,
+    privateKey,
+    privateKeyPassphrase: privateKeyPassphrase || undefined,
+    trustedCa,
+  });
+}
+
+function validatePrivateKey(privateKey: string, privateKeyPassphrase: string | undefined): void {
+  try {
+    createPrivateKey({
+      key: privateKey,
+      format: "pem",
+      ...(privateKeyPassphrase ? { passphrase: privateKeyPassphrase } : {}),
+    });
+  } catch {
+    throw new HotelbedsConfigurationError("Hotelbeds TLS private key or passphrase is invalid.");
+  }
 }
 
 export function createHotelbedsIntegrationConfig(input: HotelbedsIntegrationConfig): HotelbedsIntegrationConfig {

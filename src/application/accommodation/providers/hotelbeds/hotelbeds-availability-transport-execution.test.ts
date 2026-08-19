@@ -415,6 +415,7 @@ describe("APP-008.3-R4 Hotelbeds availability transport execution", () => {
         tls: {
           clientCertificate: "cert-data",
           privateKey: "private-key-data",
+          privateKeyPassphrase: "private-key-passphrase",
           trustedCa: "ca-data",
         },
       }),
@@ -427,6 +428,7 @@ describe("APP-008.3-R4 Hotelbeds availability transport execution", () => {
 
     expect(capturedOptions?.cert).toBe("cert-data");
     expect(capturedOptions?.key).toBe("private-key-data");
+    expect(capturedOptions?.passphrase).toBe("private-key-passphrase");
     expect(capturedOptions?.ca).toBe("ca-data");
     expect(capturedOptions?.rejectUnauthorized).not.toBe(false);
   });

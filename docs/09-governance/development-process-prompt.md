@@ -20,3 +20,5 @@ The downloadable .md file I created was not what you asked for. I should have si
 Also, I will make sure the specification's internal examples do not accidentally terminate the outer Markdown fence. That is important for producing one genuinely copyable document.
 
 I understand the correction. The specification should be presented as one complete Markdown document in one code block in the chat, exactly as GOV-DEV-001 requires.
+
+Specification → Architect Review + recommendations → Copilot implementation/live verification → Copilot report → Architect Acceptance → commit

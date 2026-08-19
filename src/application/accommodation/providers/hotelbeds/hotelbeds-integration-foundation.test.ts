@@ -1,3 +1,5 @@
+import { generateKeyPairSync } from "crypto";
+
 import {
   createHotelbedsSignature,
   DefaultHotelbedsAuthentication,
@@ -18,6 +20,23 @@ import {
   HotelbedsHttpsRequestLike,
   HotelbedsHttpsResponse,
 } from "@application/accommodation";
+
+const TEST_KEY_PASSPHRASE = "controlled-test-passphrase";
+const TEST_UNENCRYPTED_PRIVATE_KEY = generateKeyPairSync("rsa", {
+  modulusLength: 2048,
+  publicKeyEncoding: { type: "spki", format: "pem" },
+  privateKeyEncoding: { type: "pkcs8", format: "pem" },
+}).privateKey;
+const TEST_ENCRYPTED_PRIVATE_KEY = generateKeyPairSync("rsa", {
+  modulusLength: 2048,
+  publicKeyEncoding: { type: "spki", format: "pem" },
+  privateKeyEncoding: {
+    type: "pkcs8",
+    format: "pem",
+    cipher: "aes-256-cbc",
+    passphrase: TEST_KEY_PASSPHRASE,
+  },
+}).privateKey;
 
 function createRequest(overrides?: Partial<HotelbedsRequest>): HotelbedsRequest {
   return {
@@ -137,19 +156,77 @@ describe("APP-008.1 Hotelbeds integration foundation", () => {
         HOTELBEDS_API_KEY: "api-key",
         HOTELBEDS_SECRET: "secret-key",
         HOTELBEDS_TLS_CLIENT_CERTIFICATE: "cert-pem",
-        HOTELBEDS_TLS_PRIVATE_KEY: "key-pem",
+        HOTELBEDS_TLS_PRIVATE_KEY: TEST_UNENCRYPTED_PRIVATE_KEY,
       });
 
       expect(config.tls).toEqual({
         clientCertificate: "cert-pem",
-        privateKey: "key-pem",
+        privateKey: TEST_UNENCRYPTED_PRIVATE_KEY.trim(),
+        privateKeyPassphrase: undefined,
         trustedCa: "",
       });
     });
 
+    it("accepts an unencrypted private key with a passphrase when Node accepts it", () => {
+      expect(() => loadHotelbedsIntegrationConfig({
+        HOTELBEDS_ENV: "TEST",
+        HOTELBEDS_API_KEY: "api-key",
+        HOTELBEDS_SECRET: "secret-key",
+        HOTELBEDS_TLS_CLIENT_CERTIFICATE: "cert-pem",
+        HOTELBEDS_TLS_PRIVATE_KEY: TEST_UNENCRYPTED_PRIVATE_KEY,
+        HOTELBEDS_TLS_PRIVATE_KEY_PASSPHRASE: TEST_KEY_PASSPHRASE,
+      })).not.toThrow();
+    });
+
+    it("accepts an encrypted private key with the correct passphrase", () => {
+      const config = loadHotelbedsIntegrationConfig({
+        HOTELBEDS_ENV: "TEST",
+        HOTELBEDS_API_KEY: "api-key",
+        HOTELBEDS_SECRET: "secret-key",
+        HOTELBEDS_TLS_CLIENT_CERTIFICATE: "cert-pem",
+        HOTELBEDS_TLS_PRIVATE_KEY: TEST_ENCRYPTED_PRIVATE_KEY,
+        HOTELBEDS_TLS_PRIVATE_KEY_PASSPHRASE: TEST_KEY_PASSPHRASE,
+      });
+
+      expect(config.tls?.privateKeyPassphrase).toBe(TEST_KEY_PASSPHRASE);
+    });
+
+    it.each([
+      ["missing passphrase", undefined],
+      ["incorrect passphrase", "wrong-passphrase"],
+    ])("rejects an encrypted private key with %s", (_description, passphrase) => {
+      expect(() => loadHotelbedsIntegrationConfig({
+        HOTELBEDS_ENV: "TEST",
+        HOTELBEDS_API_KEY: "api-key",
+        HOTELBEDS_SECRET: "secret-key",
+        HOTELBEDS_TLS_CLIENT_CERTIFICATE: "cert-pem",
+        HOTELBEDS_TLS_PRIVATE_KEY: TEST_ENCRYPTED_PRIVATE_KEY,
+        HOTELBEDS_TLS_PRIVATE_KEY_PASSPHRASE: passphrase,
+      })).toThrow(HotelbedsConfigurationError);
+    });
+
+    it("rejects invalid private-key material", () => {
+      expect(() => loadHotelbedsIntegrationConfig({
+        HOTELBEDS_ENV: "TEST",
+        HOTELBEDS_API_KEY: "api-key",
+        HOTELBEDS_SECRET: "secret-key",
+        HOTELBEDS_TLS_CLIENT_CERTIFICATE: "cert-pem",
+        HOTELBEDS_TLS_PRIVATE_KEY: "invalid-private-key",
+      })).toThrow(HotelbedsConfigurationError);
+    });
+
+    it("rejects a passphrase without a private key", () => {
+      expect(() => loadHotelbedsIntegrationConfig({
+        HOTELBEDS_ENV: "TEST",
+        HOTELBEDS_API_KEY: "api-key",
+        HOTELBEDS_SECRET: "secret-key",
+        HOTELBEDS_TLS_PRIVATE_KEY_PASSPHRASE: TEST_KEY_PASSPHRASE,
+      })).toThrow(HotelbedsConfigurationError);
+    });
+
     it.each([
       ["HOTELBEDS_TLS_CLIENT_CERTIFICATE", "cert-pem", ""],
-      ["HOTELBEDS_TLS_PRIVATE_KEY", "", "key-pem"],
+      ["HOTELBEDS_TLS_PRIVATE_KEY", "", TEST_UNENCRYPTED_PRIVATE_KEY],
       ["HOTELBEDS_TLS_TRUSTED_CA", "", ""],
     ])("fails safely for incomplete TLS configuration: %s", (variable, certificate, privateKey) => {
       expect(() => loadHotelbedsIntegrationConfig({
