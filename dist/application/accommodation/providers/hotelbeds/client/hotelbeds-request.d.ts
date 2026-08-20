@@ -1,5 +1,5 @@
 export type HotelbedsRequestMethod = "GET" | "POST";
-export type HotelbedsOperation = "search" | "availability" | "checkRate" | "details" | "content" | "images" | "rates" | "content-sync";
+export type HotelbedsOperation = "search" | "availability" | "checkRate" | "booking" | "details" | "content" | "images" | "rates" | "content-sync";
 export interface HotelbedsRequest {
     readonly operation: HotelbedsOperation;
     readonly method: HotelbedsRequestMethod;

@@ -3,6 +3,7 @@ export type HotelbedsOperation =
   | "search"
   | "availability"
   | "checkRate"
+  | "booking"
   | "details"
   | "content"
   | "images"

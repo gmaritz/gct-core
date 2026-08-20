@@ -16,6 +16,10 @@ import {
   AccommodationRateRevalidationResult,
 } from "../../../revalidation";
 import {
+  AccommodationBookingRequest,
+  AccommodationBookingResult,
+} from "../../../booking";
+import {
   AccommodationRate,
   AccommodationRateResult,
   AccommodationRateStatus,
@@ -158,6 +162,11 @@ function createCapabilities(): ProviderCapabilitySet {
         AccommodationProviderCapabilityType.REVALIDATION,
         "Hotel Rate Revalidation",
         "Revalidates selected Hotelbeds rates through CheckRate.",
+      ),
+      createCapability(
+        AccommodationProviderCapabilityType.BOOKING,
+        "Hotel Accommodation Booking",
+        "Creates Hotelbeds accommodation bookings for selected offers.",
       ),
     ],
   };
@@ -325,4 +334,127 @@ export class HotelbedsProvider implements AccommodationProvider {
   ): HotelbedsAvailabilityMappingResult {
     return this.availabilityMapper.mapAvailabilityResponse(rawResponses);
   }
+
+  public async book(request: AccommodationBookingRequest): Promise<AccommodationBookingResult> {
+    if (request.providerReference.provider !== this.providerId) {
+      throw new Error("Hotelbeds provider cannot book a different provider reference.");
+    }
+
+    const book = this.client.book;
+    if (!book) throw new Error("Hotelbeds client does not support Booking.");
+
+    const rooms = request.occupancy.rooms.map((_occupancy, roomIndex) => ({
+      rateKey: request.providerReference.opaqueReference,
+      paxes: request.guests
+        .filter((guest) => guest.roomIndex === roomIndex)
+        .map((guest) => ({
+          type: guest.type === "CHILD" ? "CH" : "AD",
+          name: guest.firstName,
+          surname: guest.lastName,
+          ...(guest.age === undefined ? {} : { age: guest.age }),
+        })),
+    }));
+
+    try {
+      const response = await book({
+        operation: "booking",
+        method: "POST",
+        path: "/hotel-api/1.0/bookings",
+        body: {
+          stay: {
+            checkIn: request.stayPeriod.checkIn.toISOString().slice(0, 10),
+            checkOut: request.stayPeriod.checkOut.toISOString().slice(0, 10),
+          },
+          holder: {
+            name: request.holder.firstName,
+            surname: request.holder.lastName,
+            email: request.holder.email,
+            ...(request.holder.phone ? { phone: request.holder.phone } : {}),
+          },
+          rooms,
+          clientReference: request.idempotencyKey,
+        },
+      });
+      const bookingReference = findString(response.data, ["reference", "bookingReference", "confirmationNumber"]);
+      if (!bookingReference) {
+        return createBookingFailure(request, "UNKNOWN_BOOKING_OUTCOME", "Hotelbeds returned no booking confirmation reference.", "UNKNOWN");
+      }
+
+      const supplierPrice = findPrice(response.data) ?? {
+        amount: request.rate.pricing.amount,
+        currency: request.rate.pricing.currency,
+      };
+      return Object.freeze({
+        successful: true,
+        status: "CONFIRMED",
+        provider: this.providerId,
+        accommodation: request.accommodation,
+        room: request.room,
+        rate: request.rate,
+        supplierBookingReference: bookingReference,
+        supplierPrice: Object.freeze(supplierPrice),
+        packageStopId: request.packageStopId,
+        errors: Object.freeze([]),
+        warnings: Object.freeze([]),
+      });
+    } catch (error) {
+      const code = error instanceof Error && typeof (error as Error & { code?: unknown }).code === "string"
+        ? (error as Error & { code: string }).code
+        : "BOOKING_FAILED";
+      const unknownOutcome = code === "TIMEOUT" || code === "NETWORK_ERROR" || code === "UNKNOWN_ERROR";
+      return createBookingFailure(
+        request,
+        code,
+        error instanceof Error ? error.message : "Hotelbeds booking failed.",
+        unknownOutcome ? "UNKNOWN" : "FAILED",
+      );
+    }
+  }
+}
+
+function findString(value: unknown, keys: ReadonlyArray<string>): string | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const object = value as Record<string, unknown>;
+  for (const key of keys) if (typeof object[key] === "string" && object[key]) return object[key] as string;
+  for (const child of Object.values(object)) {
+    if (Array.isArray(child)) {
+      for (const item of child) { const found = findString(item, keys); if (found) return found; }
+    } else { const found = findString(child, keys); if (found) return found; }
+  }
+  return undefined;
+}
+
+function findPrice(value: unknown): { readonly amount: number; readonly currency: string } | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const object = value as Record<string, unknown>;
+  const amount = object.totalSellingRate ?? object.totalNet ?? object.amount ?? object.net;
+  const currency = object.currency;
+  if ((typeof amount === "number" || typeof amount === "string") && typeof currency === "string") {
+    const parsed = Number.parseFloat(String(amount));
+    if (Number.isFinite(parsed)) return { amount: parsed, currency };
+  }
+  for (const child of Object.values(object)) {
+    const found = findPrice(child);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+function createBookingFailure(
+  request: AccommodationBookingRequest,
+  code: string,
+  message: string,
+  status: "FAILED" | "UNKNOWN",
+): AccommodationBookingResult {
+  return Object.freeze({
+    successful: false,
+    status,
+    provider: "hotelbeds",
+    accommodation: request.accommodation,
+    room: request.room,
+    rate: request.rate,
+    packageStopId: request.packageStopId,
+    errors: Object.freeze([{ code, message }]),
+    warnings: Object.freeze([]),
+  });
 }

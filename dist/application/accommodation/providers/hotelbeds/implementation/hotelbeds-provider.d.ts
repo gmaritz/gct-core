@@ -2,6 +2,7 @@ import { ProviderCapabilitySet } from "../../../capabilities";
 import { Accommodation } from "../../../models";
 import { AccommodationContentResult, AccommodationDetailsResult, AccommodationImageResult, AccommodationSearchResult } from "../../../results";
 import { AccommodationRateRevalidationRequest, AccommodationRateRevalidationResult } from "../../../revalidation";
+import { AccommodationBookingRequest, AccommodationBookingResult } from "../../../booking";
 import { AccommodationRateResult } from "../../../rates";
 import { AccommodationSearchCriteria } from "../../../discovery";
 import { AccommodationProvider } from "../../accommodation-provider";
@@ -30,5 +31,6 @@ export declare class HotelbedsProvider implements AccommodationProvider {
     revalidate(request: AccommodationRateRevalidationRequest): Promise<AccommodationRateRevalidationResult>;
     executeAvailabilityRequests(requests: ReadonlyArray<HotelbedsAvailabilityRequest>): Promise<HotelbedsAvailabilityExecutionResult>;
     mapAvailabilityResponse(rawResponses: ReadonlyArray<HotelbedsAvailabilityExecutionResult["responses"][number]>): HotelbedsAvailabilityMappingResult;
+    book(request: AccommodationBookingRequest): Promise<AccommodationBookingResult>;
 }
 //# sourceMappingURL=hotelbeds-provider.d.ts.map

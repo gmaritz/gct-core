@@ -12,4 +12,5 @@ export * from "./rates";
 export * from "./catalogue";
 export * from "./availability";
 export * from "./revalidation";
+export * from "./booking";
 //# sourceMappingURL=index.d.ts.map

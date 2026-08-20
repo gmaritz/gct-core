@@ -14,6 +14,7 @@ export interface HotelbedsClient {
   getHotelImages(request: HotelbedsRequest): Promise<HotelbedsResponse<ReadonlyArray<HotelbedsImage>>>;
   getHotelRates(request: HotelbedsRequest): Promise<HotelbedsResponse<ReadonlyArray<HotelbedsRate>>>;
   checkRate?(request: HotelbedsRequest): Promise<HotelbedsResponse<unknown>>;
+  book?(request: HotelbedsRequest): Promise<HotelbedsResponse<unknown>>;
 }
 
 function createPlaceholderHotel(): HotelbedsHotel {
@@ -148,6 +149,10 @@ export class DefaultHotelbedsClient implements HotelbedsClient {
   }
 
   public async checkRate(request: HotelbedsRequest): Promise<HotelbedsResponse<unknown>> {
+    return executeAndUnwrap<unknown>(this.gateway, request);
+  }
+
+  public async book(request: HotelbedsRequest): Promise<HotelbedsResponse<unknown>> {
     return executeAndUnwrap<unknown>(this.gateway, request);
   }
 }
