@@ -72,6 +72,7 @@ function createCapabilities() {
             createCapability(capabilities_1.AccommodationProviderCapabilityType.REVALIDATION, "Hotel Rate Revalidation", "Revalidates selected Hotelbeds rates through CheckRate."),
             createCapability(capabilities_1.AccommodationProviderCapabilityType.BOOKING, "Hotel Accommodation Booking", "Creates Hotelbeds accommodation bookings for selected offers."),
             createCapability(capabilities_1.AccommodationProviderCapabilityType.CANCELLATION, "Hotel Accommodation Cancellation", "Cancels confirmed Hotelbeds accommodation bookings."),
+            createCapability(capabilities_1.AccommodationProviderCapabilityType.MODIFICATION, "Hotel Accommodation Booking Modification", "Modifies confirmed Hotelbeds accommodation bookings."),
         ],
     };
 }
@@ -326,6 +327,81 @@ class HotelbedsProvider {
             });
         }
     }
+    async modifyBooking(request) {
+        if (request.provider !== this.providerId)
+            throw new Error("Hotelbeds provider cannot modify a different provider booking.");
+        const modify = this.client.modify;
+        if (!modify) {
+            return createModificationFailure(request, "UNSUPPORTED", "Hotelbeds modification is not supported by this client.");
+        }
+        const change = request.changes;
+        const body = {
+            reference: request.supplierBookingReference,
+            clientReference: request.idempotencyKey,
+        };
+        if (change.stayPeriod) {
+            body.stay = {
+                checkIn: change.stayPeriod.checkIn.toISOString().slice(0, 10),
+                checkOut: change.stayPeriod.checkOut.toISOString().slice(0, 10),
+            };
+        }
+        if (change.holder) {
+            body.holder = {
+                name: change.holder.firstName,
+                surname: change.holder.lastName,
+                email: change.holder.email,
+                ...(change.holder.phone ? { phone: change.holder.phone } : {}),
+            };
+        }
+        if (change.occupancy || change.guests) {
+            const occupancy = change.occupancy ?? request.currentOccupancy;
+            body.rooms = occupancy?.rooms.map((_room, roomIndex) => ({
+                ...(change.rate?.reference.opaqueReference || request.currentRate?.reference.opaqueReference
+                    ? { rateKey: change.rate?.reference.opaqueReference ?? request.currentRate?.reference.opaqueReference } : {}),
+                paxes: (change.guests ?? []).filter((guest) => guest.roomIndex === roomIndex).map((guest) => ({
+                    type: guest.type === "CHILD" ? "CH" : "AD",
+                    name: guest.firstName,
+                    surname: guest.lastName,
+                    ...(guest.age === undefined ? {} : { age: guest.age }),
+                })),
+            }));
+        }
+        if (change.room)
+            body.room = { code: change.room.reference.opaqueReference };
+        if (change.rate)
+            body.rateKey = change.rate.reference.opaqueReference;
+        try {
+            const response = await modify({ operation: "modification", method: "POST", path: "/hotel-api/1.0/bookings", body });
+            const responseData = asObject(response.data);
+            const resultingRate = request.changes.rate ?? request.currentRate;
+            const resultingRoom = request.changes.room ?? request.currentRoom;
+            return Object.freeze({
+                successful: true,
+                status: "MODIFIED",
+                reservationId: request.reservationId,
+                provider: this.providerId,
+                supplierBookingReference: readString(responseData, ["reference", "bookingReference"]) ?? request.supplierBookingReference,
+                accommodation: request.accommodation,
+                room: resultingRoom,
+                rate: resultingRate,
+                stayPeriod: request.changes.stayPeriod ?? undefined,
+                occupancy: request.changes.occupancy,
+                guests: request.changes.guests,
+                holder: request.changes.holder,
+                supplierPrice: mapSupplierPrice(response.data),
+                modificationCharge: mapModificationCharge(response.data),
+                packageStopId: request.packageStopId,
+                errors: Object.freeze([]),
+                warnings: Object.freeze([]),
+            });
+        }
+        catch (error) {
+            const code = error instanceof Error && typeof error.code === "string"
+                ? error.code : "MODIFICATION_FAILED";
+            const unknown = code === "TIMEOUT" || code === "NETWORK_ERROR" || code === "UNKNOWN_ERROR";
+            return createModificationFailure(request, unknown ? "UNKNOWN" : "FAILED", error instanceof Error ? error.message : "Hotelbeds modification failed.", code);
+        }
+    }
 }
 exports.HotelbedsProvider = HotelbedsProvider;
 function asObject(value) {
@@ -408,5 +484,38 @@ function createBookingFailure(request, code, message, status) {
         errors: Object.freeze([{ code, message }]),
         warnings: Object.freeze([]),
     });
+}
+function createModificationFailure(request, status, message, code = status) {
+    return Object.freeze({
+        successful: false,
+        status,
+        reservationId: request.reservationId,
+        provider: "hotelbeds",
+        supplierBookingReference: request.supplierBookingReference,
+        packageStopId: request.packageStopId,
+        errors: Object.freeze([{ code, message }]),
+        warnings: Object.freeze([]),
+    });
+}
+function mapSupplierPrice(value) {
+    const object = asObject(value);
+    if (!object)
+        return undefined;
+    const amount = object.totalSellingRate ?? object.totalNet ?? object.amount;
+    const currency = object.currency;
+    const parsed = Number.parseFloat(String(amount));
+    return Number.isFinite(parsed) && typeof currency === "string" ? Object.freeze({ amount: parsed, currency }) : undefined;
+}
+function mapModificationCharge(value) {
+    const object = asObject(value);
+    if (!object)
+        return undefined;
+    const charge = asObject(object.modificationCharge) ?? asObject(object.charge);
+    if (!charge)
+        return undefined;
+    const amount = Number.parseFloat(String(charge.amount));
+    return Number.isFinite(amount) && typeof charge.currency === "string"
+        ? Object.freeze({ amount, currency: charge.currency, description: typeof charge.description === "string" ? charge.description : undefined })
+        : undefined;
 }
 //# sourceMappingURL=hotelbeds-provider.js.map

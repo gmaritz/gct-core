@@ -14,4 +14,5 @@ export * from "./availability";
 export * from "./revalidation";
 export * from "./booking";
 export * from "./cancellation";
+export * from "./modification";
 //# sourceMappingURL=index.d.ts.map

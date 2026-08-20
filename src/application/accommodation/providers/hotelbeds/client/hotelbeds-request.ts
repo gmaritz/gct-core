@@ -5,6 +5,7 @@ export type HotelbedsOperation =
   | "checkRate"
   | "booking"
   | "cancellation"
+  | "modification"
   | "details"
   | "content"
   | "images"

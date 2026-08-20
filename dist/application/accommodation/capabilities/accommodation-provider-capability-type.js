@@ -12,5 +12,6 @@ var AccommodationProviderCapabilityType;
     AccommodationProviderCapabilityType["REVALIDATION"] = "REVALIDATION";
     AccommodationProviderCapabilityType["BOOKING"] = "BOOKING";
     AccommodationProviderCapabilityType["CANCELLATION"] = "CANCELLATION";
+    AccommodationProviderCapabilityType["MODIFICATION"] = "MODIFICATION";
 })(AccommodationProviderCapabilityType || (exports.AccommodationProviderCapabilityType = AccommodationProviderCapabilityType = {}));
 //# sourceMappingURL=accommodation-provider-capability-type.js.map

@@ -16,6 +16,7 @@ export interface HotelbedsClient {
   checkRate?(request: HotelbedsRequest): Promise<HotelbedsResponse<unknown>>;
   book?(request: HotelbedsRequest): Promise<HotelbedsResponse<unknown>>;
   cancel?(request: HotelbedsRequest): Promise<HotelbedsResponse<unknown>>;
+  modify?(request: HotelbedsRequest): Promise<HotelbedsResponse<unknown>>;
 }
 
 function createPlaceholderHotel(): HotelbedsHotel {
@@ -158,6 +159,10 @@ export class DefaultHotelbedsClient implements HotelbedsClient {
   }
 
   public async cancel(request: HotelbedsRequest): Promise<HotelbedsResponse<unknown>> {
+    return executeAndUnwrap<unknown>(this.gateway, request);
+  }
+
+  public async modify(request: HotelbedsRequest): Promise<HotelbedsResponse<unknown>> {
     return executeAndUnwrap<unknown>(this.gateway, request);
   }
 }

@@ -7,6 +7,7 @@ export declare enum AccommodationProviderCapabilityType {
     RATES = "RATES",
     REVALIDATION = "REVALIDATION",
     BOOKING = "BOOKING",
-    CANCELLATION = "CANCELLATION"
+    CANCELLATION = "CANCELLATION",
+    MODIFICATION = "MODIFICATION"
 }
 //# sourceMappingURL=accommodation-provider-capability-type.d.ts.map
