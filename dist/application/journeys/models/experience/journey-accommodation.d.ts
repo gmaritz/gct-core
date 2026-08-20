@@ -1,4 +1,5 @@
 import { AccommodationAvailabilityOccupancy, AccommodationRateOption, AccommodationRoomOption, AccommodationSupplierReference } from "../../../accommodation";
+import { Accommodation } from "../../../accommodation";
 export interface JourneyPackageStop {
     readonly packageId: string;
     readonly stopId: string;
@@ -14,7 +15,14 @@ export interface JourneyAccommodationSelection {
     readonly rateReference: AccommodationSupplierReference;
 }
 export interface JourneyAccommodationPricingInput {
+    readonly packageId?: string;
     readonly packageStopId?: string;
+    readonly stopOrder?: number;
+    readonly accommodation?: Accommodation;
+    readonly stayPeriod?: {
+        readonly checkIn: Date;
+        readonly checkOut: Date;
+    };
     readonly accommodationId: string;
     readonly room: AccommodationRoomOption;
     readonly rate: AccommodationRateOption;
@@ -27,6 +35,7 @@ export interface JourneyAccommodationReservationInput extends JourneyAccommodati
 export interface JourneyAccommodation {
     readonly accommodationId: string;
     readonly name: string;
+    readonly accommodation?: Accommodation;
     readonly packageStop?: JourneyPackageStop;
     readonly provider?: string;
     readonly roomOptions?: ReadonlyArray<AccommodationRoomOption>;

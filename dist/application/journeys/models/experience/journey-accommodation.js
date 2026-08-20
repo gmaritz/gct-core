@@ -24,14 +24,26 @@ function selectJourneyAccommodation(option, selection) {
         ...option,
         selection: Object.freeze(selection),
         pricingInput: Object.freeze({
+            packageId: option.packageStop?.packageId,
             packageStopId: option.packageStop?.stopId,
+            stopOrder: option.packageStop?.stopOrder,
+            accommodation: option.accommodation,
+            stayPeriod: option.packageStop
+                ? { checkIn: option.packageStop.checkInDate, checkOut: option.packageStop.checkOutDate }
+                : undefined,
             accommodationId: option.accommodationId,
             room,
             rate,
             occupancy: option.requestedOccupancy,
         }),
         reservationInput: Object.freeze({
+            packageId: option.packageStop?.packageId,
             packageStopId: option.packageStop?.stopId,
+            stopOrder: option.packageStop?.stopOrder,
+            accommodation: option.accommodation,
+            stayPeriod: option.packageStop
+                ? { checkIn: option.packageStop.checkInDate, checkOut: option.packageStop.checkOutDate }
+                : undefined,
             accommodationId: option.accommodationId,
             room,
             rate,

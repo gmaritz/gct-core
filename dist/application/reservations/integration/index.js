@@ -17,4 +17,5 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./models"), exports);
 __exportStar(require("./booking-gateway"), exports);
 __exportStar(require("./booking-integration-orchestrator"), exports);
+__exportStar(require("./accommodation-reservation-handoff"), exports);
 //# sourceMappingURL=index.js.map

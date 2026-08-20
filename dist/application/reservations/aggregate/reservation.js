@@ -57,6 +57,22 @@ function freezeAccommodationSnapshot(snapshot) {
         mealBasis: snapshot.mealBasis,
         checkInDate: typeof snapshot.checkInDate === "undefined" ? undefined : cloneDate(snapshot.checkInDate),
         checkOutDate: typeof snapshot.checkOutDate === "undefined" ? undefined : cloneDate(snapshot.checkOutDate),
+        packageId: snapshot.packageId,
+        packageStopId: snapshot.packageStopId,
+        stopOrder: snapshot.stopOrder,
+        rateReference: snapshot.rateReference ? Object.freeze({ ...snapshot.rateReference }) : undefined,
+        roomReference: snapshot.roomReference ? Object.freeze({ ...snapshot.roomReference }) : undefined,
+        provider: snapshot.provider,
+        occupancy: snapshot.occupancy
+            ? Object.freeze({
+                rooms: Object.freeze(snapshot.occupancy.rooms.map((room) => Object.freeze({
+                    adults: room.adults,
+                    children: room.children,
+                    childAges: Object.freeze([...room.childAges]),
+                }))),
+            })
+            : undefined,
+        supplierPrice: snapshot.supplierPrice ? Object.freeze({ ...snapshot.supplierPrice }) : undefined,
     });
 }
 function freezeSupplierReference(reference) {

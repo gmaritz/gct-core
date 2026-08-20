@@ -4,6 +4,7 @@ import {
   AccommodationRoomOption,
   AccommodationSupplierReference,
 } from "../../../accommodation";
+import { Accommodation } from "../../../accommodation";
 
 export interface JourneyPackageStop {
   readonly packageId: string;
@@ -22,7 +23,11 @@ export interface JourneyAccommodationSelection {
 }
 
 export interface JourneyAccommodationPricingInput {
+  readonly packageId?: string;
   readonly packageStopId?: string;
+  readonly stopOrder?: number;
+  readonly accommodation?: Accommodation;
+  readonly stayPeriod?: { readonly checkIn: Date; readonly checkOut: Date };
   readonly accommodationId: string;
   readonly room: AccommodationRoomOption;
   readonly rate: AccommodationRateOption;
@@ -37,6 +42,7 @@ export interface JourneyAccommodationReservationInput extends JourneyAccommodati
 export interface JourneyAccommodation {
   readonly accommodationId: string;
   readonly name: string;
+  readonly accommodation?: Accommodation;
   readonly packageStop?: JourneyPackageStop;
   readonly provider?: string;
   readonly roomOptions?: ReadonlyArray<AccommodationRoomOption>;
@@ -77,14 +83,26 @@ export function selectJourneyAccommodation(
     ...option,
     selection: Object.freeze(selection),
     pricingInput: Object.freeze({
+      packageId: option.packageStop?.packageId,
       packageStopId: option.packageStop?.stopId,
+      stopOrder: option.packageStop?.stopOrder,
+      accommodation: option.accommodation,
+      stayPeriod: option.packageStop
+        ? { checkIn: option.packageStop.checkInDate, checkOut: option.packageStop.checkOutDate }
+        : undefined,
       accommodationId: option.accommodationId,
       room,
       rate,
       occupancy: option.requestedOccupancy,
     }),
     reservationInput: Object.freeze({
+      packageId: option.packageStop?.packageId,
       packageStopId: option.packageStop?.stopId,
+      stopOrder: option.packageStop?.stopOrder,
+      accommodation: option.accommodation,
+      stayPeriod: option.packageStop
+        ? { checkIn: option.packageStop.checkInDate, checkOut: option.packageStop.checkOutDate }
+        : undefined,
       accommodationId: option.accommodationId,
       room,
       rate,
