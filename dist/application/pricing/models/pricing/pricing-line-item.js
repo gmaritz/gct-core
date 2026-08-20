@@ -9,6 +9,7 @@ function createPricingLineItem(item) {
         unitAmount: (0, money_1.createMoney)(item.unitAmount),
         totalAmount: (0, money_1.createMoney)(item.totalAmount),
         quantity: item.quantity,
+        metadata: item.metadata ? Object.freeze({ ...item.metadata }) : undefined,
     });
 }
 //# sourceMappingURL=pricing-line-item.js.map

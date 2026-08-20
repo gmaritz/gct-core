@@ -6,6 +6,7 @@ export interface PricingLineItem {
   readonly unitAmount: Money;
   readonly totalAmount: Money;
   readonly quantity: number;
+  readonly metadata?: Readonly<Record<string, string>>;
 }
 
 export function createPricingLineItem(item: PricingLineItem): PricingLineItem {
@@ -15,5 +16,6 @@ export function createPricingLineItem(item: PricingLineItem): PricingLineItem {
     unitAmount: createMoney(item.unitAmount),
     totalAmount: createMoney(item.totalAmount),
     quantity: item.quantity,
+    metadata: item.metadata ? Object.freeze({ ...item.metadata }) : undefined,
   });
 }
