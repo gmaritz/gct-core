@@ -69,8 +69,15 @@ describe("Hotelbeds availability response mapper", () => {
 
     expect(result.kind).toBe("ACCOMMODATION");
     if (result.kind !== "ACCOMMODATION") throw new Error("Expected accommodation result.");
+    if (result.result.kind !== "ACCOMMODATION") throw new Error("Expected mapped accommodation result.");
     expect(result.result.available).toBe(true);
     expect(result.result.accommodation!.identity.id).toBe("26996");
+    expect(result.results).toHaveLength(2);
+    const firstResult = result.results[0];
+    if (!firstResult || firstResult.kind !== "ACCOMMODATION") throw new Error("Expected mapped accommodation result.");
+    expect(firstResult.availabilityOptions?.roomOptions).toHaveLength(1);
+    expect(firstResult.availabilityOptions?.roomOptions[0]?.rateOptions).toHaveLength(1);
+    expect(firstResult.availabilityOptions?.roomOptions[0]?.rateOptions[0]?.status).toBe("BOOKABLE");
   });
 
   it("maps the verified zero-result envelope without fabricating an accommodation", () => {
@@ -114,11 +121,19 @@ describe("Hotelbeds availability response mapper", () => {
 
     expect(result.kind).toBe("ACCOMMODATION");
     if (result.kind !== "ACCOMMODATION") throw new Error("Expected accommodation result.");
+    if (result.result.kind !== "ACCOMMODATION") throw new Error("Expected mapped accommodation result.");
     expect(result.result.accommodation!.identity.id).toBe("123");
     expect(result.result.accommodation!.providerReference.providerAccommodationId).toBe("123");
     expect(result.result.available).toBe(true);
     expect(result.result.metadata.provider).toBe("hotelbeds");
-    expect(Object.keys(result.result)).toEqual(["kind", "accommodation", "available", "metadata"]);
+    expect(Object.keys(result.result)).toEqual([
+      "kind",
+      "accommodation",
+      "available",
+      "requestedOccupancy",
+      "availabilityOptions",
+      "metadata",
+    ]);
   });
 
   it("maps a valid successful response with no qualifying availability to unavailable", () => {
@@ -180,6 +195,43 @@ describe("Hotelbeds availability response mapper", () => {
     expect(result.kind).toBe("ACCOMMODATION");
     if (result.kind !== "ACCOMMODATION") throw new Error("Expected accommodation result.");
     expect(result.result.available).toBe(true);
+  });
+
+  it("preserves RECHECK status and offered child occupancy", () => {
+    const mapper = new HotelbedsAvailabilityResponseMapper();
+    const result = mapper.mapAvailabilityResponse([
+      createRawResponse({
+        body: {
+          hotels: [{
+            code: 321,
+            name: "Occupancy Hotel",
+            currency: "ZAR",
+            rooms: [{
+              code: "FAM",
+              name: "Family Room",
+              rates: [{
+                rateKey: "opaque-rate",
+                rateType: "RECHECK",
+                rooms: 1,
+                adults: 2,
+                children: 1,
+                childrenAges: "7",
+                net: "100.00",
+              }],
+            }],
+          }],
+        },
+      }),
+    ]);
+
+    expect(result.kind).toBe("ACCOMMODATION");
+    if (result.kind !== "ACCOMMODATION") throw new Error("Expected accommodation result.");
+    if (result.result.kind !== "ACCOMMODATION") throw new Error("Expected mapped accommodation result.");
+    const rate = result.result.availabilityOptions?.roomOptions[0]?.rateOptions[0];
+    expect(rate?.status).toBe("RECHECK_REQUIRED");
+    expect(rate?.reference).toEqual({ provider: "hotelbeds", opaqueReference: "opaque-rate" });
+    expect(rate?.pricing).toEqual({ amount: 100, currency: "ZAR", basis: "TOTAL_STAY" });
+    expect(rate?.occupancy.rooms[0]).toEqual({ adults: 2, children: 1, childAges: [7] });
   });
 
   it("preserves supplier, HTTP, and transport failures as failures instead of false availability", () => {

@@ -49,6 +49,35 @@ function cloneMetadata(metadata: AccommodationResultMetadata): AccommodationResu
   });
 }
 
+function cloneAvailabilityOptions(
+  options: NonNullable<Extract<AccommodationAvailabilityResult, { readonly kind: "ACCOMMODATION" }>["availabilityOptions"]>,
+) {
+  return Object.freeze({
+    roomOptions: Object.freeze(options.roomOptions.map((room) => Object.freeze({
+      reference: Object.freeze({ ...room.reference }),
+      name: room.name,
+      rateOptions: Object.freeze(room.rateOptions.map((rate) => Object.freeze({
+        reference: Object.freeze({ ...rate.reference }),
+        status: rate.status,
+        pricing: Object.freeze({ ...rate.pricing }),
+        occupancy: Object.freeze({
+          rooms: Object.freeze(rate.occupancy.rooms.map((occupancy) => Object.freeze({
+            adults: occupancy.adults,
+            children: occupancy.children,
+            childAges: Object.freeze([...occupancy.childAges]),
+          }))),
+        }),
+        board: rate.board ? Object.freeze({ ...rate.board }) : undefined,
+        allotment: rate.allotment,
+        payment: rate.payment ? Object.freeze({ ...rate.payment }) : undefined,
+        packaging: rate.packaging,
+        cancellationPolicies: Object.freeze(rate.cancellationPolicies.map((policy) => Object.freeze({ ...policy }))),
+        taxes: Object.freeze(rate.taxes.map((tax) => Object.freeze({ ...tax }))),
+      }))),
+    }))),
+  });
+}
+
 function freezeAvailabilityResult(result: AccommodationAvailabilityResult): AccommodationAvailabilityResult {
   if (result.kind === "NO_AVAILABILITY") {
     return Object.freeze({
@@ -62,6 +91,18 @@ function freezeAvailabilityResult(result: AccommodationAvailabilityResult): Acco
     kind: "ACCOMMODATION",
     accommodation: cloneAccommodation(result.accommodation),
     available: result.available,
+    requestedOccupancy: result.requestedOccupancy
+      ? Object.freeze({
+          rooms: Object.freeze(result.requestedOccupancy.rooms.map((room) => Object.freeze({
+            adults: room.adults,
+            children: room.children,
+            childAges: Object.freeze([...room.childAges]),
+          }))),
+        })
+      : undefined,
+    availabilityOptions: result.availabilityOptions
+      ? cloneAvailabilityOptions(result.availabilityOptions)
+      : undefined,
     metadata: cloneMetadata(result.metadata),
   });
 }

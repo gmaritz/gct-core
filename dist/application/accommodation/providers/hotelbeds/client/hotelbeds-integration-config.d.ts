@@ -5,6 +5,7 @@ export declare enum HotelbedsEnvironment {
 export interface HotelbedsTlsConfig {
     readonly clientCertificate: string;
     readonly privateKey: string;
+    readonly privateKeyPassphrase?: string;
     readonly trustedCa: string;
 }
 export interface HotelbedsIntegrationConfig {

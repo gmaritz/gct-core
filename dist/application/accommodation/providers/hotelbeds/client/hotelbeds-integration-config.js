@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DEFAULT_AVAILABILITY_MAX_CONCURRENCY = exports.DEFAULT_AVAILABILITY_MAX_QPS = exports.DEFAULT_CONTENT_RETRY_BASE_DELAY_MS = exports.DEFAULT_CONTENT_MAX_RETRIES = exports.DEFAULT_CONTENT_MAX_QPS = exports.DEFAULT_CONTENT_BATCH_SIZE = exports.HotelbedsConfigurationError = exports.HotelbedsEnvironment = void 0;
 exports.createHotelbedsIntegrationConfig = createHotelbedsIntegrationConfig;
 exports.loadHotelbedsIntegrationConfig = loadHotelbedsIntegrationConfig;
+const crypto_1 = require("crypto");
 var HotelbedsEnvironment;
 (function (HotelbedsEnvironment) {
     HotelbedsEnvironment["TEST"] = "TEST";
@@ -89,19 +90,55 @@ function parseSelectedHotelCodes(rawCodes) {
 function parseTlsConfig(env) {
     const clientCertificate = env.HOTELBEDS_TLS_CLIENT_CERTIFICATE?.trim();
     const privateKey = env.HOTELBEDS_TLS_PRIVATE_KEY?.trim();
+    const privateKeyPassphrase = env.HOTELBEDS_TLS_PRIVATE_KEY_PASSPHRASE?.trim();
     const trustedCa = env.HOTELBEDS_TLS_TRUSTED_CA?.trim();
-    const definedValues = [clientCertificate, privateKey, trustedCa].filter((value) => typeof value === "string" && value.length > 0).length;
-    if (definedValues === 0) {
+    if (!clientCertificate && !privateKey && !trustedCa && !privateKeyPassphrase) {
         return undefined;
     }
-    if (definedValues !== 3) {
-        throw new HotelbedsConfigurationError("HOTELBEDS_TLS_CLIENT_CERTIFICATE, HOTELBEDS_TLS_PRIVATE_KEY, and HOTELBEDS_TLS_TRUSTED_CA must be provided together.");
+    if (!clientCertificate || !privateKey || (privateKeyPassphrase && !privateKey)) {
+        throw new HotelbedsConfigurationError("Hotelbeds TLS certificate and private key must be provided together; passphrase-only configuration is invalid.");
     }
+    validatePrivateKey(privateKey, privateKeyPassphrase);
     return Object.freeze({
-        clientCertificate: clientCertificate ?? "",
-        privateKey: privateKey ?? "",
+        clientCertificate,
+        privateKey,
+        privateKeyPassphrase: privateKeyPassphrase || undefined,
         trustedCa: trustedCa ?? "",
     });
+}
+function validateTlsConfig(tls) {
+    if (!tls) {
+        return undefined;
+    }
+    const clientCertificate = tls.clientCertificate.trim();
+    const privateKey = tls.privateKey.trim();
+    const privateKeyPassphrase = tls.privateKeyPassphrase?.trim();
+    const trustedCa = tls.trustedCa.trim();
+    if (!clientCertificate && !privateKey && !trustedCa && !privateKeyPassphrase) {
+        return undefined;
+    }
+    if (!clientCertificate || !privateKey || (privateKeyPassphrase && !privateKey)) {
+        throw new HotelbedsConfigurationError("Hotelbeds TLS certificate and private key must be provided together; passphrase-only configuration is invalid.");
+    }
+    validatePrivateKey(privateKey, privateKeyPassphrase);
+    return Object.freeze({
+        clientCertificate,
+        privateKey,
+        privateKeyPassphrase: privateKeyPassphrase || undefined,
+        trustedCa,
+    });
+}
+function validatePrivateKey(privateKey, privateKeyPassphrase) {
+    try {
+        (0, crypto_1.createPrivateKey)({
+            key: privateKey,
+            format: "pem",
+            ...(privateKeyPassphrase ? { passphrase: privateKeyPassphrase } : {}),
+        });
+    }
+    catch {
+        throw new HotelbedsConfigurationError("Hotelbeds TLS private key or passphrase is invalid.");
+    }
 }
 function createHotelbedsIntegrationConfig(input) {
     if (isBlank(input.apiKey)) {
@@ -127,13 +164,7 @@ function createHotelbedsIntegrationConfig(input) {
         secret: input.secret.trim(),
         baseUrl: validateUrl(input.baseUrl),
         timeoutMs: input.timeoutMs,
-        tls: input.tls
-            ? Object.freeze({
-                clientCertificate: input.tls.clientCertificate,
-                privateKey: input.tls.privateKey,
-                trustedCa: input.tls.trustedCa,
-            })
-            : undefined,
+        tls: validateTlsConfig(input.tls),
         selectedHotelCodes: Object.freeze([...(input.selectedHotelCodes ?? [])]),
         contentBatchSize: input.contentBatchSize ?? exports.DEFAULT_CONTENT_BATCH_SIZE,
         contentMaxQps: input.contentMaxQps ?? exports.DEFAULT_CONTENT_MAX_QPS,

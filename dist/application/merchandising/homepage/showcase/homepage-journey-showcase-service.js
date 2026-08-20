@@ -112,6 +112,7 @@ function createContentResult(destination) {
 }
 function createAvailabilityResult(destination) {
     return {
+        kind: "ACCOMMODATION",
         accommodation: createAccommodation(destination),
         available: true,
         metadata: Object.freeze({

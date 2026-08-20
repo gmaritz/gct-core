@@ -6,7 +6,7 @@ export interface HotelbedsAvailabilityPax {
 }
 
 export interface HotelbedsAvailabilityOccupancy {
-  readonly rooms: 1;
+  readonly rooms: number;
   readonly adults: number;
   readonly children: number;
   readonly paxes: ReadonlyArray<HotelbedsAvailabilityPax>;

@@ -4,7 +4,7 @@ export interface HotelbedsAvailabilityPax {
     readonly age?: number;
 }
 export interface HotelbedsAvailabilityOccupancy {
-    readonly rooms: 1;
+    readonly rooms: number;
     readonly adults: number;
     readonly children: number;
     readonly paxes: ReadonlyArray<HotelbedsAvailabilityPax>;
@@ -16,7 +16,7 @@ export interface HotelbedsAvailabilityRequestBody {
     };
     readonly occupancies: ReadonlyArray<HotelbedsAvailabilityOccupancy>;
     readonly hotels: {
-        readonly codes: ReadonlyArray<number>;
+        readonly hotel: ReadonlyArray<number>;
     };
     readonly sourceMarket: string;
 }

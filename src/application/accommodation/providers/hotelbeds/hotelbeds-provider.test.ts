@@ -313,7 +313,7 @@ describe("Hotelbeds provider implementation", () => {
             },
           ],
           hotels: {
-            codes: [1001],
+            hotel: [1001],
           },
         },
       },

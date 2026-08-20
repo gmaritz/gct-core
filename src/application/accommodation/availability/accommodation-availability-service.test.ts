@@ -164,8 +164,10 @@ describe("Accommodation availability orchestration service", () => {
     });
     expect(requestBuilder.build).toHaveBeenCalledWith(createCriteria(), [{ hotelCode: "101" }, { hotelCode: "102" }]);
     expect(result.kind).toBe("ACCOMMODATION");
+    if (result.kind !== "ACCOMMODATION") throw new Error("Expected accommodation result.");
     expect(result.available).toBe(true);
     expect(result.metadata.provider).toBe("hotelbeds");
+    expect(result.results).toHaveLength(1);
   });
 
   it("returns the canonical unavailable result when candidate resolution yields no hotels", async () => {
@@ -177,9 +179,9 @@ describe("Accommodation availability orchestration service", () => {
 
     const result = await service.execute(createQuery());
 
-    expect(result.kind).toBe("ACCOMMODATION");
+    expect(result.kind).toBe("NO_AVAILABILITY");
     expect(result.available).toBe(false);
-    expect(result.accommodation!.identity.id).toBe("unavailable");
+    expect(result.accommodation).toBeUndefined();
   });
 
   it("returns the canonical unavailable result when no supplier requests are built", async () => {
@@ -206,9 +208,9 @@ describe("Accommodation availability orchestration service", () => {
 
     const result = await service.execute(createQuery());
 
-    expect(result.kind).toBe("ACCOMMODATION");
+    expect(result.kind).toBe("NO_AVAILABILITY");
     expect(result.available).toBe(false);
-    expect(result.accommodation!.identity.id).toBe("unavailable");
+    expect(result.accommodation).toBeUndefined();
   });
 
   it("converts a supplier NO_AVAILABILITY outcome without fabricating accommodation", async () => {

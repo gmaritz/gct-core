@@ -48,9 +48,8 @@ function createRoomFromOccupancyGroup(
   group: AccommodationOccupancyGroup,
   index: number,
 ): HotelbedsAvailabilityOccupancy {
-  if (group.rooms !== undefined && group.rooms !== 1) {
-    throw new Error(`Invalid occupancies[${index}].rooms.`);
-  }
+  const rooms = group.rooms ?? 1;
+  assertPositiveInteger(rooms, `occupancies[${index}].rooms`);
 
   assertPositiveInteger(group.adults, `occupancies[${index}].adults`);
   assertNonNegativeInteger(group.children, `occupancies[${index}].children`);
@@ -73,7 +72,7 @@ function createRoomFromOccupancyGroup(
   );
 
   return Object.freeze({
-    rooms: 1,
+    rooms,
     adults: group.adults,
     children: group.children,
     paxes: freezePaxes([...adultPaxes, ...childPaxes]),

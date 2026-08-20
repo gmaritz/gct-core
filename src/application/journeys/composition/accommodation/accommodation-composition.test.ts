@@ -92,6 +92,7 @@ function createAvailabilityResult(
   available: boolean,
 ): AccommodationAvailabilityResult {
   return {
+    kind: "ACCOMMODATION",
     accommodation,
     available,
     metadata: {

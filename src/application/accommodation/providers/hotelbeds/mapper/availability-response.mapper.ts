@@ -1,7 +1,19 @@
 import { Accommodation } from "../../../models";
-import { AccommodationAvailabilityResult, AccommodationResultMetadata } from "../../../results";
+import {
+  AccommodationAvailabilityOptions,
+  AccommodationAvailabilityRateStatus,
+  AccommodationAvailabilityResult,
+  AccommodationAvailabilitySearchResult,
+  AccommodationAvailabilityOccupancy,
+  AccommodationCancellationPolicy,
+  AccommodationRateOption,
+  AccommodationResultMetadata,
+  AccommodationRoomOption,
+  AccommodationSupplierReference,
+  AccommodationTaxOrFee,
+} from "../../../results";
 import { HotelbedsAvailabilityRawResponse } from "../client";
-import { HotelbedsHotel } from "../models";
+import { HotelbedsCancellationPolicy, HotelbedsHotel, HotelbedsRate, HotelbedsRoom } from "../models";
 import { HotelMapper } from "./hotel.mapper";
 
 function createMetadata(): AccommodationResultMetadata {
@@ -75,40 +87,181 @@ function resolveAccommodation(hotel: Record<string, unknown>): Accommodation {
     facilities: Array.isArray(hotel.facilities) ? (hotel.facilities as unknown[]) : [],
     address: isObject(hotel.address) ? (hotel.address as Record<string, unknown>) : undefined,
     location: isObject(hotel.location) ? (hotel.location as Record<string, unknown>) : undefined,
+    currency: typeof hotel.currency === "string" ? hotel.currency : undefined,
+    rooms: Array.isArray(hotel.rooms) ? (hotel.rooms as HotelbedsRoom[]) : [],
   } as HotelbedsHotel;
 
   return new HotelMapper().mapHotel(mappedHotel);
 }
 
-function isQualifiedAvailabilityHotel(hotel: Record<string, unknown>): boolean {
-  const rooms = Array.isArray(hotel.rooms) ? hotel.rooms : [];
+function parseNumber(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
 
-  return rooms.some((room) => {
-    if (!isObject(room)) {
-      return false;
-    }
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
 
-    const roomRates = Array.isArray(room.rates) ? room.rates : [];
+  return undefined;
+}
 
-    return roomRates.some((rate) => {
-      if (!isObject(rate)) {
-        return false;
-      }
+function toReference(provider: string, opaqueReference: string): AccommodationSupplierReference {
+  return Object.freeze({ provider, opaqueReference });
+}
 
-      const allotment = rate.allotment;
-      if (typeof allotment === "number") {
-        return allotment > 0;
-      }
+function parseChildAges(value: string | undefined): ReadonlyArray<number> {
+  if (!value) {
+    return Object.freeze([]);
+  }
 
-      const rateType = rate.rateType;
-      if (typeof rateType === "string") {
-        return rateType === "BOOKABLE" || rateType === "RECHECK";
-      }
+  return Object.freeze(
+    value
+      .split(/[,|~]/)
+      .map((age) => Number.parseInt(age.trim(), 10))
+      .filter((age) => Number.isInteger(age) && age >= 0),
+  );
+}
 
-      return Boolean(
-        rate.sellingRate || rate.net || rate.rateKey || rate.boardCode || rate.boardName,
-      );
-    });
+function mapRequestedOccupancy(response: HotelbedsAvailabilityRawResponse): AccommodationAvailabilityOccupancy | undefined {
+  const occupancies = response.request.body?.occupancies;
+  if (!occupancies?.length) {
+    return undefined;
+  }
+
+  return Object.freeze({
+    rooms: Object.freeze(
+      occupancies.map((occupancy) => Object.freeze({
+        adults: occupancy.adults,
+        children: occupancy.children,
+        childAges: Object.freeze(
+          occupancy.paxes
+            .filter((pax) => pax.type === "CH" && typeof pax.age === "number")
+            .map((pax) => pax.age!),
+        ),
+      })),
+    ),
+  });
+}
+
+function mapOfferedOccupancy(rate: HotelbedsRate): AccommodationAvailabilityOccupancy {
+  const rooms = Math.max(1, rate.rooms ?? 1);
+  const roomOccupancy = Object.freeze({
+    adults: rate.adults ?? 0,
+    children: rate.children ?? 0,
+    childAges: parseChildAges(rate.childrenAges),
+  });
+
+  return Object.freeze({ rooms: Object.freeze(Array.from({ length: rooms }, () => roomOccupancy)) });
+}
+
+function mapStatus(rate: HotelbedsRate): AccommodationAvailabilityRateStatus {
+  if (rate.rateType === "RECHECK") {
+    return "RECHECK_REQUIRED";
+  }
+
+  if (typeof rate.allotment === "number" && rate.allotment <= 0) {
+    return "UNAVAILABLE";
+  }
+
+  if (rate.rateType === "BOOKABLE" || typeof rate.allotment === "number") {
+    return "BOOKABLE";
+  }
+
+  return "UNKNOWN";
+}
+
+function mapCancellationPolicy(policy: HotelbedsCancellationPolicy): AccommodationCancellationPolicy {
+  return Object.freeze({
+    amount: parseNumber(policy.amount),
+    from: policy.from,
+    percent: parseNumber(policy.percent),
+    numberOfNights: parseNumber(policy.numberOfNights),
+  });
+}
+
+function mapTaxes(rate: HotelbedsRate): ReadonlyArray<AccommodationTaxOrFee> {
+  return Object.freeze(
+    (rate.taxes?.taxes ?? []).map((tax) => Object.freeze({
+      type: tax.type,
+      name: tax.subType,
+      amount: parseNumber(tax.amount),
+      currency: tax.currency,
+      included: tax.included,
+    })),
+  );
+}
+
+function mapRate(
+  hotel: HotelbedsHotel,
+  room: HotelbedsRoom,
+  rate: HotelbedsRate,
+  index: number,
+): AccommodationRateOption {
+  const hotelCode = String(hotel.code ?? "unknown");
+  const roomCode = room.code ?? room.roomCode ?? room.PMSRoomCode ?? `room-${index}`;
+  const opaqueReference = rate.rateKey ?? `${hotelCode}:${roomCode}:rate-${index}`;
+
+  return Object.freeze({
+    reference: toReference("hotelbeds", opaqueReference),
+    status: mapStatus(rate),
+    pricing: Object.freeze({
+      amount: parseNumber(rate.sellingRate ?? rate.net) ?? 0,
+      currency: hotel.currency ?? "UNKNOWN",
+      basis: "TOTAL_STAY",
+    }),
+    occupancy: mapOfferedOccupancy(rate),
+    board: rate.boardCode || rate.boardName
+      ? Object.freeze({ code: rate.boardCode, name: rate.boardName })
+      : undefined,
+    allotment: rate.allotment,
+    payment: rate.paymentType ? Object.freeze({ type: rate.paymentType }) : undefined,
+    packaging: rate.packaging,
+    cancellationPolicies: Object.freeze((rate.cancellationPolicies ?? []).map(mapCancellationPolicy)),
+    taxes: mapTaxes(rate),
+  });
+}
+
+function mapRoomOptions(hotel: HotelbedsHotel): AccommodationAvailabilityOptions {
+  const roomOptions: AccommodationRoomOption[] = [];
+
+  (hotel.rooms ?? []).forEach((room, roomIndex) => {
+    const roomCode = room.code ?? room.roomCode ?? room.PMSRoomCode ?? `room-${roomIndex}`;
+    const rates = (room.rates ?? []).map((rate, rateIndex) => mapRate(hotel, room, rate, rateIndex));
+    roomOptions.push(Object.freeze({
+      reference: toReference("hotelbeds", room.supplierReference ?? roomCode),
+      name: room.name ?? room.roomType ?? roomCode,
+      rateOptions: Object.freeze(rates),
+    }));
+  });
+
+  return Object.freeze({ roomOptions: Object.freeze(roomOptions) });
+}
+
+function mapHotelResult(
+  hotel: Record<string, unknown>,
+  response: HotelbedsAvailabilityRawResponse,
+): AccommodationAvailabilityResult {
+  const accommodation = resolveAccommodation(hotel);
+  const supplierHotel = accommodation.providerReference.providerAccommodationId;
+  const typedHotel = {
+    ...hotel,
+    code: supplierHotel,
+    currency: typeof hotel.currency === "string" ? hotel.currency : undefined,
+    rooms: Array.isArray(hotel.rooms) ? hotel.rooms : [],
+  } as HotelbedsHotel;
+  const availabilityOptions = mapRoomOptions(typedHotel);
+
+  return Object.freeze({
+    kind: "ACCOMMODATION",
+    accommodation,
+    available: availabilityOptions.roomOptions.some((room) =>
+      room.rateOptions.some((rate) => rate.status === "BOOKABLE" || rate.status === "RECHECK_REQUIRED"),
+    ),
+    requestedOccupancy: mapRequestedOccupancy(response),
+    availabilityOptions,
+    metadata: createMetadata(),
   });
 }
 
@@ -146,8 +299,7 @@ export class HotelbedsAvailabilityResponseMapper {
       throw new Error("No successful Hotelbeds availability responses were available for mapping.");
     }
 
-    let firstAccommodation: Accommodation | undefined;
-    let anyQualifiedAvailability = false;
+    const mappedResults: AccommodationAvailabilityResult[] = [];
     let noAvailabilityResponse = false;
 
     for (const response of successfulResponses) {
@@ -158,32 +310,22 @@ export class HotelbedsAvailabilityResponseMapper {
       const hotels = getHotelPayloadEntries(response.body);
 
       for (const hotel of hotels) {
-        if (!firstAccommodation) {
-          firstAccommodation = resolveAccommodation(hotel);
-        }
-
-        if (isQualifiedAvailabilityHotel(hotel)) {
-          anyQualifiedAvailability = true;
-        }
+        mappedResults.push(mapHotelResult(hotel, response));
       }
     }
 
-    if (!firstAccommodation && noAvailabilityResponse) {
+    if (mappedResults.length === 0 && noAvailabilityResponse) {
       return { kind: "NO_AVAILABILITY" };
     }
 
-    if (!firstAccommodation) {
+    if (mappedResults.length === 0) {
       throw new Error("Malformed Hotelbeds availability response: no supplier hotel entries were found.");
     }
 
     return {
       kind: "ACCOMMODATION",
-      result: {
-        kind: "ACCOMMODATION",
-        accommodation: firstAccommodation,
-        available: anyQualifiedAvailability,
-        metadata: createMetadata(),
-      },
+      result: mappedResults.find((result) => result.available) ?? mappedResults[0]!,
+      results: Object.freeze(mappedResults),
     };
   }
 }
@@ -192,6 +334,7 @@ export type HotelbedsAvailabilityMappingResult =
   | {
       readonly kind: "ACCOMMODATION";
       readonly result: AccommodationAvailabilityResult;
+      readonly results: AccommodationAvailabilitySearchResult["results"];
     }
   | {
       readonly kind: "NO_AVAILABILITY";

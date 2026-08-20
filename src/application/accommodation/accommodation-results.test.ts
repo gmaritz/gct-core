@@ -73,6 +73,7 @@ describe("Accommodation application result contracts", () => {
       metadata,
     };
     const availabilityResult: AccommodationAvailabilityResult = {
+      kind: "ACCOMMODATION",
       accommodation,
       available: true,
       metadata,

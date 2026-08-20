@@ -10,24 +10,7 @@ function hasAvailabilityExecution(provider) {
 }
 function createUnavailableResult(provider) {
     return Object.freeze({
-        accommodation: Object.freeze({
-            identity: Object.freeze({ id: "unavailable", name: "Unavailable" }),
-            category: "Guest House",
-            location: Object.freeze({
-                country: "",
-                region: "",
-                city: "",
-                suburb: "",
-                latitude: 0,
-                longitude: 0,
-            }),
-            rating: Object.freeze({ stars: 0, classification: "Unknown" }),
-            images: Object.freeze([]),
-            amenities: Object.freeze([]),
-            policies: Object.freeze([]),
-            contacts: Object.freeze([]),
-            providerReference: Object.freeze({ provider, providerAccommodationId: "unavailable" }),
-        }),
+        kind: "NO_AVAILABILITY",
         available: false,
         metadata: Object.freeze({
             provider,
@@ -72,7 +55,22 @@ class DefaultAccommodationAvailabilityService {
             throw new Error("No accommodation availability provider is registered");
         }
         const executionResult = await provider.executeAvailabilityRequests(requests);
-        return provider.mapAvailabilityResponse(executionResult.responses);
+        const mappingResult = provider.mapAvailabilityResponse(executionResult.responses);
+        if (mappingResult.kind === "NO_AVAILABILITY") {
+            return Object.freeze({
+                kind: "NO_AVAILABILITY",
+                available: false,
+                metadata: Object.freeze({
+                    provider: "hotelbeds",
+                    generatedAt: new Date(),
+                    version: "1.0.0",
+                }),
+            });
+        }
+        return Object.freeze({
+            ...mappingResult.result,
+            results: mappingResult.results ?? [mappingResult.result],
+        });
     }
 }
 exports.DefaultAccommodationAvailabilityService = DefaultAccommodationAvailabilityService;

@@ -37,6 +37,7 @@ function createQuery(overrides: Partial<AccommodationInventoryQuery> = {}): Acco
 
 function createAvailabilityResult(provider: string): AccommodationAvailabilityResult {
   return {
+    kind: "ACCOMMODATION",
     accommodation: {
       identity: {
         id: "acc-1001",
@@ -225,6 +226,7 @@ describe("AccommodationInventoryService", () => {
     const service = new AccommodationInventoryService(registry);
     const result = await service.execute(createQuery());
 
+    if (result.kind !== "ACCOMMODATION") throw new Error("Expected accommodation result.");
     expect(result.accommodation.providerReference.provider).toBe("hotelbeds");
     expect(result.available).toBe(true);
   });
@@ -236,6 +238,7 @@ describe("AccommodationInventoryService", () => {
     const service = new AccommodationInventoryService(registry);
     const result = await service.execute(createQuery());
 
+    if (result.kind !== "ACCOMMODATION") throw new Error("Expected accommodation result.");
     expect(Object.isFrozen(result)).toBe(true);
     expect(Object.isFrozen(result.accommodation)).toBe(true);
     expect(Object.isFrozen(result.metadata)).toBe(true);

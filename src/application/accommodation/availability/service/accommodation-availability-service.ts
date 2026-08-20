@@ -4,17 +4,21 @@ import { HotelCatalogueService } from "../../catalogue";
 import { AccommodationSearchCriteria, AccommodationSearchQuery } from "../../discovery";
 import { ProviderRegistry } from "../../registry";
 import { AccommodationAvailabilityResult } from "../../results";
-import { HotelbedsAvailabilityRequest, HotelbedsAvailabilityRequestBuilder } from "../../providers/hotelbeds/client";
+import { HotelbedsAvailabilityRequestBuilder } from "../../providers/hotelbeds/client";
 
 interface AvailabilityProvider {
-  executeAvailabilityRequests(requests: ReadonlyArray<HotelbedsAvailabilityRequest>): Promise<{
+  executeAvailabilityRequests(requests: ReadonlyArray<unknown>): Promise<{
     readonly provider: string;
     readonly operation: string;
     readonly completedAt: Date;
     readonly responses: ReadonlyArray<unknown>;
   }>;
   mapAvailabilityResponse(rawResponses: ReadonlyArray<unknown>):
-    | { readonly kind: "ACCOMMODATION"; readonly result: AccommodationAvailabilityResult }
+    | {
+        readonly kind: "ACCOMMODATION";
+        readonly result: AccommodationAvailabilityResult;
+        readonly results: ReadonlyArray<AccommodationAvailabilityResult>;
+      }
     | { readonly kind: "NO_AVAILABILITY" };
 }
 
@@ -27,25 +31,7 @@ function hasAvailabilityExecution(provider: unknown): provider is AvailabilityPr
 
 function createUnavailableResult(provider: string): AccommodationAvailabilityResult {
   return Object.freeze({
-    kind: "ACCOMMODATION",
-    accommodation: Object.freeze({
-      identity: Object.freeze({ id: "unavailable", name: "Unavailable" }),
-      category: "Guest House",
-      location: Object.freeze({
-        country: "",
-        region: "",
-        city: "",
-        suburb: "",
-        latitude: 0,
-        longitude: 0,
-      }),
-      rating: Object.freeze({ stars: 0, classification: "Unknown" }),
-      images: Object.freeze([]),
-      amenities: Object.freeze([]),
-      policies: Object.freeze([]),
-      contacts: Object.freeze([]),
-      providerReference: Object.freeze({ provider, providerAccommodationId: "unavailable" }),
-    }),
+    kind: "NO_AVAILABILITY",
     available: false,
     metadata: Object.freeze({
       provider,
@@ -126,6 +112,9 @@ export class DefaultAccommodationAvailabilityService implements AccommodationAva
       });
     }
 
-    return mappingResult.result;
+    return Object.freeze({
+      ...mappingResult.result,
+      results: mappingResult.results ?? [mappingResult.result],
+    });
   }
 }

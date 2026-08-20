@@ -1,16 +1,17 @@
 import { ProviderCapabilitySet } from "../../../capabilities";
 import { Accommodation } from "../../../models";
-import { AccommodationAvailabilityResult, AccommodationContentResult, AccommodationDetailsResult, AccommodationImageResult, AccommodationSearchResult } from "../../../results";
+import { AccommodationContentResult, AccommodationDetailsResult, AccommodationImageResult, AccommodationSearchResult } from "../../../results";
 import { AccommodationRateResult } from "../../../rates";
 import { AccommodationSearchCriteria } from "../../../discovery";
 import { AccommodationProvider } from "../../accommodation-provider";
+import { HotelbedsAvailabilityMappingResult } from "../mapper";
 import { HotelbedsAvailabilityExecutionResult, HotelbedsAvailabilityExecutor, HotelbedsAvailabilityRequest, HotelbedsClient } from "../client";
 import { HotelbedsHotel } from "../models";
 export interface HotelbedsAccommodationMapper {
     mapHotel(hotel: HotelbedsHotel): Accommodation;
 }
 export interface HotelbedsAvailabilityMapper {
-    mapAvailabilityResponse(rawResponses: ReadonlyArray<HotelbedsAvailabilityExecutionResult["responses"][number]>): AccommodationAvailabilityResult;
+    mapAvailabilityResponse(rawResponses: ReadonlyArray<HotelbedsAvailabilityExecutionResult["responses"][number]>): HotelbedsAvailabilityMappingResult;
 }
 export declare class HotelbedsProvider implements AccommodationProvider {
     private readonly client;
@@ -26,6 +27,6 @@ export declare class HotelbedsProvider implements AccommodationProvider {
     images(providerAccommodationId: string): Promise<AccommodationImageResult>;
     rates(query: import("../../../rates").AccommodationRateQuery): Promise<AccommodationRateResult>;
     executeAvailabilityRequests(requests: ReadonlyArray<HotelbedsAvailabilityRequest>): Promise<HotelbedsAvailabilityExecutionResult>;
-    mapAvailabilityResponse(rawResponses: ReadonlyArray<HotelbedsAvailabilityExecutionResult["responses"][number]>): AccommodationAvailabilityResult;
+    mapAvailabilityResponse(rawResponses: ReadonlyArray<HotelbedsAvailabilityExecutionResult["responses"][number]>): HotelbedsAvailabilityMappingResult;
 }
 //# sourceMappingURL=hotelbeds-provider.d.ts.map

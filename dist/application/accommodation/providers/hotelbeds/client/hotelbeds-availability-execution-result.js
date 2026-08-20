@@ -13,7 +13,7 @@ function freezeRequest(request) {
                     ...occupancy,
                     paxes: Object.freeze(occupancy.paxes.map((pax) => Object.freeze({ ...pax }))),
                 }))),
-                hotels: Object.freeze({ codes: Object.freeze([...request.body.hotels.codes]) }),
+                hotels: Object.freeze({ hotel: Object.freeze([...request.body.hotels.hotel]) }),
             })
             : request.body,
     });

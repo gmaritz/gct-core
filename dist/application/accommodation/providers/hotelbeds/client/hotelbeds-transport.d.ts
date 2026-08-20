@@ -1,7 +1,10 @@
+import { IncomingHttpHeaders } from "http";
+import { RequestOptions } from "https";
 import { HotelbedsIntegrationConfig } from "./hotelbeds-integration-config";
 export interface HotelbedsTransportTlsConfig {
     readonly clientCertificate: string;
     readonly privateKey: string;
+    readonly privateKeyPassphrase?: string;
     readonly trustedCa: string;
 }
 export interface HotelbedsTransportRequest {
@@ -30,30 +33,27 @@ export declare class HotelbedsTransportError extends Error {
     readonly providerCode?: string | undefined;
     constructor(kind: HotelbedsTransportErrorKind, message: string, providerCode?: string | undefined);
 }
-interface FetchLikeResponse {
-    readonly status: number;
-    readonly headers: {
-        forEach(callback: (value: string, key: string) => void): void;
-        get?(key: string): string | null;
-    };
-    text(): Promise<string>;
-    arrayBuffer?(): Promise<ArrayBuffer>;
+export interface HotelbedsHttpsResponse {
+    readonly statusCode?: number;
+    readonly headers: IncomingHttpHeaders;
+    on(event: "data", listener: (chunk: Buffer) => void): this;
+    on(event: "end", listener: () => void): this;
+    on(event: "error", listener: (error: Error) => void): this;
 }
-interface HotelbedsFetchInit {
-    method: string;
-    headers: Record<string, string>;
-    body?: string;
-    signal: AbortSignal;
-    tls?: HotelbedsTransportTlsConfig;
+export interface HotelbedsHttpsRequest {
+    on(event: "error", listener: (error: Error) => void): this;
+    setTimeout(timeoutMs: number, callback: () => void): this;
+    write(body: string): boolean;
+    end(): void;
+    destroy(error?: Error): void;
 }
-export type HotelbedsFetchLike = (input: string, init: HotelbedsFetchInit) => Promise<FetchLikeResponse>;
+export type HotelbedsHttpsRequestLike = (options: RequestOptions, callback: (response: HotelbedsHttpsResponse) => void) => HotelbedsHttpsRequest;
 export interface HotelbedsTransport {
     execute(config: HotelbedsIntegrationConfig, request: HotelbedsTransportRequest): Promise<HotelbedsTransportResponse>;
 }
 export declare class FetchHotelbedsTransport implements HotelbedsTransport {
-    private readonly fetchClient;
-    constructor(fetchClient?: HotelbedsFetchLike);
+    private readonly requestClient;
+    constructor(requestClient?: HotelbedsHttpsRequestLike);
     execute(config: HotelbedsIntegrationConfig, request: HotelbedsTransportRequest): Promise<HotelbedsTransportResponse>;
 }
-export {};
 //# sourceMappingURL=hotelbeds-transport.d.ts.map

@@ -17,6 +17,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./accommodation-search.result"), exports);
 __exportStar(require("./accommodation-details.result"), exports);
 __exportStar(require("./accommodation-availability.result"), exports);
+__exportStar(require("./accommodation-availability-options"), exports);
 __exportStar(require("./accommodation-image.result"), exports);
 __exportStar(require("./accommodation-content.result"), exports);
 __exportStar(require("./accommodation-result-metadata"), exports);

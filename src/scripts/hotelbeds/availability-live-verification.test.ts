@@ -198,7 +198,7 @@ describe("Hotelbeds live availability verification harness", () => {
         responses: [],
       } as never);
     const map = jest.spyOn(HotelbedsProvider.prototype, "mapAvailabilityResponse")
-      .mockReturnValue({ kind: "ACCOMMODATION", result: createResult(false) });
+      .mockReturnValue({ kind: "ACCOMMODATION", result: createResult(false), results: [createResult(false)] });
 
     await service.execute(createAvailabilityQuery(parseLiveVerificationConfiguration(createEnvironment())));
 

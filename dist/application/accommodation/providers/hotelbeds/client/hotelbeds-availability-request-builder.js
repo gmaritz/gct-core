@@ -29,9 +29,8 @@ function assertNonNegativeInteger(value, field) {
     }
 }
 function createRoomFromOccupancyGroup(group, index) {
-    if (group.rooms !== undefined && group.rooms !== 1) {
-        throw new Error(`Invalid occupancies[${index}].rooms.`);
-    }
+    const rooms = group.rooms ?? 1;
+    assertPositiveInteger(rooms, `occupancies[${index}].rooms`);
     assertPositiveInteger(group.adults, `occupancies[${index}].adults`);
     assertNonNegativeInteger(group.children, `occupancies[${index}].children`);
     const childAges = [...group.childAges];
@@ -47,7 +46,7 @@ function createRoomFromOccupancyGroup(group, index) {
     });
     const adultPaxes = Array.from({ length: group.adults }, () => Object.freeze({ type: "AD" }));
     return Object.freeze({
-        rooms: 1,
+        rooms,
         adults: group.adults,
         children: group.children,
         paxes: freezePaxes([...adultPaxes, ...childPaxes]),
@@ -126,7 +125,7 @@ class HotelbedsAvailabilityRequestBuilder {
                 stay: Object.freeze({ checkIn, checkOut }),
                 sourceMarket,
                 occupancies: Object.freeze(rooms.map((room) => Object.freeze({ ...room }))),
-                hotels: Object.freeze({ codes: Object.freeze([...batch]) }),
+                hotels: Object.freeze({ hotel: Object.freeze([...batch]) }),
             }),
         })));
     }

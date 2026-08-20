@@ -1,5 +1,6 @@
 import { Accommodation } from "../models";
 import { AccommodationResultMetadata } from "./accommodation-result-metadata";
+import { AccommodationAvailabilityOptions, AccommodationAvailabilityOccupancy } from "./accommodation-availability-options";
 
 export type AccommodationAvailabilityResult =
   | {
@@ -7,6 +8,9 @@ export type AccommodationAvailabilityResult =
       readonly accommodation: Accommodation;
       readonly available: boolean;
       readonly metadata: AccommodationResultMetadata;
+      readonly requestedOccupancy?: AccommodationAvailabilityOccupancy;
+      readonly availabilityOptions?: AccommodationAvailabilityOptions;
+      readonly results?: ReadonlyArray<AccommodationAvailabilityResult>;
     }
   | {
       readonly kind: "NO_AVAILABILITY";
@@ -14,3 +18,8 @@ export type AccommodationAvailabilityResult =
       readonly available: false;
       readonly metadata: AccommodationResultMetadata;
     };
+
+export interface AccommodationAvailabilitySearchResult {
+  readonly results: ReadonlyArray<AccommodationAvailabilityResult>;
+  readonly metadata: AccommodationResultMetadata;
+}
