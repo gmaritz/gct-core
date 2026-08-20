@@ -15,3 +15,4 @@ export * from "./revalidation";
 export * from "./booking";
 export * from "./cancellation";
 export * from "./modification";
+export * from "./details";

@@ -28,6 +28,10 @@ import {
   AccommodationBookingModificationResult,
 } from "../../../modification";
 import {
+  AccommodationBookingDetailsRequest,
+  AccommodationBookingDetailsResult,
+} from "../../../details";
+import {
   AccommodationRate,
   AccommodationRateResult,
   AccommodationRateStatus,
@@ -38,6 +42,7 @@ import { AccommodationSearchCriteria } from "../../../discovery";
 import { AccommodationProvider } from "../../accommodation-provider";
 import {
   HotelMapper,
+  mapHotelbedsBookingDetails,
   HotelbedsAvailabilityMappingResult,
   HotelbedsAvailabilityResponseMapper,
   mapHotelbedsCheckRateResponse,
@@ -185,6 +190,11 @@ function createCapabilities(): ProviderCapabilitySet {
         AccommodationProviderCapabilityType.MODIFICATION,
         "Hotel Accommodation Booking Modification",
         "Modifies confirmed Hotelbeds accommodation bookings.",
+      ),
+      createCapability(
+        AccommodationProviderCapabilityType.BOOKING_DETAILS,
+        "Hotel Accommodation Booking Details",
+        "Retrieves current Hotelbeds booking state for a known booking.",
       ),
     ],
   };
@@ -561,6 +571,48 @@ export class HotelbedsProvider implements AccommodationProvider {
       return createModificationFailure(request, unknown ? "UNKNOWN" : "FAILED", error instanceof Error ? error.message : "Hotelbeds modification failed.", code);
     }
   }
+
+  public async getBookingDetails(
+    request: AccommodationBookingDetailsRequest,
+  ): Promise<AccommodationBookingDetailsResult> {
+    if (request.provider !== this.providerId) throw new Error("Hotelbeds provider cannot retrieve another provider booking.");
+    const getDetails = this.client.getBookingDetails;
+    if (!getDetails) return createDetailsFailure(request, "FAILED", "Hotelbeds booking details are not supported by this client.", "UNSUPPORTED");
+
+    try {
+      const response = await getDetails({
+        operation: "booking-details",
+        method: "GET",
+        path: `/hotel-api/1.0/bookings/${encodeURIComponent(request.supplierBookingReference)}`,
+      });
+      const mapped = mapHotelbedsBookingDetails(response.data);
+      return Object.freeze({
+        successful: true,
+        status: mapped.status,
+        reservationId: request.reservationId,
+        provider: this.providerId,
+        supplierBookingReference: request.supplierBookingReference,
+        accommodation: mapped.accommodation,
+        rooms: mapped.rooms,
+        rate: mapped.rate,
+        stayPeriod: mapped.stayPeriod,
+        occupancy: mapped.occupancy,
+        guests: mapped.guests,
+        holder: mapped.holder,
+        supplierPrice: mapped.supplierPrice,
+        cancellable: mapped.cancellable,
+        modifiable: mapped.modifiable,
+        packageStopId: request.packageStopId,
+        errors: Object.freeze([]),
+        warnings: Object.freeze([]),
+      });
+    } catch (error) {
+      const code = error instanceof Error && typeof (error as Error & { code?: unknown }).code === "string"
+        ? (error as Error & { code: string }).code : "BOOKING_DETAILS_FAILED";
+      const status = code === "TIMEOUT" || code === "NETWORK_ERROR" || code === "UNKNOWN_ERROR" ? "UNKNOWN" : "FAILED";
+      return createDetailsFailure(request, status, error instanceof Error ? error.message : "Hotelbeds booking details failed.", code);
+    }
+  }
 }
 
 function asObject(value: unknown): Record<string, unknown> | undefined {
@@ -671,4 +723,23 @@ function mapModificationCharge(value: unknown): { readonly amount: number; reado
   return Number.isFinite(amount) && typeof charge.currency === "string"
     ? Object.freeze({ amount, currency: charge.currency, description: typeof charge.description === "string" ? charge.description : undefined })
     : undefined;
+}
+
+function createDetailsFailure(
+  request: AccommodationBookingDetailsRequest,
+  status: "FAILED" | "UNKNOWN",
+  message: string,
+  code: string = status,
+): AccommodationBookingDetailsResult {
+  return Object.freeze({
+    successful: false,
+    status,
+    reservationId: request.reservationId,
+    provider: "hotelbeds",
+    supplierBookingReference: request.supplierBookingReference,
+    rooms: Object.freeze([]),
+    packageStopId: request.packageStopId,
+    errors: Object.freeze([{ code, message }]),
+    warnings: Object.freeze([]),
+  });
 }

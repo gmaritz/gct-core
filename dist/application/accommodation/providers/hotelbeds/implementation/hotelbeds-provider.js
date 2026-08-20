@@ -73,6 +73,7 @@ function createCapabilities() {
             createCapability(capabilities_1.AccommodationProviderCapabilityType.BOOKING, "Hotel Accommodation Booking", "Creates Hotelbeds accommodation bookings for selected offers."),
             createCapability(capabilities_1.AccommodationProviderCapabilityType.CANCELLATION, "Hotel Accommodation Cancellation", "Cancels confirmed Hotelbeds accommodation bookings."),
             createCapability(capabilities_1.AccommodationProviderCapabilityType.MODIFICATION, "Hotel Accommodation Booking Modification", "Modifies confirmed Hotelbeds accommodation bookings."),
+            createCapability(capabilities_1.AccommodationProviderCapabilityType.BOOKING_DETAILS, "Hotel Accommodation Booking Details", "Retrieves current Hotelbeds booking state for a known booking."),
         ],
     };
 }
@@ -402,6 +403,47 @@ class HotelbedsProvider {
             return createModificationFailure(request, unknown ? "UNKNOWN" : "FAILED", error instanceof Error ? error.message : "Hotelbeds modification failed.", code);
         }
     }
+    async getBookingDetails(request) {
+        if (request.provider !== this.providerId)
+            throw new Error("Hotelbeds provider cannot retrieve another provider booking.");
+        const getDetails = this.client.getBookingDetails;
+        if (!getDetails)
+            return createDetailsFailure(request, "FAILED", "Hotelbeds booking details are not supported by this client.", "UNSUPPORTED");
+        try {
+            const response = await getDetails({
+                operation: "booking-details",
+                method: "GET",
+                path: `/hotel-api/1.0/bookings/${encodeURIComponent(request.supplierBookingReference)}`,
+            });
+            const mapped = (0, mapper_1.mapHotelbedsBookingDetails)(response.data);
+            return Object.freeze({
+                successful: true,
+                status: mapped.status,
+                reservationId: request.reservationId,
+                provider: this.providerId,
+                supplierBookingReference: request.supplierBookingReference,
+                accommodation: mapped.accommodation,
+                rooms: mapped.rooms,
+                rate: mapped.rate,
+                stayPeriod: mapped.stayPeriod,
+                occupancy: mapped.occupancy,
+                guests: mapped.guests,
+                holder: mapped.holder,
+                supplierPrice: mapped.supplierPrice,
+                cancellable: mapped.cancellable,
+                modifiable: mapped.modifiable,
+                packageStopId: request.packageStopId,
+                errors: Object.freeze([]),
+                warnings: Object.freeze([]),
+            });
+        }
+        catch (error) {
+            const code = error instanceof Error && typeof error.code === "string"
+                ? error.code : "BOOKING_DETAILS_FAILED";
+            const status = code === "TIMEOUT" || code === "NETWORK_ERROR" || code === "UNKNOWN_ERROR" ? "UNKNOWN" : "FAILED";
+            return createDetailsFailure(request, status, error instanceof Error ? error.message : "Hotelbeds booking details failed.", code);
+        }
+    }
 }
 exports.HotelbedsProvider = HotelbedsProvider;
 function asObject(value) {
@@ -517,5 +559,18 @@ function mapModificationCharge(value) {
     return Number.isFinite(amount) && typeof charge.currency === "string"
         ? Object.freeze({ amount, currency: charge.currency, description: typeof charge.description === "string" ? charge.description : undefined })
         : undefined;
+}
+function createDetailsFailure(request, status, message, code = status) {
+    return Object.freeze({
+        successful: false,
+        status,
+        reservationId: request.reservationId,
+        provider: "hotelbeds",
+        supplierBookingReference: request.supplierBookingReference,
+        rooms: Object.freeze([]),
+        packageStopId: request.packageStopId,
+        errors: Object.freeze([{ code, message }]),
+        warnings: Object.freeze([]),
+    });
 }
 //# sourceMappingURL=hotelbeds-provider.js.map

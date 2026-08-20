@@ -12,4 +12,5 @@ export * from "./provider-reference.mapper";
 export * from "./hotel-content.mapper";
 export * from "./availability-response.mapper";
 export * from "./checkrate.mapper";
+export * from "./booking-details.mapper";
 //# sourceMappingURL=index.d.ts.map

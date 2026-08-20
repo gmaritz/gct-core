@@ -9,4 +9,5 @@ export enum AccommodationProviderCapabilityType {
   BOOKING = "BOOKING",
   CANCELLATION = "CANCELLATION",
   MODIFICATION = "MODIFICATION",
+  BOOKING_DETAILS = "BOOKING_DETAILS",
 }

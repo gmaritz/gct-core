@@ -118,6 +118,9 @@ class DefaultHotelbedsClient {
     async modify(request) {
         return executeAndUnwrap(this.gateway, request);
     }
+    async getBookingDetails(request) {
+        return executeAndUnwrap(this.gateway, request);
+    }
 }
 exports.DefaultHotelbedsClient = DefaultHotelbedsClient;
 //# sourceMappingURL=hotelbeds-client.js.map

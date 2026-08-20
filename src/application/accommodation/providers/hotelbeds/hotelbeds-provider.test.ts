@@ -73,6 +73,7 @@ describe("Hotelbeds provider implementation", () => {
       AccommodationProviderCapabilityType.BOOKING,
       AccommodationProviderCapabilityType.CANCELLATION,
       AccommodationProviderCapabilityType.MODIFICATION,
+      AccommodationProviderCapabilityType.BOOKING_DETAILS,
     ]);
   });
 
