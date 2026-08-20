@@ -8,7 +8,7 @@
 **Status:** APPROVED  
 **Version:** 1.0  
 **Applies To:** All future GCT Core capability and application development  
-**Primary Principle:** Specification → Architect Review → Implementation → Verification → Acceptance → Commit
+**Primary Principle:** Specification → Implementation → Testing → Report → Acceptance → Commit
 
 ---
 
@@ -56,8 +56,6 @@ Do not unnecessarily enlarge an iteration after implementation has started.
 
 ## 2.2 Specification Before Implementation
 
-No implementation may begin until its specification has been reviewed and accepted.
-
 The specification defines:
 
 - purpose;
@@ -79,7 +77,7 @@ The specification is the implementation contract.
 
 Implementation specifications must normally be:
 
-**500 lines or fewer.**
+**700 lines or fewer.**
 
 The specification must be:
 
@@ -92,7 +90,7 @@ The specification must be:
 
 Do not turn an implementation specification into a publication-style document.
 
-If an iteration cannot reasonably fit within approximately 500 lines, divide the capability into smaller iterations.
+If an iteration cannot reasonably fit within approximately 700 lines, divide the capability into smaller iterations.
 
 ---
 
@@ -100,24 +98,22 @@ If an iteration cannot reasonably fit within approximately 500 lines, divide the
 
 Every implementation iteration follows exactly this sequence:
 
-```text
-SPECIFICATION
+STAGE 1 - SPECIFICATION
       ↓
-ARCHITECT REVIEW
+STAGE 2 - IMPLEMENTATION
       ↓
-IMPLEMENTATION
+STAGE 3 - FOCUSED TESTS + REGRESSION
       ↓
-FOCUSED TESTS + REGRESSION
+STAGE 4 - COPILOT IMPLEMENTATION REPORT
       ↓
-COPILOT IMPLEMENTATION REPORT
+STAGE 5 - ARCHITECT ACCEPTANCE
       ↓
-ARCHITECT ACCEPTANCE
-      ↓
-COMMIT
+STAGE 6 - COMMIT
       ↓
 NEXT SPECIFICATION
 
-4. STAGE 1 — SPECIFICATION
+
+# 3.1  STAGE 1 — SPECIFICATION
 
 ChatGPT acts as system architect and produces the implementation specification.
 
@@ -125,17 +121,17 @@ The specification must be supplied as:
 
 ONE COMPLETE MARKDOWN DOCUMENT IN THE CHAT.
 
-Mandatory format:
+This workflow is mandatory unless the user explicitly changes it.
 
-```markdown
-<complete specification>
+When the markdown is supplied then it needs to be done in the following way.
 
+Make sure the specification's internal examples do not accidentally terminate the outer Markdown fence. That is important for producing one genuinely copyable document.
 
-The complete document must be contained in one copyable block.
+The requirement is that the specification be presented as one complete Markdown document in one code block in the chat.
 
+The entire specification must be contained inside one outer Markdown code block, with no nested code blocks inside it. 
 
 Do NOT:
-
 
 - split the specification into multiple blocks;
 - provide sections separately;
@@ -144,59 +140,17 @@ Do NOT:
 - create multiple files for one specification;
 - ask the user to assemble the specification.
 
-
 The user must be able to copy the complete specification in one action.
-
 
 A downloadable file may only be provided if the user explicitly requests one.
 
-
 ---
 
-
-# 5. STAGE 2 — ARCHITECT REVIEW
-
-
-Before implementation, the specification is reviewed against the existing codebase and architecture.
-
-
-The architect review determines:
-
-
-- whether the proposed boundary is correct;
-- whether existing architecture should be reused;
-- whether the specification conflicts with previous iterations;
-- whether the scope is sufficiently narrow;
-- whether dependencies on earlier iterations are satisfied;
-- whether the acceptance criteria are testable.
-
-
-If the specification is acceptable:
-
-
-**Implementation may begin.**
-
-
-If changes are required:
-
-
-**Update the complete specification.**
-
-
-Do not begin implementation while significant architectural ambiguity remains.
-
-
----
-
-
-# 6. STAGE 3 — COPILOT IMPLEMENTATION
-
+# 3.2  STAGE 2 — COPILOT IMPLEMENTATION
 
 The approved specification is provided to Copilot.
 
-
 Copilot must:
-
 
 - implement only the current iteration;
 - follow the specification;
@@ -206,26 +160,18 @@ Copilot must:
 - avoid unrelated refactoring;
 - avoid unrelated technical-debt remediation.
 
-
 Copilot may modify production code and tests required by the specification.
-
 
 Generated `dist` artifacts must follow the established repository convention.
 
-
 ---
 
-
-# 7. STAGE 4 — COPILOT VERIFICATION
-
+# 3.3  STAGE 3 — COPILOT VERIFICATION
 
 After implementation, Copilot performs the normal verification required for the iteration.
 
-
 At minimum:
 
-
-```text
 npm run build
 npm test -- --runInBand
 npx prisma validate
@@ -239,7 +185,8 @@ The objective is to establish that the implementation works.
 
 The objective is NOT to create another governance process.
 
-8. COPILOT IMPLEMENTATION REPORT
+
+# 3.4  STAGE 4 - COPILOT IMPLEMENTATION REPORT
 
 Copilot reports back with:
 
@@ -257,7 +204,7 @@ any genuine implementation issues.
 
 The report is then provided to the architect.
 
-9. STAGE 5 — ARCHITECT ACCEPTANCE
+# 3.5  STAGE 5 — ARCHITECT ACCEPTANCE
 
 ChatGPT reviews the Copilot report against:
 
@@ -279,7 +226,23 @@ If accepted, the implementation proceeds immediately to commit.
 
 If not accepted, only the identified defect or gap is addressed.
 
-10. NO ROUTINE PRE-COMMIT AUDIT
+# 3.6  STAGE 6 - COMMIT
+
+The user performs the commit.
+
+ChatGPT does NOT perform the commit.
+
+After acceptance, ChatGPT supplies:
+
+the recommended commit message;
+optionally, a concise instruction to commit the completed iteration.
+
+The user controls staging and committing.
+
+The normal process does not require ChatGPT to perform a staging audit.
+
+
+# 4. NO ROUTINE PRE-COMMIT AUDIT
 
 A separate acceptance-audit process is NOT part of the normal workflow.
 
@@ -296,29 +259,8 @@ multiple pre-commit verification passes.
 
 These are only performed when a real problem requires investigation.
 
-Normal workflow:
 
-Copilot report
-      ↓
-Architect acceptance
-      ↓
-Commit
-11. COMMIT RESPONSIBILITY
-
-The user performs the commit.
-
-ChatGPT does NOT perform the commit.
-
-After acceptance, ChatGPT supplies:
-
-the recommended commit message;
-optionally, a concise instruction to commit the completed iteration.
-
-The user controls staging and committing.
-
-The normal process does not require ChatGPT to perform a staging audit.
-
-12. GENERATED ARTIFACTS
+# 5. GENERATED ARTIFACTS
 
 The repository has an established convention of committing generated dist
 artifacts corresponding to changed TypeScript implementation files.
@@ -331,7 +273,7 @@ the convention does not need to be rediscovered for every iteration.
 
 Do not create a separate generated-artifact governance exercise unless a genuine inconsistency is discovered.
 
-13. LINT POLICY
+# 6. LINT POLICY
 
 Lint errors that prevent implementation are defects.
 
@@ -351,7 +293,7 @@ A new iteration must not introduce lint errors.
 
 New warnings should be avoided where practical.
 
-14. TOOLING PROBLEMS
+# 7. TOOLING PROBLEMS
 
 Tooling problems must be distinguished from implementation defects.
 
@@ -369,7 +311,7 @@ Once fixed, commit it and continue development.
 
 Do not repeatedly re-investigate a tooling issue that has already been resolved.
 
-15. REGRESSION PROTECTION
+# 8. REGRESSION PROTECTION
 
 Every iteration must preserve previously accepted behaviour.
 
@@ -389,7 +331,7 @@ unrelated existing failures.
 
 Classify the cause before changing code.
 
-16. DATABASE SAFETY
+# 9. DATABASE SAFETY
 
 Unless explicitly required by the current specification:
 
@@ -402,7 +344,7 @@ alter schema outside the current specification.
 
 npx prisma validate is permitted as validation.
 
-17. EXTERNAL SUPPLIER SAFETY
+# 10. EXTERNAL SUPPLIER SAFETY
 
 External supplier APIs must not be called during automated tests unless explicitly required and approved.
 
@@ -414,7 +356,7 @@ supplier API calls are not part of normal iteration verification.
 
 Controlled supplier verification occurs later when the complete integration is ready.
 
-18. HOTELBEDS DEVELOPMENT
+# 11. HOTELBEDS DEVELOPMENT
 
 Hotelbeds integration development is iterative.
 
@@ -438,7 +380,7 @@ Certification
 
 The exact iteration sequence is defined by the application specifications.
 
-19. CERTIFICATION BOUNDARY
+# 12. CERTIFICATION BOUNDARY
 
 Certification is separate from feature development.
 
@@ -453,7 +395,7 @@ Certification establishes supplier/integration readiness.
 
 Do not introduce certification gates into ordinary implementation iterations.
 
-20. SCOPE DISCIPLINE
+# 13. SCOPE DISCIPLINE
 
 During an iteration:
 
@@ -479,7 +421,7 @@ Create a future iteration.
 
 Do not silently expand the current one.
 
-21. PREVIOUS ITERATIONS ARE ACCEPTED CONTRACTS
+# 14. PREVIOUS ITERATIONS ARE ACCEPTED CONTRACTS
 
 Once an iteration has been accepted and committed, treat it as an architectural and behavioural baseline.
 
@@ -499,7 +441,7 @@ Do not repeatedly reopen R1–R3 unless a genuine defect is discovered.
 
 Do not redesign an accepted iteration merely because a later iteration exposes a different implementation possibility.
 
-22. CHAT CONTINUITY
+# 15. CHAT CONTINUITY
 
 When continuing work in an existing conversation:
 
@@ -515,41 +457,23 @@ The user may provide this document at the beginning of a new chat with:
 
 The assistant must then follow this governance document.
 
-23. NEW CHAT RESET PROTOCOL
+# 16. NEW CHAT RESET PROTOCOL
 
 When this governance document is supplied at the beginning of a new chat:
 
 The assistant must acknowledge:
 
 it understands the GCT Core development workflow;
-specifications must be ≤500 lines where practical;
+specifications must be ≤700 lines where practical;
 specifications must be supplied as one complete Markdown block;
-the workflow is Specification → Architect Review → Implementation → Verification → Acceptance → Commit;
+the workflow is Specification → Implementation → Testing → Verification & Report → Acceptance → Commit;
 no routine pre-commit audit process is to be introduced;
 the user performs commits;
 the assistant supplies the commit message after acceptance.
 
 The assistant must NOT reinterpret or redesign the workflow.
 
-24. CURRENT DEVELOPMENT OPERATING MODE
-
-For normal feature development, use:
-
-1. Define next iteration
-2. Produce one complete specification
-3. Architect review
-4. User gives specification to Copilot
-5. Copilot implements
-6. Copilot runs focused tests + regression
-7. User provides Copilot report
-8. Architect accepts/rejects
-9. If accepted, provide commit message
-10. User commits
-11. Define next iteration
-
-This is the default operating mode.
-
-25. EXCEPTION PROCESS
+# 17. EXCEPTION PROCESS
 
 Additional investigation is permitted only when one of the following occurs:
 
@@ -572,25 +496,7 @@ return to the normal workflow.
 
 Do not permanently add new gates because of a one-off problem.
 
-26. GOVERNANCE PRIORITY
-
-When development instructions conflict with a desire for additional verification,
-the following priority applies:
-
-Approved Specification
-        ↓
-Existing Architecture
-        ↓
-This Governance Process
-        ↓
-Implementation Efficiency
-        ↓
-Additional Verification
-
-Additional verification must not override the established iterative workflow
-without a concrete technical reason.
-
-27. ARCHITECT ROLE
+# 18. ARCHITECT ROLE
 
 ChatGPT acts as the GCT Core system architect during development.
 
@@ -611,7 +517,8 @@ performing routine staging audits;
 repeatedly rediscovering repository conventions;
 manually reproducing Copilot's test execution;
 expanding every issue into a new governance process.
-28. COPILOT ROLE
+
+# 19. COPILOT ROLE
 
 Copilot acts as the implementation engineer.
 
@@ -629,7 +536,7 @@ implementation reporting.
 Copilot does not redefine the architecture or expand the specification without
 architect approval.
 
-29. USER ROLE
+# 20. USER ROLE
 
 The user acts as project owner/developer and controls:
 
@@ -643,7 +550,7 @@ certification process.
 
 The user provides Copilot's implementation report to the architect for acceptance.
 
-30. DEFINITION OF DONE
+# 21. DEFINITION OF DONE
 
 An implementation iteration is DONE when:
 
@@ -660,7 +567,7 @@ After acceptance:
 
 Commit and move on.
 
-31. PROCESS SUCCESS CRITERION
+# 22. PROCESS SUCCESS CRITERION
 
 The development process is successful when it enables rapid, controlled progress
 toward the complete GCT Core platform.
@@ -673,36 +580,39 @@ Prefer the smallest sufficient verification that establishes correctness.
 
 Do not add process for the sake of process.
 
-32. FINAL GOVERNING WORKFLOW
+
+# 23. FINAL GOVERNING WORKFLOW
+
+STAGE 1:
 ┌──────────────────────────────┐
 │        SPECIFICATION         │
-│      ≤ ~500 lines            │
+│      ≤ ~700 lines            │
 │   One complete Markdown file │
 └──────────────┬───────────────┘
                ↓
-┌──────────────────────────────┐
-│      ARCHITECT REVIEW        │
-│   Architecture + scope      │
-└──────────────┬───────────────┘
-               ↓
+STAGE 2:
 ┌──────────────────────────────┐
 │        IMPLEMENTATION        │
 │          Copilot             │
 └──────────────┬───────────────┘
                ↓
+STAGE 3:
 ┌──────────────────────────────┐
 │   FOCUSED + REGRESSION TESTS │
 │          Copilot             │
 └──────────────┬───────────────┘
                ↓
+STAGE 4:
 ┌──────────────────────────────┐
 │       COPILOT REPORT         │
 └──────────────┬───────────────┘
                ↓
+STAGE 5:
 ┌──────────────────────────────┐
 │     ARCHITECT ACCEPTANCE     │
 └──────────────┬───────────────┘
                ↓
+STAGE 6:
 ┌──────────────────────────────┐
 │           COMMIT             │
 │       User performs it       │
@@ -713,6 +623,10 @@ Do not add process for the sake of process.
 
 This workflow is mandatory unless the user explicitly changes it.
 
+The format ChatGPT / Architect provide the Markdown is very important as it saves a lot of development time. When the Markdown is supplied then it needs to be done in the following way.
+
+Make sure the specification's internal examples do not accidentally terminate the outer Markdown fence. That is important for producing one genuinely copyable document.
+The requirement is that the specification be presented as one complete Markdown document in one code block in the chat.
+The entire specification must be contained inside one outer Markdown code block, with no nested code blocks inside it. 
+
 END GOV-DEV-001
-
-
