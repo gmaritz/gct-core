@@ -20,6 +20,10 @@ import {
   AccommodationBookingResult,
 } from "../../../booking";
 import {
+  AccommodationCancellationRequest,
+  AccommodationCancellationResult,
+} from "../../../cancellation";
+import {
   AccommodationRate,
   AccommodationRateResult,
   AccommodationRateStatus,
@@ -167,6 +171,11 @@ function createCapabilities(): ProviderCapabilitySet {
         AccommodationProviderCapabilityType.BOOKING,
         "Hotel Accommodation Booking",
         "Creates Hotelbeds accommodation bookings for selected offers.",
+      ),
+      createCapability(
+        AccommodationProviderCapabilityType.CANCELLATION,
+        "Hotel Accommodation Cancellation",
+        "Cancels confirmed Hotelbeds accommodation bookings.",
       ),
     ],
   };
@@ -410,6 +419,88 @@ export class HotelbedsProvider implements AccommodationProvider {
       );
     }
   }
+
+  public async cancelAccommodation(
+    request: AccommodationCancellationRequest,
+  ): Promise<AccommodationCancellationResult> {
+    if (request.provider !== this.providerId) {
+      throw new Error("Hotelbeds provider cannot cancel a different provider booking.");
+    }
+
+    const cancel = this.client.cancel;
+    if (!cancel) throw new Error("Hotelbeds client does not support cancellation.");
+
+    try {
+      const response = await cancel({
+        operation: "cancellation",
+        method: "POST",
+        path: "/hotel-api/1.0/bookings",
+        body: {
+          reference: request.supplierBookingReference,
+          cancellation: true,
+          clientReference: request.idempotencyKey,
+        },
+      });
+      const responseObject = asObject(response.data);
+      const status = readString(responseObject, ["status", "cancellationStatus"]);
+      const alreadyCancelled = status?.toUpperCase().includes("CANCEL") &&
+        status.toUpperCase().includes("ALREADY");
+      const charge = mapCancellationCharge(response.data);
+
+      return Object.freeze({
+        successful: true,
+        status: alreadyCancelled ? "ALREADY_CANCELLED" : "CANCELLED",
+        reservationId: request.reservationId,
+        provider: this.providerId,
+        supplierBookingReference: request.supplierBookingReference,
+        charge,
+        cancelledAt: new Date(),
+        packageStopId: request.packageStopId,
+        errors: Object.freeze([]),
+        warnings: Object.freeze([]),
+      });
+    } catch (error) {
+      const code = error instanceof Error && typeof (error as Error & { code?: unknown }).code === "string"
+        ? (error as Error & { code: string }).code
+        : "CANCELLATION_FAILED";
+      const unknown = code === "TIMEOUT" || code === "NETWORK_ERROR" || code === "UNKNOWN_ERROR";
+      return Object.freeze({
+        successful: false,
+        status: unknown ? "UNKNOWN" : "FAILED",
+        reservationId: request.reservationId,
+        provider: this.providerId,
+        supplierBookingReference: request.supplierBookingReference,
+        packageStopId: request.packageStopId,
+        errors: Object.freeze([{ code, message: error instanceof Error ? error.message : "Hotelbeds cancellation failed." }]),
+        warnings: Object.freeze([]),
+      });
+    }
+  }
+}
+
+function asObject(value: unknown): Record<string, unknown> | undefined {
+  return typeof value === "object" && value !== null ? value as Record<string, unknown> : undefined;
+}
+
+function readString(value: Record<string, unknown> | undefined, keys: ReadonlyArray<string>): string | undefined {
+  if (!value) return undefined;
+  for (const key of keys) if (typeof value[key] === "string") return value[key] as string;
+  return undefined;
+}
+
+function mapCancellationCharge(value: unknown): { readonly amount: number; readonly currency: string; readonly description?: string } | undefined {
+  const object = asObject(value);
+  if (!object) return undefined;
+  const charge = asObject(object.cancellationAmount) ?? asObject(object.cancellationFee) ?? object;
+  const amountValue = charge.amount ?? charge.value ?? charge.cancellationAmount;
+  const currency = charge.currency ?? object.currency;
+  const amount = Number.parseFloat(String(amountValue));
+  if (!Number.isFinite(amount) || typeof currency !== "string") return undefined;
+  return Object.freeze({
+    amount,
+    currency,
+    description: typeof charge.description === "string" ? charge.description : undefined,
+  });
 }
 
 function findString(value: unknown, keys: ReadonlyArray<string>): string | undefined {

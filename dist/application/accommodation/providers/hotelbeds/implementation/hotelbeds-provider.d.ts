@@ -3,6 +3,7 @@ import { Accommodation } from "../../../models";
 import { AccommodationContentResult, AccommodationDetailsResult, AccommodationImageResult, AccommodationSearchResult } from "../../../results";
 import { AccommodationRateRevalidationRequest, AccommodationRateRevalidationResult } from "../../../revalidation";
 import { AccommodationBookingRequest, AccommodationBookingResult } from "../../../booking";
+import { AccommodationCancellationRequest, AccommodationCancellationResult } from "../../../cancellation";
 import { AccommodationRateResult } from "../../../rates";
 import { AccommodationSearchCriteria } from "../../../discovery";
 import { AccommodationProvider } from "../../accommodation-provider";
@@ -32,5 +33,6 @@ export declare class HotelbedsProvider implements AccommodationProvider {
     executeAvailabilityRequests(requests: ReadonlyArray<HotelbedsAvailabilityRequest>): Promise<HotelbedsAvailabilityExecutionResult>;
     mapAvailabilityResponse(rawResponses: ReadonlyArray<HotelbedsAvailabilityExecutionResult["responses"][number]>): HotelbedsAvailabilityMappingResult;
     book(request: AccommodationBookingRequest): Promise<AccommodationBookingResult>;
+    cancelAccommodation(request: AccommodationCancellationRequest): Promise<AccommodationCancellationResult>;
 }
 //# sourceMappingURL=hotelbeds-provider.d.ts.map

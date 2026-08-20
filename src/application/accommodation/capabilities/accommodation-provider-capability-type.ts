@@ -7,4 +7,5 @@ export enum AccommodationProviderCapabilityType {
   RATES = "RATES",
   REVALIDATION = "REVALIDATION",
   BOOKING = "BOOKING",
+  CANCELLATION = "CANCELLATION",
 }
