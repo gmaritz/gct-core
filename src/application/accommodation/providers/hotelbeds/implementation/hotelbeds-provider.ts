@@ -12,6 +12,10 @@ import {
   AccommodationSearchResult,
 } from "../../../results";
 import {
+  AccommodationRateRevalidationRequest,
+  AccommodationRateRevalidationResult,
+} from "../../../revalidation";
+import {
   AccommodationRate,
   AccommodationRateResult,
   AccommodationRateStatus,
@@ -20,7 +24,12 @@ import {
 import { AccommodationSearchCriteria } from "../../../discovery";
 
 import { AccommodationProvider } from "../../accommodation-provider";
-import { HotelMapper, HotelbedsAvailabilityMappingResult, HotelbedsAvailabilityResponseMapper } from "../mapper";
+import {
+  HotelMapper,
+  HotelbedsAvailabilityMappingResult,
+  HotelbedsAvailabilityResponseMapper,
+  mapHotelbedsCheckRateResponse,
+} from "../mapper";
 import {
   DefaultHotelbedsAvailabilityExecutor,
   DefaultHotelbedsClient,
@@ -145,6 +154,11 @@ function createCapabilities(): ProviderCapabilitySet {
         "Hotel Rates",
         "Retrieves Hotelbeds rate payloads via the provider client.",
       ),
+      createCapability(
+        AccommodationProviderCapabilityType.REVALIDATION,
+        "Hotel Rate Revalidation",
+        "Revalidates selected Hotelbeds rates through CheckRate.",
+      ),
     ],
   };
 }
@@ -234,6 +248,70 @@ export class HotelbedsProvider implements AccommodationProvider {
       rates: response.data.map((rate) => mapRate(rate, query.context.currency)),
       metadata: createMetadata(),
     };
+  }
+
+  public async revalidate(
+    request: AccommodationRateRevalidationRequest,
+  ): Promise<AccommodationRateRevalidationResult> {
+    if (request.providerReference.provider !== this.providerId) {
+      throw new Error("Hotelbeds provider cannot revalidate a different provider reference.");
+    }
+
+    const checkRate = this.client.checkRate;
+    if (!checkRate) {
+      throw new Error("Hotelbeds client does not support CheckRate.");
+    }
+
+    try {
+      const response = await checkRate({
+        operation: "checkRate",
+        method: "POST",
+        path: "/hotel-api/1.0/checkrate",
+        body: {
+          rooms: [{ rateKey: request.providerReference.opaqueReference }],
+        },
+      });
+      const currentRate = mapHotelbedsCheckRateResponse(response.data, request.rate);
+      const changed = JSON.stringify(currentRate) !== JSON.stringify(request.rate);
+
+      if (currentRate.status === "UNAVAILABLE") {
+        return Object.freeze({
+          status: "UNAVAILABLE",
+          accommodation: request.accommodation,
+          room: request.room,
+          previousRate: request.rate,
+          packageStopId: request.packageStopId,
+          provider: this.providerId,
+        });
+      }
+
+      return Object.freeze({
+        status: changed ? "CHANGED" : "VALID",
+        accommodation: request.accommodation,
+        room: request.room,
+        previousRate: request.rate,
+        currentRate,
+        packageStopId: request.packageStopId,
+        provider: this.providerId,
+      });
+    } catch (error) {
+      const code = error instanceof Error && typeof (error as Error & { code?: unknown }).code === "string"
+        ? (error as Error & { code: string }).code
+        : "CHECK_RATE_FAILED";
+      const unavailable = code === "NOT_FOUND" || code === "VALIDATION_ERROR";
+      return Object.freeze({
+        status: unavailable ? "UNAVAILABLE" : "FAILED",
+        accommodation: request.accommodation,
+        room: request.room,
+        previousRate: request.rate,
+        packageStopId: request.packageStopId,
+        provider: this.providerId,
+        error: Object.freeze({
+          code,
+          message: error instanceof Error ? error.message : "Hotelbeds CheckRate failed.",
+        }),
+      });
+    }
   }
 
   public async executeAvailabilityRequests(

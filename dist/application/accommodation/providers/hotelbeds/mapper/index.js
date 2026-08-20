@@ -27,4 +27,5 @@ __exportStar(require("./destination.mapper"), exports);
 __exportStar(require("./provider-reference.mapper"), exports);
 __exportStar(require("./hotel-content.mapper"), exports);
 __exportStar(require("./availability-response.mapper"), exports);
+__exportStar(require("./checkrate.mapper"), exports);
 //# sourceMappingURL=index.js.map

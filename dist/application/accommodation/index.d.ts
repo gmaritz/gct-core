@@ -11,4 +11,5 @@ export * from "./inventory";
 export * from "./rates";
 export * from "./catalogue";
 export * from "./availability";
+export * from "./revalidation";
 //# sourceMappingURL=index.d.ts.map

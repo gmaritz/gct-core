@@ -9,5 +9,6 @@ var AccommodationProviderCapabilityType;
     AccommodationProviderCapabilityType["CONTENT"] = "CONTENT";
     AccommodationProviderCapabilityType["IMAGES"] = "IMAGES";
     AccommodationProviderCapabilityType["RATES"] = "RATES";
+    AccommodationProviderCapabilityType["REVALIDATION"] = "REVALIDATION";
 })(AccommodationProviderCapabilityType || (exports.AccommodationProviderCapabilityType = AccommodationProviderCapabilityType = {}));
 //# sourceMappingURL=accommodation-provider-capability-type.js.map

@@ -69,6 +69,7 @@ describe("Hotelbeds provider implementation", () => {
       AccommodationProviderCapabilityType.CONTENT,
       AccommodationProviderCapabilityType.IMAGES,
       AccommodationProviderCapabilityType.RATES,
+      AccommodationProviderCapabilityType.REVALIDATION,
     ]);
   });
 

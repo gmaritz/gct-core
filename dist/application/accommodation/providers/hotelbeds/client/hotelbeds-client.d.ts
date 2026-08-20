@@ -8,6 +8,7 @@ export interface HotelbedsClient {
     getHotelContent(request: HotelbedsRequest): Promise<HotelbedsResponse<HotelbedsHotel>>;
     getHotelImages(request: HotelbedsRequest): Promise<HotelbedsResponse<ReadonlyArray<HotelbedsImage>>>;
     getHotelRates(request: HotelbedsRequest): Promise<HotelbedsResponse<ReadonlyArray<HotelbedsRate>>>;
+    checkRate?(request: HotelbedsRequest): Promise<HotelbedsResponse<unknown>>;
 }
 export declare class DefaultHotelbedsClient implements HotelbedsClient {
     private readonly gateway;
@@ -17,5 +18,6 @@ export declare class DefaultHotelbedsClient implements HotelbedsClient {
     getHotelContent(request: HotelbedsRequest): Promise<HotelbedsResponse<HotelbedsHotel>>;
     getHotelImages(request: HotelbedsRequest): Promise<HotelbedsResponse<ReadonlyArray<HotelbedsImage>>>;
     getHotelRates(request: HotelbedsRequest): Promise<HotelbedsResponse<ReadonlyArray<HotelbedsRate>>>;
+    checkRate(request: HotelbedsRequest): Promise<HotelbedsResponse<unknown>>;
 }
 //# sourceMappingURL=hotelbeds-client.d.ts.map

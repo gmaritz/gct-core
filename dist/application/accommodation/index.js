@@ -27,4 +27,5 @@ __exportStar(require("./inventory"), exports);
 __exportStar(require("./rates"), exports);
 __exportStar(require("./catalogue"), exports);
 __exportStar(require("./availability"), exports);
+__exportStar(require("./revalidation"), exports);
 //# sourceMappingURL=index.js.map
