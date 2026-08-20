@@ -1,6 +1,7 @@
 import { AccommodationAmenity, AccommodationCategory } from "../../../accommodation/models";
 import { AccommodationCurrency } from "../../../accommodation/rates";
 import { JourneyCompositionSource } from "../../validation";
+import { JourneyPackageStop } from "../../models";
 export interface AccommodationCompositionPreferences {
     readonly category?: AccommodationCategory;
     readonly minimumRating?: number;
@@ -22,5 +23,7 @@ export interface AccommodationCompositionContext {
     readonly currency?: AccommodationCurrency;
     readonly market?: string;
     readonly preferences?: AccommodationCompositionPreferences;
+    readonly packageStop?: JourneyPackageStop;
+    readonly occupancy?: import("../../../accommodation").AccommodationAvailabilityOccupancy;
 }
 //# sourceMappingURL=accommodation-composition-context.d.ts.map

@@ -176,16 +176,28 @@ function createRateQuery(context, identifier) {
         context: rateContext,
     });
 }
-function toJourneyAccommodation(accommodation, contentResult) {
+function toJourneyAccommodation(accommodation, contentResult, inventoryResult, context) {
     const accommodationId = accommodation.identity.id;
     const resolvedName = contentResult?.accommodation.identity.name ?? accommodation.identity.name;
     if (isBlank(accommodationId) || isBlank(resolvedName)) {
         return undefined;
     }
-    return Object.freeze({
+    const positiveResult = inventoryResult.kind === "ACCOMMODATION" ? inventoryResult : undefined;
+    const roomOptions = positiveResult?.availabilityOptions?.roomOptions;
+    const provider = accommodation.providerReference.provider;
+    const option = {
         accommodationId,
         name: resolvedName,
-    });
+        ...(context.packageStop ? { packageStop: context.packageStop } : {}),
+        ...(roomOptions || context.packageStop || positiveResult?.requestedOccupancy || context.occupancy
+            ? { provider }
+            : {}),
+        ...(roomOptions && roomOptions.length > 0 ? { roomOptions } : {}),
+        ...(positiveResult?.requestedOccupancy || context.occupancy
+            ? { requestedOccupancy: positiveResult?.requestedOccupancy ?? context.occupancy }
+            : {}),
+    };
+    return Object.freeze(option);
 }
 class AccommodationCompositionAdapter {
     constructor(discoveryService, contentService, inventoryService, rateService) {
@@ -227,13 +239,13 @@ class AccommodationCompositionAdapter {
         const contentResult = isFulfilled(contentExecution)
             ? contentExecution.value
             : undefined;
-        if (!inventoryResult || !inventoryResult.available) {
+        if (!inventoryResult || inventoryResult.kind !== "ACCOMMODATION" || !inventoryResult.available) {
             return undefined;
         }
         if (!rateResult || rateResult.rates.length === 0) {
             return undefined;
         }
-        return toJourneyAccommodation(accommodation, contentResult);
+        return toJourneyAccommodation(accommodation, contentResult, inventoryResult, context);
     }
 }
 exports.AccommodationCompositionAdapter = AccommodationCompositionAdapter;

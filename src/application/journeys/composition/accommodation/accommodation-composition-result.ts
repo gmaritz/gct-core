@@ -7,10 +7,7 @@ export function createAccommodationCompositionResult(
 ): AccommodationCompositionResult {
   return Object.freeze(
     accommodations.map((accommodation) =>
-      Object.freeze({
-        accommodationId: accommodation.accommodationId,
-        name: accommodation.name,
-      }),
+      Object.freeze({ ...accommodation }),
     ),
   );
 }

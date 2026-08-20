@@ -5,6 +5,7 @@ import {
 import { AccommodationCurrency } from "../../../accommodation/rates";
 
 import { JourneyCompositionSource } from "../../validation";
+import { JourneyPackageStop } from "../../models";
 
 export interface AccommodationCompositionPreferences {
   readonly category?: AccommodationCategory;
@@ -28,4 +29,6 @@ export interface AccommodationCompositionContext {
   readonly currency?: AccommodationCurrency;
   readonly market?: string;
   readonly preferences?: AccommodationCompositionPreferences;
+  readonly packageStop?: JourneyPackageStop;
+  readonly occupancy?: import("../../../accommodation").AccommodationAvailabilityOccupancy;
 }

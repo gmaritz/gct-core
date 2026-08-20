@@ -23,6 +23,7 @@ import {
 import {
   JourneyCompositionSource,
 } from "@application/journeys/validation";
+import { selectJourneyAccommodation } from "@application/journeys/models";
 
 import {
   AccommodationCompositionAdapter,
@@ -227,6 +228,104 @@ describe("AccommodationCompositionAdapter", () => {
 
     expect(Object.isFrozen(result)).toBe(true);
     expect(Object.isFrozen(result[0])).toBe(true);
+  });
+
+  it("preserves stop context, room/rate hierarchy, occupancy and supplier references", async () => {
+    const accommodation = createAccommodation("acc-stop-1", "Stop One Hotel");
+    const room = {
+      reference: { provider: "hotelbeds", opaqueReference: "room-1" },
+      name: "Deluxe Room",
+      rateOptions: [
+        {
+          reference: { provider: "hotelbeds", opaqueReference: "rate-1" },
+          status: "RECHECK_REQUIRED" as const,
+          pricing: { amount: 1200, currency: "ZAR", basis: "TOTAL_STAY" },
+          occupancy: { rooms: [{ adults: 2, children: 1, childAges: [7] }] },
+          cancellationPolicies: [],
+          taxes: [],
+        },
+      ],
+    };
+    const adapter = new AccommodationCompositionAdapter(
+      { search: async () => createSearchResult([accommodation]) },
+      { execute: async () => createContentResult(accommodation) },
+      {
+        execute: async () => ({
+          kind: "ACCOMMODATION" as const,
+          accommodation,
+          available: true,
+          requestedOccupancy: { rooms: [{ adults: 2, children: 1, childAges: [7] }] },
+          availabilityOptions: { roomOptions: [room] },
+          metadata: { generatedAt: new Date(), version: "1.0.0", provider: "hotelbeds" },
+        }),
+      },
+      { execute: async () => createRateResult(accommodation.identity.id) },
+    );
+
+    const result = await adapter.compose(createContext({
+      packageStop: {
+        packageId: "package-1",
+        stopId: "stop-1",
+        stopOrder: 1,
+        checkInDate: new Date("2026-10-10"),
+        checkOutDate: new Date("2026-10-14"),
+      },
+    }));
+
+    expect(result[0]?.packageStop?.stopId).toBe("stop-1");
+    expect(result[0]?.roomOptions?.[0]?.rateOptions[0]?.reference.opaqueReference).toBe("rate-1");
+    expect(result[0]?.requestedOccupancy?.rooms[0]?.childAges).toEqual([7]);
+    expect(result[0]?.provider).toBe("hotelbeds");
+  });
+
+  it("validates Property -> Room -> Rate selection and projects downstream inputs", () => {
+    const option = {
+      accommodationId: "acc-1",
+      name: "Hotel",
+      packageStop: {
+        packageId: "package-1",
+        stopId: "stop-1",
+        stopOrder: 1,
+        checkInDate: new Date("2026-10-10"),
+        checkOutDate: new Date("2026-10-14"),
+      },
+      provider: "hotelbeds",
+      roomOptions: [{
+        reference: { provider: "hotelbeds", opaqueReference: "room-1" },
+        name: "Room",
+        rateOptions: [{
+          reference: { provider: "hotelbeds", opaqueReference: "rate-1" },
+          status: "BOOKABLE" as const,
+          pricing: { amount: 100, currency: "ZAR", basis: "TOTAL_STAY" },
+          occupancy: { rooms: [{ adults: 2, children: 0, childAges: [] }] },
+          cancellationPolicies: [],
+          taxes: [],
+        }],
+      }],
+      requestedOccupancy: { rooms: [{ adults: 2, children: 0, childAges: [] }] },
+    };
+    const selected = selectJourneyAccommodation(option, {
+      accommodationId: "acc-1",
+      packageStopId: "stop-1",
+      roomReference: { provider: "hotelbeds", opaqueReference: "room-1" },
+      rateReference: { provider: "hotelbeds", opaqueReference: "rate-1" },
+    });
+
+    expect(selected.selection?.rateReference.opaqueReference).toBe("rate-1");
+    expect(selected.pricingInput?.packageStopId).toBe("stop-1");
+    expect(selected.reservationInput?.supplierReference.opaqueReference).toBe("rate-1");
+    expect(() => selectJourneyAccommodation(option, {
+      accommodationId: "acc-1",
+      packageStopId: "stop-2",
+      roomReference: { provider: "hotelbeds", opaqueReference: "room-1" },
+      rateReference: { provider: "hotelbeds", opaqueReference: "rate-1" },
+    })).toThrow("another package stop");
+    expect(() => selectJourneyAccommodation(option, {
+      accommodationId: "acc-1",
+      packageStopId: "stop-1",
+      roomReference: { provider: "hotelbeds", opaqueReference: "room-1" },
+      rateReference: { provider: "hotelbeds", opaqueReference: "missing-rate" },
+    })).toThrow("does not belong");
   });
 
   it("isolates downstream service failures and composes when sufficient data exists", async () => {
