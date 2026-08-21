@@ -1,16 +1,16 @@
 /**
- * Journey Prisma Repository
+ * Reservation Prisma Repository
  *
- * Implements IJourneyRepository using Prisma.
+ * Implements IReservationRepository using Prisma.
  */
-import { IJourneyRepository } from '@domain/repositories';
-import { Journey } from '@domain/aggregates';
-export declare class JourneyPrismaRepository implements IJourneyRepository {
-    save(aggregate: Journey): Promise<void>;
-    findById(id: string): Promise<Journey | null>;
-    findByJourneyCode(journeyCode: string): Promise<Journey | null>;
-    findByTravelerId(travelerId: string): Promise<Journey[]>;
-    findAll(): Promise<Journey[]>;
+import { IReservationRepository } from '@domain/repositories';
+import { Reservation } from '@domain/aggregates';
+export declare class ReservationPrismaRepository implements IReservationRepository {
+    save(aggregate: Reservation): Promise<void>;
+    findById(id: string): Promise<Reservation | null>;
+    findByReservationNumber(reservationNumber: string): Promise<Reservation | null>;
+    findByTravelerId(travelerId: string): Promise<Reservation[]>;
+    findByJourneyId(journeyId: string): Promise<Reservation[]>;
     delete(id: string): Promise<void>;
 }
 //# sourceMappingURL=reservation-prisma.repository.d.ts.map

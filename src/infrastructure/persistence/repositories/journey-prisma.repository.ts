@@ -1,34 +1,34 @@
 /**
- * Reservation Prisma Repository
+ * Journey Prisma Repository
  * 
- * Implements IReservationRepository using Prisma.
+ * Implements IJourneyRepository using Prisma.
  */
-import { IReservationRepository } from '@domain/repositories';
-import { Reservation } from '@domain/aggregates';
-import { ReservationMapper } from '@application/mappers';
+import { IJourneyRepository } from '@domain/repositories';
+import { Journey } from '@domain/aggregates';
+import { JourneyMapper } from '@application/mappers';
 import { PrismaService } from '../prisma/prisma.service';
 
-export class ReservationPrismaRepository implements IReservationRepository {
-  async save(aggregate: Reservation): Promise<void> {
-    const data = ReservationMapper.toPersistence(aggregate);
+export class JourneyPrismaRepository implements IJourneyRepository {
+  async save(aggregate: Journey): Promise<void> {
+    const data = JourneyMapper.toPersistence(aggregate);
     const prisma = PrismaService.getInstance();
 
     try {
-      await prisma.reservation.upsert({
+      await prisma.journey.upsert({
         where: { id: aggregate.getId() },
         update: data,
         create: data,
       });
     } catch (error) {
-      throw new Error(`Failed to save reservation: ${error}`);
+      throw new Error(`Failed to save journey: ${error}`);
     }
   }
 
-  async findById(id: string): Promise<Reservation | null> {
+  async findById(id: string): Promise<Journey | null> {
     const prisma = PrismaService.getInstance();
 
     try {
-      const raw = await prisma.reservation.findUnique({
+      const raw = await prisma.journey.findUnique({
         where: { id },
       });
 
@@ -36,55 +36,52 @@ export class ReservationPrismaRepository implements IReservationRepository {
         return null;
       }
 
-      return ReservationMapper.toDomain(raw);
+      return JourneyMapper.toDomain(raw);
     } catch (error) {
-      throw new Error(`Failed to find reservation: ${error}`);
+      throw new Error(`Failed to find journey: ${error}`);
     }
   }
 
-  async findByReservationNumber(reservationNumber: string): Promise<Reservation | null> {
+  async findByJourneyCode(journeyCode: string): Promise<Journey | null> {
     const prisma = PrismaService.getInstance();
 
     try {
-      const raw = await prisma.reservation.findUnique({
-        where: { reservationNumber },
+      const raw = await prisma.journey.findUnique({
+        where: { journeyCode },
       });
 
       if (!raw) {
         return null;
       }
 
-      return ReservationMapper.toDomain(raw);
+      return JourneyMapper.toDomain(raw);
     } catch (error) {
-      throw new Error(`Failed to find reservation by number: ${error}`);
+      throw new Error(`Failed to find journey by code: ${error}`);
     }
   }
 
-  async findByTravelerId(travelerId: string): Promise<Reservation[]> {
+  async findByTravelerId(travelerId: string): Promise<Journey[]> {
     const prisma = PrismaService.getInstance();
 
     try {
-      const raw = await prisma.reservation.findMany({
+      const raw = await prisma.journey.findMany({
         where: { travelerId },
       });
 
-      return raw.map((item: any) => ReservationMapper.toDomain(item));
+      return raw.map((item: any) => JourneyMapper.toDomain(item));
     } catch (error) {
-      throw new Error(`Failed to find reservations by traveller: ${error}`);
+      throw new Error(`Failed to find journeys by traveller: ${error}`);
     }
   }
 
-  async findByJourneyId(journeyId: string): Promise<Reservation[]> {
+  async findAll(): Promise<Journey[]> {
     const prisma = PrismaService.getInstance();
 
     try {
-      const raw = await prisma.reservation.findMany({
-        where: { journeyId },
-      });
-
-      return raw.map((item: any) => ReservationMapper.toDomain(item));
+      const raw = await prisma.journey.findMany();
+      return raw.map((item: any) => JourneyMapper.toDomain(item));
     } catch (error) {
-      throw new Error(`Failed to find reservations by journey: ${error}`);
+      throw new Error(`Failed to find all journeys: ${error}`);
     }
   }
 
@@ -92,11 +89,11 @@ export class ReservationPrismaRepository implements IReservationRepository {
     const prisma = PrismaService.getInstance();
 
     try {
-      await prisma.reservation.delete({
+      await prisma.journey.delete({
         where: { id },
       });
     } catch (error) {
-      throw new Error(`Failed to delete reservation: ${error}`);
+      throw new Error(`Failed to delete journey: ${error}`);
     }
   }
 }
