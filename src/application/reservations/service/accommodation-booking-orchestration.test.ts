@@ -1,4 +1,8 @@
 import { AccommodationBookingOrchestrationService } from "./accommodation-booking-orchestration";
+import { AccommodationBookingService } from "@application/accommodation/booking";
+import { AccommodationRateRevalidationService } from "@application/accommodation/revalidation";
+import { PricingEngine, PricingEngineRequest } from "@application/pricing";
+import { ReservationService } from "./reservation-service";
 import { ReservationStatus } from "../aggregate";
 import { JourneyAccommodationPricingInput, JourneyAccommodationReservationInput } from "@application/journeys/models";
 
@@ -19,9 +23,9 @@ function input(status: "BOOKABLE" | "RECHECK_REQUIRED" = "BOOKABLE"): {
   };
   const room = { reference: { provider: "supplier-a", opaqueReference: "room-1" }, name: "Room", rateOptions: [rate] };
   return {
-    pricing: { packageStopId: "stop-1", packageId: "package-1", accommodation, stayPeriod: { checkIn: new Date("2026-10-01"), checkOut: new Date("2026-10-04") }, accommodationId: "hotel-1", room, rate, occupancy: rate.occupancy },
-    reservation: { packageStopId: "stop-1", packageId: "package-1", accommodation, stayPeriod: { checkIn: new Date("2026-10-01"), checkOut: new Date("2026-10-04") }, accommodationId: "hotel-1", room, rate, occupancy: rate.occupancy, provider: "supplier-a", supplierReference: rate.reference },
-  } as any;
+    pricing: { packageStopId: "stop-1", packageId: "package-1", accommodation, stayPeriod: { checkIn: new Date("2026-10-01"), checkOut: new Date("2026-10-04") }, accommodationId: "hotel-1", room, rate, occupancy: rate.occupancy } as JourneyAccommodationPricingInput,
+    reservation: { packageStopId: "stop-1", packageId: "package-1", accommodation, stayPeriod: { checkIn: new Date("2026-10-01"), checkOut: new Date("2026-10-04") }, accommodationId: "hotel-1", room, rate, occupancy: rate.occupancy, provider: "supplier-a", supplierReference: rate.reference } as JourneyAccommodationReservationInput,
+  };
 }
 
 describe("AccommodationBookingOrchestrationService", () => {
@@ -29,13 +33,13 @@ describe("AccommodationBookingOrchestrationService", () => {
     const calls: string[] = [];
     const selected = input("RECHECK_REQUIRED");
     const pricing = {
-      pricingRequest: { currency: "ZAR", summary: {}, breakdown: { lineItems: [] }, totals: { subtotal: { amount: 0, currency: "ZAR" }, taxTotal: { amount: 0, currency: "ZAR" }, feeTotal: { amount: 0, currency: "ZAR" }, discountTotal: { amount: 0, currency: "ZAR" }, markupTotal: { amount: 0, currency: "ZAR" }, commissionTotal: { amount: 0, currency: "ZAR" }, grandTotal: { amount: 0, currency: "ZAR" } } },
-    } as any;
+      pricingRequest: { currency: "ZAR", breakdown: { lineItems: [] }, totals: { subtotal: { amount: 0, currency: "ZAR" }, taxTotal: { amount: 0, currency: "ZAR" }, feeTotal: { amount: 0, currency: "ZAR" }, discountTotal: { amount: 0, currency: "ZAR" }, markupTotal: { amount: 0, currency: "ZAR" }, commissionTotal: { amount: 0, currency: "ZAR" }, grandTotal: { amount: 0, currency: "ZAR" } } },
+    } as PricingEngineRequest;
     const service = new AccommodationBookingOrchestrationService(
-      { execute: async () => { calls.push("pricing"); return { successful: true, pricing: { currency: "ZAR", totals: { grandTotal: { amount: 1000 }, taxTotal: { amount: 0 }, discountTotal: { amount: 0 }, feeTotal: { amount: 0 } } }, warnings: [] }; } } as any,
-      { execute: async () => { calls.push("reservation"); return { successful: true, reservation: { status: ReservationStatus.CREATED }, errors: [], warnings: [] }; } } as any,
-      { execute: async () => { calls.push("revalidation"); return { status: "VALID", currentRate: { ...selected.pricing.rate, status: "BOOKABLE" }, previousRate: selected.pricing.rate, accommodation: selected.pricing.accommodation, room: selected.pricing.room, provider: "supplier-a" }; } } as any,
-      { execute: async () => { calls.push("booking"); return { successful: true, status: "CONFIRMED", provider: "supplier-a", errors: [], warnings: [] }; } } as any,
+      Object.assign(Object.create(PricingEngine.prototype), { execute: async () => { calls.push("pricing"); return { successful: true, pricing: { currency: "ZAR", totals: { grandTotal: { amount: 1000 }, taxTotal: { amount: 0 }, discountTotal: { amount: 0 }, feeTotal: { amount: 0 } } }, warnings: [] }; } }),
+      Object.assign(Object.create(ReservationService.prototype), { execute: async () => { calls.push("reservation"); return { successful: true, reservation: { status: ReservationStatus.CREATED }, errors: [], warnings: [] }; } }),
+      Object.assign(Object.create(AccommodationRateRevalidationService.prototype), { execute: async () => { calls.push("revalidation"); return { status: "VALID", currentRate: { ...selected.pricing.rate, status: "BOOKABLE" }, previousRate: selected.pricing.rate, accommodation: selected.pricing.accommodation, room: selected.pricing.room, provider: "supplier-a" }; } }),
+      Object.assign(Object.create(AccommodationBookingService.prototype), { execute: async () => { calls.push("booking"); return { successful: true, status: "CONFIRMED", provider: "supplier-a", errors: [], warnings: [] }; } }),
     );
 
     const result = await service.execute({

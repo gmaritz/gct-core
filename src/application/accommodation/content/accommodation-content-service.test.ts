@@ -7,6 +7,8 @@ import {
   AccommodationContentSource,
   AccommodationProviderCapabilityType,
   AccommodationProvider,
+  AccommodationContentResult,
+  Accommodation,
   InMemoryProviderRegistry,
   ProviderRegistry,
 } from "@application/accommodation";
@@ -28,7 +30,7 @@ function createQuery(overrides: Partial<AccommodationContentQuery> = {}): Accomm
   };
 }
 
-function createAccommodation(providerId: string, accommodationId: string, name: string) : { identity: { id: string; name: string; }; category: string; location: { country: string; region: string; city: string; suburb: string; latitude: number; longitude: number; }; rating: { stars: number; classification: string; }; images: never[]; amenities: never[]; policies: never[]; contacts: never[]; providerReference: { provider: string; providerAccommodationId: string; }; } {
+function createAccommodation(providerId: string, accommodationId: string, name: string): Accommodation {
   return {
     identity: {
       id: accommodationId,
@@ -64,7 +66,7 @@ function createProvider(
     throwError?: boolean;
     content?: ReturnType<typeof createAccommodation>;
   },
-): AccommodationProvider & { content(identifier: AccommodationContentIdentifier): Promise<any> } {
+): AccommodationProvider & { content(identifier: AccommodationContentIdentifier): Promise<AccommodationContentResult> } {
   return {
     providerId,
     capabilities: {
@@ -94,7 +96,7 @@ function createProvider(
         },
       };
     },
-    async content(identifier) : Promise<{ accommodation: { identity: { id: string; name: string; }; category: string; location: { country: string; region: string; city: string; suburb: string; latitude: number; longitude: number; }; rating: { stars: number; classification: string; }; images: never[]; amenities: never[]; policies: never[]; contacts: never[]; providerReference: { provider: string; providerAccommodationId: string; }; }; metadata: { provider: string; generatedAt: Date; version: string; }; }> {
+    async content(identifier): Promise<AccommodationContentResult> {
       void identifier;
 
       if (behavior?.throwError) {
