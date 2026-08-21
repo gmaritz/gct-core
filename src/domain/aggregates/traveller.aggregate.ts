@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { AggregateRoot } from '../shared/aggregate-root';
 import { EmailAddress } from '../value-objects/email-address.vo';
 import { TravellerCreatedEvent, TravellerProfileUpdatedEvent } from '../events/traveller.event';
+import { TravellerPreferences } from '../shared';
 
 /**
  * Traveller Aggregate Root
@@ -13,7 +14,7 @@ export class Traveller extends AggregateRoot {
   private firstName: string;
   private lastName: string;
   private email: EmailAddress;
-  private preferences: Record<string, any>;
+  private preferences: TravellerPreferences;
   private createdAt: Date;
   private updatedAt: Date;
 
@@ -22,7 +23,7 @@ export class Traveller extends AggregateRoot {
     firstName: string,
     lastName: string,
     email: EmailAddress,
-    preferences: Record<string, any> = {},
+    preferences: TravellerPreferences = {},
     createdAt: Date = new Date(),
     updatedAt: Date = new Date()
   ) {
@@ -68,7 +69,7 @@ export class Traveller extends AggregateRoot {
     firstName: string,
     lastName: string,
     email: string,
-    preferences: Record<string, any>,
+    preferences: TravellerPreferences,
     createdAt: Date,
     updatedAt: Date
   ): Traveller {
@@ -92,7 +93,7 @@ export class Traveller extends AggregateRoot {
     return this.email.value;
   }
 
-  getPreferences(): Record<string, any> {
+  getPreferences(): TravellerPreferences {
     return { ...this.preferences };
   }
 
@@ -112,7 +113,7 @@ export class Traveller extends AggregateRoot {
     );
   }
 
-  updatePreferences(preferences: Record<string, any>): void {
+  updatePreferences(preferences: TravellerPreferences): void {
     this.preferences = { ...preferences };
     this.updatedAt = new Date();
   }

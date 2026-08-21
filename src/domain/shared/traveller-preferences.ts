@@ -1,0 +1,1 @@
+export type TravellerPreferences = Record<string, unknown>;

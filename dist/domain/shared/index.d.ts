@@ -10,4 +10,5 @@ export { Entity } from './entity';
 export { ValueObject } from './value-object';
 export type { IRepository } from './repository';
 export { Specification } from './specification';
+export type { TravellerPreferences } from './traveller-preferences';
 //# sourceMappingURL=index.d.ts.map

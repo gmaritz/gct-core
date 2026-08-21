@@ -1,4 +1,5 @@
 import { DomainEvent } from '../shared/domain-event';
+import { TravellerPreferences } from '../shared/traveller-preferences';
 /**
  * Event raised when a traveller is created
  */
@@ -22,8 +23,8 @@ export declare class TravellerProfileUpdatedEvent extends DomainEvent {
  * Event raised when a traveller's preferences are updated
  */
 export declare class TravellerPreferencesUpdatedEvent extends DomainEvent {
-    readonly preferences: Record<string, any>;
-    constructor(aggregateId: string, preferences: Record<string, any>, occurredAt?: Date);
+    readonly preferences: TravellerPreferences;
+    constructor(aggregateId: string, preferences: TravellerPreferences, occurredAt?: Date);
     getEventType(): string;
 }
 //# sourceMappingURL=traveller.event.d.ts.map

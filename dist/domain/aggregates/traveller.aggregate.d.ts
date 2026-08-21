@@ -1,4 +1,5 @@
 import { AggregateRoot } from '../shared/aggregate-root';
+import { TravellerPreferences } from '../shared';
 /**
  * Traveller Aggregate Root
  *
@@ -14,14 +15,14 @@ export declare class Traveller extends AggregateRoot {
     private updatedAt;
     private constructor();
     static create(firstName: string, lastName: string, email: string): Traveller;
-    static restore(id: string, firstName: string, lastName: string, email: string, preferences: Record<string, any>, createdAt: Date, updatedAt: Date): Traveller;
+    static restore(id: string, firstName: string, lastName: string, email: string, preferences: TravellerPreferences, createdAt: Date, updatedAt: Date): Traveller;
     getFirstName(): string;
     getLastName(): string;
     getFullName(): string;
     getEmail(): string;
-    getPreferences(): Record<string, any>;
+    getPreferences(): TravellerPreferences;
     updateProfile(firstName: string, lastName: string): void;
-    updatePreferences(preferences: Record<string, any>): void;
+    updatePreferences(preferences: TravellerPreferences): void;
     getCreatedAt(): Date;
     getUpdatedAt(): Date;
     isValid(): boolean;

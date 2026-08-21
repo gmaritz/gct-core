@@ -1,4 +1,5 @@
 import { DomainEvent } from '../shared/domain-event';
+import { TravellerPreferences } from '../shared/traveller-preferences';
 
 /**
  * Event raised when a traveller is created
@@ -43,7 +44,7 @@ export class TravellerProfileUpdatedEvent extends DomainEvent {
 export class TravellerPreferencesUpdatedEvent extends DomainEvent {
   constructor(
     aggregateId: string,
-    readonly preferences: Record<string, any>,
+    readonly preferences: TravellerPreferences,
     occurredAt?: Date
   ) {
     super(aggregateId, occurredAt);

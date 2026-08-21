@@ -3,12 +3,14 @@
  * 
  * Used for transferring traveller data between layers.
  */
+import { TravellerPreferences } from '@domain/shared';
+
 export interface TravellerDTO {
   id: string;
   firstName: string;
   lastName: string;
   email: string;
-  preferences: Record<string, any>;
+  preferences: TravellerPreferences;
   createdAt: Date;
   updatedAt: Date;
 }
