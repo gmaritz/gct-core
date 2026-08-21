@@ -125,3 +125,5 @@ APP-007.6 Invoice Presentation Pipeline
 APP-007.7 Invoice Integration
 
 The next sensible action is a read-only Git/codebase recovery assessment so we can decide whether to restore the clean pre-Hotelbeds baseline.
+
+read-only dependency/roadmap review

@@ -146,6 +146,8 @@ A downloadable file may only be provided if the user explicitly requests one.
 
 ---
 
+GOV-DEV-001 must be explicitly referenced in every Copilot implementation/verification prompt
+
 # 3.2  STAGE 2 — COPILOT IMPLEMENTATION
 
 The approved specification is provided to Copilot.
