@@ -4,7 +4,8 @@ exports.TravellerPrismaRepository = void 0;
 const mappers_1 = require("@application/mappers");
 const prisma_service_1 = require("../prisma/prisma.service");
 class TravellerPrismaRepository {
-    async save(aggregate) {
+    async save(aggregate, context) {
+        void context;
         const data = mappers_1.TravellerMapper.toPersistence(aggregate);
         const prisma = prisma_service_1.PrismaService.getInstance();
         try {

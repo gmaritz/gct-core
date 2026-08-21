@@ -3,7 +3,7 @@
  *
  * Exports all repository interfaces.
  */
-export type { ITravellerRepository } from './traveller.repository';
+export type { ITravellerRepository, TravellerPersistenceContext } from './traveller.repository';
 export type { IReservationRepository } from './reservation.repository';
 export type { IJourneyRepository } from './journey.repository';
 //# sourceMappingURL=index.d.ts.map

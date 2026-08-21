@@ -7,7 +7,8 @@ exports.CreateTravellerCommand = void 0;
  * Command to initiate the creation of a new traveller.
  */
 class CreateTravellerCommand {
-    constructor(firstName, lastName, email) {
+    constructor(customerId, firstName, lastName, email) {
+        this.customerId = customerId;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;

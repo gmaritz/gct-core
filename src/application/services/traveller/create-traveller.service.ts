@@ -14,6 +14,10 @@ export class CreateTravellerService {
   constructor(private readonly travellerRepository: ITravellerRepository) {}
 
   async execute(command: CreateTravellerCommand): Promise<TravellerDTO> {
+    if (!command.customerId?.trim()) {
+      throw new Error("Customer ID is required");
+    }
+
     const existing = await this.travellerRepository.findByEmail(command.email);
 
     if (existing) {
@@ -22,7 +26,7 @@ export class CreateTravellerService {
 
     const traveller = Traveller.create(command.firstName, command.lastName, command.email);
 
-    await this.travellerRepository.save(traveller);
+    await this.travellerRepository.save(traveller, { customerId: command.customerId });
 
     // Domain events (TravellerCreatedEvent) are available here for publishing.
     traveller.clearDomainEvents();

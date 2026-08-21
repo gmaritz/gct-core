@@ -14,12 +14,15 @@ class CreateTravellerService {
         this.travellerRepository = travellerRepository;
     }
     async execute(command) {
+        if (!command.customerId?.trim()) {
+            throw new Error("Customer ID is required");
+        }
         const existing = await this.travellerRepository.findByEmail(command.email);
         if (existing) {
             throw new Error(`A traveller with email ${command.email} already exists`);
         }
         const traveller = aggregates_1.Traveller.create(command.firstName, command.lastName, command.email);
-        await this.travellerRepository.save(traveller);
+        await this.travellerRepository.save(traveller, { customerId: command.customerId });
         // Domain events (TravellerCreatedEvent) are available here for publishing.
         traveller.clearDomainEvents();
         return traveller_mapper_1.TravellerMapper.toDTO(traveller);

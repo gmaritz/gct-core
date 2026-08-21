@@ -3,13 +3,14 @@
  * 
  * Implements ITravellerRepository using Prisma.
  */
-import { ITravellerRepository } from '@domain/repositories';
+import { ITravellerRepository, TravellerPersistenceContext } from '@domain/repositories';
 import { Traveller } from '@domain/aggregates';
 import { TravellerMapper } from '@application/mappers';
 import { PrismaService } from '../prisma/prisma.service';
 
 export class TravellerPrismaRepository implements ITravellerRepository {
-  async save(aggregate: Traveller): Promise<void> {
+  async save(aggregate: Traveller, context?: TravellerPersistenceContext): Promise<void> {
+    void context;
     const data = TravellerMapper.toPersistence(aggregate);
     const prisma = PrismaService.getInstance();
 
