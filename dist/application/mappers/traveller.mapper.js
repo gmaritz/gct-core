@@ -8,12 +8,12 @@ exports.TravellerMapper = void 0;
  */
 const aggregates_1 = require("@domain/aggregates");
 class TravellerMapper {
-    static toPersistence(traveller) {
+    static toPersistence(traveller, customerId) {
         return {
             id: traveller.getId(),
+            customerId,
             firstName: traveller.getFirstName(),
             lastName: traveller.getLastName(),
-            email: traveller.getEmail(),
             preferences: traveller.getPreferences(),
             createdAt: traveller.getCreatedAt(),
             updatedAt: traveller.getUpdatedAt(),
@@ -31,7 +31,7 @@ class TravellerMapper {
         };
     }
     static toDomain(raw) {
-        return aggregates_1.Traveller.restore(raw.id, raw.firstName, raw.lastName, raw.email, raw.preferences, raw.createdAt, raw.updatedAt);
+        return aggregates_1.Traveller.restore(raw.id, raw.firstName, raw.lastName, raw.customer.email, raw.preferences ?? {}, raw.createdAt, raw.updatedAt);
     }
 }
 exports.TravellerMapper = TravellerMapper;

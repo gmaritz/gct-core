@@ -5,10 +5,19 @@ const mappers_1 = require("@application/mappers");
 const prisma_service_1 = require("../prisma/prisma.service");
 class TravellerPrismaRepository {
     async save(aggregate, context) {
-        void context;
-        const data = mappers_1.TravellerMapper.toPersistence(aggregate);
         const prisma = prisma_service_1.PrismaService.getInstance();
         try {
+            const existing = context?.customerId
+                ? null
+                : await prisma.traveller.findUnique({
+                    where: { id: aggregate.getId() },
+                    select: { customerId: true },
+                });
+            const customerId = context?.customerId ?? existing?.customerId;
+            if (!customerId) {
+                throw new Error("Customer ID is required to persist a traveller.");
+            }
+            const data = mappers_1.TravellerMapper.toPersistence(aggregate, customerId);
             await prisma.traveller.upsert({
                 where: { id: aggregate.getId() },
                 update: data,
@@ -24,6 +33,7 @@ class TravellerPrismaRepository {
         try {
             const raw = await prisma.traveller.findUnique({
                 where: { id },
+                include: { customer: true },
             });
             if (!raw) {
                 return null;
@@ -37,9 +47,13 @@ class TravellerPrismaRepository {
     async findByEmail(email) {
         const prisma = prisma_service_1.PrismaService.getInstance();
         try {
-            const raw = await prisma.traveller.findUnique({
+            const customer = await prisma.customer.findFirst({
                 where: { email },
+                include: { travellers: true },
             });
+            const raw = customer?.travellers[0]
+                ? { ...customer.travellers[0], customer: { email: customer.email } }
+                : null;
             if (!raw) {
                 return null;
             }
@@ -52,7 +66,7 @@ class TravellerPrismaRepository {
     async findAll() {
         const prisma = prisma_service_1.PrismaService.getInstance();
         try {
-            const raw = await prisma.traveller.findMany();
+            const raw = await prisma.traveller.findMany({ include: { customer: true } });
             return raw.map((item) => mappers_1.TravellerMapper.toDomain(item));
         }
         catch (error) {

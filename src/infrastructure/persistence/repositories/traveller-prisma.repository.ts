@@ -5,16 +5,26 @@
  */
 import { ITravellerRepository, TravellerPersistenceContext } from '@domain/repositories';
 import { Traveller } from '@domain/aggregates';
-import { TravellerMapper } from '@application/mappers';
+import { TravellerMapper, TravellerPersistenceRecord } from '@application/mappers';
 import { PrismaService } from '../prisma/prisma.service';
 
 export class TravellerPrismaRepository implements ITravellerRepository {
   async save(aggregate: Traveller, context?: TravellerPersistenceContext): Promise<void> {
-    void context;
-    const data = TravellerMapper.toPersistence(aggregate);
     const prisma = PrismaService.getInstance();
 
     try {
+      const existing = context?.customerId
+        ? null
+        : await prisma.traveller.findUnique({
+            where: { id: aggregate.getId() },
+            select: { customerId: true },
+          });
+      const customerId = context?.customerId ?? existing?.customerId;
+      if (!customerId) {
+        throw new Error("Customer ID is required to persist a traveller.");
+      }
+      const data = TravellerMapper.toPersistence(aggregate, customerId);
+
       await prisma.traveller.upsert({
         where: { id: aggregate.getId() },
         update: data,
@@ -31,6 +41,7 @@ export class TravellerPrismaRepository implements ITravellerRepository {
     try {
       const raw = await prisma.traveller.findUnique({
         where: { id },
+        include: { customer: true },
       });
 
       if (!raw) {
@@ -47,10 +58,14 @@ export class TravellerPrismaRepository implements ITravellerRepository {
     const prisma = PrismaService.getInstance();
 
     try {
-      const raw = await prisma.traveller.findUnique({
+      const customer = await prisma.customer.findFirst({
         where: { email },
+        include: { travellers: true },
       });
 
+      const raw = customer?.travellers[0]
+        ? { ...customer.travellers[0], customer: { email: customer.email } }
+        : null;
       if (!raw) {
         return null;
       }
@@ -65,8 +80,8 @@ export class TravellerPrismaRepository implements ITravellerRepository {
     const prisma = PrismaService.getInstance();
 
     try {
-      const raw = await prisma.traveller.findMany();
-      return raw.map((item: any) => TravellerMapper.toDomain(item));
+      const raw = await prisma.traveller.findMany({ include: { customer: true } });
+      return raw.map((item: TravellerPersistenceRecord) => TravellerMapper.toDomain(item));
     } catch (error) {
       throw new Error(`Failed to find all travellers: ${error}`);
     }

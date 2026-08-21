@@ -1,38 +1,41 @@
 # GCT CORE — PERSISTENCE RECONCILIATION BATCH 2A
-## Focused Traveller Persistence Model Specification
+## Traveller Persistence Model Implementation
 
 ## 1. Document Control
 
 | Field | Value |
 |---|---|
 | Document ID | PERSISTENCE-B2A-TRAVELLER-MODEL |
-| Title | Traveller Persistence Model |
+| Title | Traveller Persistence Model Implementation |
 | Project | GCT Core |
-| Type | Focused Persistence Model Specification |
+| Type | Focused Implementation Specification |
 | Status | Implementation Ready |
 | Governing Process | GOV-DEV-001-DEVELOPMENT-PROCESS |
-| Scope | Traveller and Customer persistence relationship |
-| Related Lint Batch | Batch 2 — Traveller Persistence Contract |
+| Dependency | PERSISTENCE-B2B-TRAVELLER-CUSTOMER |
+| Scope | Traveller persistence mapping and repository |
 | Current Lint Warnings | 14 |
-| Downstream Target | Unblock 3 Traveller persistence warnings |
+| Target Lint Warnings | 11 |
+| Targeted Warnings | 3 Traveller persistence warnings |
 
 ---
 
 ## 2. Purpose
 
-Define the canonical persistence model for the Traveller aggregate so that the existing domain Traveller can be represented correctly by the current GCT Core persistence architecture.
+Implement the Traveller persistence model established by the read-only persistence reconciliation and the completed Customer Association Contract.
 
-This specification resolves the persistence decisions that blocked PERSISTENCE-B2-TRAVELLER:
+The implementation MUST reconcile:
 
-1. Traveller ownership and Customer relationship;
-2. authoritative email ownership;
-3. persistence representation of TravellerPreferences;
-4. mapping between domain Traveller and Traveller/Customer persistence;
-5. correct ownership of email-based Traveller lookup.
+- Traveller domain representation;
+- Customer persistence relationship;
+- Customer-owned email;
+- Traveller preferences;
+- Prisma Traveller representation;
+- Traveller mapper;
+- Traveller repository.
 
-This specification establishes the model only.
+The immediate objective is to remove the three Traveller persistence `no-explicit-any` warnings through correct typing.
 
-The subsequent implementation specification will apply the model to the Traveller mapper and repository and remove the three targeted no-explicit-any warnings.
+This specification MUST NOT redesign the Traveller domain model.
 
 ---
 
@@ -45,548 +48,598 @@ Follow:
 Required workflow:
 
 Specification
-→ Architect Review/Approval
-→ Copilot Implementation
+→ Implementation
 → Focused Tests + Regression
-→ Copilot Verification Report
+→ Copilot Report
 → Architect Acceptance
 → User Commit
 
-No commit is created by Copilot.
-
-The implementation must remain within this specification.
+Do not create a commit.
 
 ---
 
-## 4. Architectural Boundary
+## 4. Established Decisions
 
-The canonical persistence direction remains:
+The following decisions have already been established and MUST be treated as authoritative for this implementation.
 
-Domain Traveller
-→ ITravellerRepository
-→ TravellerPrismaRepository
-→ Persistence Model
-→ Prisma
+### 4.1 Traveller Domain
 
-The domain model MUST remain independent of Prisma.
+The existing Traveller aggregate remains unchanged.
 
-The persistence model exists to represent the approved domain model in the physical data layer.
+Do not add `customerId` to the Traveller aggregate solely for persistence.
 
-Prisma generated types remain infrastructure concerns.
+### 4.2 Customer Association
 
----
+Customer identity now enters Traveller creation explicitly through:
 
-## 5. Current Blocking Evidence
+`CreateTravellerCommand.customerId`
 
-The current Prisma representation does not directly correspond to the existing Traveller domain/repository contract.
+The completed B2B implementation introduced:
 
-Confirmed mismatches include:
+`TravellerPersistenceContext`
 
-- Prisma Traveller requires `customerId`;
-- the current Traveller aggregate does not expose `customerId`;
-- email is represented by Customer rather than Traveller;
-- Prisma Traveller has no preferences JSON field;
-- `TravellerPrismaRepository.findByEmail()` currently expects email on Traveller;
-- the existing mapper expects email and preferences on the Traveller persistence representation.
+to carry the Customer association into persistence without introducing Prisma types into the domain.
 
-These differences MUST be resolved by an explicit persistence model rather than by adding arbitrary fields or unsafe typing.
+### 4.3 Customer Ownership
 
----
+Customer remains a distinct business concept.
 
-## 6. Canonical Traveller Ownership
+Traveller persistence requires the existing Customer relationship.
 
-Traveller remains a distinct domain entity/aggregate within the GCT Core domain model.
+### 4.4 Email
 
-Traveller MUST remain associated with a Customer through the existing Customer relationship represented by the persistence model.
+Customer is the authoritative persistence owner of email.
 
-The persistence relationship MUST NOT be interpreted as making Customer the domain owner of Traveller.
+Traveller persistence MUST NOT introduce a duplicate email field.
 
-The distinction is:
-
-- Customer identifies the commercial/customer relationship;
-- Traveller represents the person participating in a journey/reservation;
-- Traveller persistence references Customer where required by the physical model.
-
-The domain Traveller does not need to expose `customerId` solely because Prisma requires the relationship.
-
----
-
-## 7. Customer Relationship
-
-The Prisma Traveller `customerId` relationship is authoritative for persistence.
-
-The persistence model MUST retain the Customer relationship.
-
-The Traveller domain object MUST NOT be expanded merely to expose the Prisma foreign key.
-
-The mapper is responsible for translating:
-
-Domain Traveller
-
-to:
-
-Traveller persistence representation with Customer relationship.
-
-Where the domain Traveller is reconstructed from persistence, the Customer relationship must be available to the persistence layer without introducing Prisma-specific fields into the domain object.
-
----
-
-## 8. Customer Relationship Requirement
-
-A persisted Traveller MUST have a valid Customer relationship where the Prisma schema requires `customerId`.
-
-The persistence implementation MUST NOT:
-
-- invent a Customer;
-- create a Customer implicitly;
-- use a dummy Customer ID;
-- use a zero/empty identifier;
-- bypass the foreign-key relationship.
-
-If a Traveller is persisted without an available Customer relationship, the operation must fail through the existing application/persistence error mechanism.
-
-Do not introduce a new Customer creation workflow in this specification.
-
----
-
-## 9. Email Ownership
-
-Email is owned by Customer in the current physical model.
-
-Therefore:
-
-**Customer is the authoritative persistence source for Traveller email.**
-
-Traveller persistence MUST NOT duplicate email merely to satisfy the legacy Traveller mapper.
-
-The Traveller domain may continue to expose the email information required by its existing contract, but the persistence layer must obtain that value through the Customer relationship.
-
----
-
-## 10. Email Lookup
-
-The existing:
-
-`ITravellerRepository.findByEmail()`
-
-contract must remain unchanged for this specification.
-
-Its implementation MUST resolve the Traveller through the authoritative Customer email relationship.
-
-Conceptually:
-
-Traveller Repository
-→ Customer relationship
-→ Customer.email
-→ associated Traveller
-
-The implementation MUST NOT query a nonexistent:
-
-`Traveller.email`
-
-field.
-
-No repository contract redesign is required.
-
-No Customer repository is introduced.
-
-No new public query method is introduced.
-
----
-
-## 11. Email Lookup Semantics
-
-`findByEmail()` MUST:
-
-1. locate the Customer using the authoritative email field;
-2. resolve the associated Traveller persistence record;
-3. map the resulting persistence representation into the domain Traveller;
-4. return the existing repository result type.
-
-If no matching Traveller is found, preserve the existing repository not-found semantics.
-
-Email comparison behaviour must follow the existing Prisma/database semantics.
-
-Do not introduce new email normalization rules in this specification.
-
----
-
-## 12. Traveller Preferences
+### 4.5 Preferences
 
 The accepted domain contract remains:
 
 `TravellerPreferences = Record<string, unknown>`
 
-This contract MUST NOT be changed.
-
-Traveller preferences are part of the Traveller domain representation but are currently not represented by a dedicated Prisma Traveller column.
-
-The persistence model therefore requires an explicit persistence representation.
+Preferences are an open-ended property bag.
 
 ---
 
-## 13. Preference Persistence Representation
+## 5. Persistence Boundary
 
-Traveller preferences MUST be persisted as a JSON-compatible property bag associated with the Traveller.
+The persistence flow MUST remain:
 
-The preferred physical representation is a Prisma JSON field on the Traveller persistence model.
+Domain Traveller
+→ ITravellerRepository
+→ TravellerPrismaRepository
+→ Prisma
 
-The field MUST represent:
+Prisma types MUST remain inside infrastructure/persistence.
 
-`TravellerPreferences`
+The domain MUST NOT import:
 
-without introducing a fixed preference schema.
+- Prisma generated types;
+- Prisma JSON types;
+- persistence DTOs;
+- database-specific types.
 
-The persistence representation must support JSON-compatible:
+---
+
+## 6. Traveller Prisma Model
+
+The Prisma Traveller model currently requires:
+
+`customerId`
+
+This relationship MUST remain required.
+
+The implementation MUST use the Customer identity supplied through `TravellerPersistenceContext`.
+
+Do not:
+
+- make customerId nullable;
+- invent a Customer;
+- use a dummy Customer ID;
+- derive customerId from email;
+- bypass the foreign-key relationship.
+
+---
+
+## 7. Customer Relationship Persistence
+
+`TravellerPrismaRepository.save()` MUST use the supplied:
+
+`TravellerPersistenceContext.customerId`
+
+when persisting a Traveller.
+
+The Customer association MUST be explicit.
+
+No implicit Customer creation is permitted.
+
+No Customer lookup by email is required for save.
+
+---
+
+## 8. Traveller Persistence Context
+
+The existing persistence-neutral:
+
+`TravellerPersistenceContext`
+
+MUST remain the mechanism for carrying Customer identity to persistence.
+
+It MUST contain only the required Customer association information.
+
+It MUST NOT contain:
+
+- Prisma objects;
+- Prisma generated types;
+- Customer database rows;
+- email;
+- unrelated Traveller properties.
+
+The context is infrastructure/application boundary data, not part of the Traveller aggregate.
+
+---
+
+## 9. Traveller Repository Contract
+
+Preserve the completed B2B repository contract.
+
+`ITravellerRepository.save()` MUST accept the Traveller and the required persistence context according to the established implementation.
+
+The repository MUST remain domain/application oriented.
+
+It MUST NOT expose Prisma models or Prisma generated types.
+
+Existing update-save compatibility MUST be preserved where already established by B2B.
+
+---
+
+## 10. Email Lookup
+
+Customer owns email in persistence.
+
+`TravellerPrismaRepository.findByEmail()` MUST NOT query:
+
+`Traveller.email`
+
+because that field does not exist on the canonical Prisma Traveller model.
+
+Instead, the repository MUST resolve the Traveller through the Customer relationship and the authoritative Customer email.
+
+The existing repository method contract MUST remain unchanged.
+
+---
+
+## 11. Email Lookup Semantics
+
+The implementation MUST:
+
+1. locate the Customer using the authoritative Customer email;
+2. resolve the associated Traveller;
+3. map the persistence representation into the domain Traveller;
+4. return the existing repository result.
+
+If no matching Traveller is found, preserve the existing not-found semantics.
+
+Do not introduce new email normalization behaviour.
+
+Do not create a Customer during lookup.
+
+---
+
+## 12. Traveller Preferences Persistence
+
+The domain representation remains:
+
+`Record<string, unknown>`
+
+The Prisma Traveller model MUST gain a nullable JSON-compatible preferences field.
+
+The field represents the Traveller preference property bag.
+
+The field MUST be optional/nullable to preserve compatibility with existing Traveller records.
+
+No fixed preference schema is introduced.
+
+---
+
+## 13. Prisma Schema Change
+
+A narrowly scoped Prisma schema change is authorised:
+
+Add a nullable JSON-compatible preferences field to the Traveller model.
+
+No other Prisma model changes are permitted.
+
+Do not modify:
+
+- Customer;
+- Reservation;
+- Journey;
+- unrelated Traveller fields;
+- relationships;
+- indexes;
+- enums.
+
+Do not redesign the physical data model.
+
+---
+
+## 14. Migration Boundary
+
+The implementation may update the Prisma schema as required by this specification.
+
+Do not apply database migrations unless explicitly required by the normal project implementation workflow.
+
+Do not:
+
+- reset the database;
+- delete data;
+- alter existing identifiers;
+- rewrite existing Customer relationships;
+- modify existing email data.
+
+The new preferences field must remain nullable for existing records.
+
+---
+
+## 15. Preference Type Boundary
+
+The domain contract remains:
+
+`Record<string, unknown>`
+
+The persistence boundary may use Prisma's generated JSON-compatible types internally.
+
+Prisma JSON types MUST NOT enter:
+
+- domain entities;
+- domain value objects;
+- repository interfaces;
+- application commands.
+
+No `any` is permitted.
+
+No unsafe casts are permitted.
+
+No ESLint suppression is permitted.
+
+---
+
+## 16. Preference Mapping
+
+The Traveller mapper MUST explicitly convert between:
+
+Domain TravellerPreferences
+
+and:
+
+Prisma-compatible JSON persistence.
+
+The mapper MUST preserve supported JSON-compatible values, including:
 
 - strings;
 - numbers;
 - booleans;
-- null values;
+- null;
 - arrays;
 - nested objects.
 
-The domain remains:
-
-`Record<string, unknown>`
-
-Prisma-specific JSON types MUST remain inside persistence infrastructure.
+Do not arbitrarily transform preference values.
 
 ---
 
-## 14. Prisma Schema Requirement
+## 17. Legacy Null Preferences
 
-The current Prisma Traveller model does not contain the required preferences field.
-
-Therefore this specification authorises the following narrowly scoped Prisma model extension:
-
-Add a nullable JSON-compatible Traveller preferences field.
-
-The field represents the Traveller preference property bag.
-
-The field MUST be optional at the database level to preserve compatibility with existing Traveller records.
-
-No migration is to be generated or applied as part of this specification unless normal implementation workflow explicitly requires generation after schema approval.
-
-No unrelated Prisma model changes are permitted.
-
----
-
-## 15. Preference Nullability
-
-The persistence representation may be null for existing records that predate preference persistence.
+Existing Traveller records may contain no preferences value.
 
 When reconstructing the domain Traveller:
 
-- null/missing persistence preferences must map to the existing domain default semantics;
-- the mapper must not return null where the domain contract requires `TravellerPreferences`;
-- the mapper must not introduce `any`.
+- null/missing preferences MUST map to the existing Traveller default semantics;
+- the domain MUST continue to expose the established `TravellerPreferences` contract;
+- no null preference value may leak into a field that expects `Record<string, unknown>`.
 
-The exact existing Traveller construction/default behaviour must be preserved.
+Do not invent a new domain default.
 
-Do not invent a new preference default.
-
----
-
-## 16. Preference Type Boundary
-
-The type boundary is:
-
-Domain:
-
-`Record<string, unknown>`
-
-Persistence:
-
-Prisma-compatible JSON representation.
-
-Conversion MUST occur inside the persistence mapper.
-
-The domain MUST NOT import:
-
-- Prisma `JsonValue`;
-- Prisma `InputJsonValue`;
-- Prisma generated model types.
-
-No lint suppression is permitted.
+Use the existing Traveller construction semantics.
 
 ---
 
-## 17. Traveller Persistence Representation
+## 18. Traveller Persistence Mapping
 
-The canonical persistence representation MUST contain the information required to reconstruct the current domain Traveller without introducing persistence-only fields into the domain.
+The mapper MUST explicitly type both directions:
 
-At minimum the persistence mapping must account for:
+### Persistence → Domain
+
+Map:
 
 - Traveller identity;
-- Traveller name;
-- Customer relationship;
+- first name;
+- last name;
 - Customer-owned email;
-- Traveller preferences;
+- preferences;
+- existing Traveller fields;
+- timestamps.
+
+### Domain → Persistence
+
+Map:
+
+- Traveller identity;
+- first name;
+- last name;
+- preferences;
+- existing Traveller fields;
+- required Customer relationship from `TravellerPersistenceContext`;
+- timestamps where applicable.
+
+The mapper MUST NOT perform database operations.
+
+---
+
+## 19. Email Mapping
+
+Email MUST be obtained from the Customer persistence relation.
+
+Do not add:
+
+`email`
+
+to the Prisma Traveller model.
+
+Do not duplicate Customer.email into Traveller persistence.
+
+When mapping persistence to domain, the mapper may consume the loaded Customer relation as required.
+
+The resulting domain Traveller continues to use its existing email representation.
+
+---
+
+## 20. Prisma Query Requirements
+
+Traveller queries that reconstruct the domain Traveller MUST load the Customer relationship required to obtain email.
+
+This applies to:
+
+- `findById`;
+- `findByEmail`;
+- other existing Traveller retrieval operations where the domain requires email.
+
+Do not introduce unnecessary Customer data loading.
+
+Load only the relationship/data required by the existing Traveller contract.
+
+---
+
+## 21. Traveller Identity
+
+Preserve the existing Traveller identity mapping.
+
+Do not change:
+
+- domain identity type;
+- identifier generation;
+- identifier semantics.
+
+If Prisma uses the same identifier, map directly.
+
+If conversion is required, isolate it inside the mapper.
+
+---
+
+## 22. Traveller Name
+
+Preserve the existing first-name/last-name mapping.
+
+Do not change:
+
+- field names in the domain;
+- public API shape;
+- name validation;
+- name semantics.
+
+The mapper is responsible for translating persistence fields to the existing domain representation.
+
+---
+
+## 23. Timestamps
+
+Preserve the existing Traveller timestamp semantics.
+
+Where the Prisma model contains:
+
 - created timestamp;
 - updated timestamp;
-- existing Traveller-specific persistence attributes already represented by the approved Prisma model.
 
-Do not remove existing approved Traveller persistence attributes.
+the mapper MUST preserve them according to the existing domain contract.
 
-Do not add unrelated attributes.
-
----
-
-## 18. Domain-to-Persistence Mapping
-
-The mapper MUST translate the existing Traveller aggregate into the persistence representation.
-
-The mapping must:
-
-- preserve Traveller identity;
-- preserve name;
-- associate the correct Customer;
-- persist preferences;
-- preserve timestamps where applicable;
-- preserve existing Traveller fields;
-- avoid Prisma-specific types outside infrastructure.
-
-The mapper MUST NOT create or mutate a Customer as a side effect unless the existing repository architecture already explicitly requires that behaviour.
+Do not introduce new lifecycle timestamps.
 
 ---
 
-## 19. Persistence-to-Domain Mapping
+## 24. Existing Traveller Fields
 
-The mapper MUST reconstruct the existing Traveller domain representation from persistence.
+All existing approved Traveller persistence fields MUST remain supported.
 
-The mapping must:
+Do not remove or repurpose existing fields as part of this implementation.
 
-- reconstruct the Traveller identity;
-- reconstruct name;
-- obtain email from the authoritative Customer relationship;
-- reconstruct preferences;
-- preserve existing optional field semantics;
-- preserve timestamps;
-- preserve existing domain validation.
-
-No new domain properties may be introduced solely to accommodate Prisma.
+If a current Prisma field has no corresponding domain property, preserve it according to the existing persistence model rather than exposing it in the domain.
 
 ---
 
-## 20. Customer Loading
+## 25. Repository Methods
 
-Where Traveller reconstruction requires Customer-owned email, the persistence implementation may load the required Customer relationship as part of the Traveller query.
-
-The Customer relationship is an infrastructure concern.
-
-Do not introduce:
-
-- Customer domain aggregate loading into Traveller;
-- new Customer repository dependencies;
-- domain-level persistence navigation.
-
-The domain Traveller receives only the data required by its existing contract.
-
----
-
-## 21. Repository Contract
-
-`ITravellerRepository` MUST remain unchanged.
-
-The following method remains valid:
-
-`findByEmail()`
-
-Its implementation changes only in how the persistence lookup resolves the authoritative Customer email.
-
-No new repository methods are required.
-
-No repository interface changes are permitted.
-
----
-
-## 22. Traveller Repository Ownership
-
-The previously accepted repository ownership remains:
-
-`traveller-prisma.repository.ts`
-
-→ `TravellerPrismaRepository`
-
-→ `ITravellerRepository`
-
-Do not modify Journey or Reservation repositories.
-
-Do not modify repository barrel ownership.
-
----
-
-## 23. Prisma Traveller Model
-
-The Prisma Traveller model may be extended only for the approved preferences JSON field required by this specification.
-
-Existing fields and relationships remain unchanged.
-
-In particular:
-
-- `customerId` remains required;
-- Customer relationship remains intact;
-- existing Traveller fields remain intact;
-- no duplicate email field is introduced.
-
----
-
-## 24. No Customer Schema Redesign
-
-The Customer Prisma model is not redesigned.
+Preserve all existing `ITravellerRepository` methods.
 
 Do not:
 
-- rename Customer fields;
-- add duplicate email fields;
-- change Customer identity;
-- change Customer relationships;
-- change Customer lifecycle.
+- add unrelated methods;
+- remove methods;
+- redesign repository abstractions.
 
-Customer email remains the authoritative email persistence field.
+The only lookup behaviour requiring correction is email resolution through Customer.
 
 ---
 
-## 25. No Domain Model Redesign
+## 26. Repository Ownership
 
-Do not modify the Traveller aggregate merely to expose:
+The previously accepted ownership remains:
+
+`traveller-prisma.repository.ts`
+→ `TravellerPrismaRepository`
+→ `ITravellerRepository`
+
+Do not modify:
+
+- Journey repository;
+- Reservation repository;
+- repository barrel ownership.
+
+---
+
+## 27. Domain Isolation
+
+Do not modify the Traveller aggregate to accommodate:
 
 - customerId;
-- Prisma JSON types;
+- Prisma JSON;
+- Prisma relations;
 - persistence-only fields.
 
-Do not add Customer persistence concepts to the domain Traveller unless the existing approved domain model already requires them.
+The completed B2B Customer association contract intentionally keeps Customer context outside the Traveller aggregate.
+
+Preserve that architecture.
 
 ---
 
-## 26. Migration Safety
+## 28. Application Contract
 
-The new preferences field MUST be nullable/optional for existing records.
+The completed B2B changes remain authoritative:
 
-Existing Traveller records must remain readable after the schema extension.
+- `CreateTravellerCommand.customerId` is required;
+- `CreateTravellerService` supplies Customer context;
+- `TravellerPersistenceContext` carries Customer identity;
+- repository persistence receives the context.
 
-No existing Traveller data may be destroyed or transformed automatically.
-
-No migration may:
-
-- delete Traveller records;
-- delete Customer records;
-- alter existing identifiers;
-- rewrite existing email values.
+Do not redesign these contracts during B2A.
 
 ---
 
-## 27. Data Integrity
+## 29. Tests — Mapping
 
-The persistence implementation MUST preserve:
+Add or update focused tests for:
 
-- Traveller identity;
-- Customer relationship;
+### Domain → Persistence
+
+Verify:
+
+- identity;
+- name;
+- preferences;
+- Customer context;
+- timestamps;
+- existing fields.
+
+### Persistence → Domain
+
+Verify:
+
+- identity;
+- name;
 - Customer email;
-- Traveller preferences;
-- existing Traveller fields.
-
-A Traveller record without a valid required Customer relationship must not be silently persisted.
+- preferences;
+- timestamps;
+- existing fields.
 
 ---
 
-## 28. Testing Requirements
+## 30. Tests — Customer Association
 
-Focused tests MUST cover:
+Verify:
 
-### Persistence Mapping
+- valid customerId is persisted;
+- Customer relationship is preserved;
+- missing Customer relationship cannot silently persist;
+- no Customer is implicitly created.
 
-- domain → persistence;
-- persistence → domain.
+The tests MUST use the established B2B persistence context.
 
-### Customer Relationship
+---
 
-- valid Customer association;
-- required Customer relationship;
-- Customer email retrieval.
+## 31. Tests — Email Lookup
 
-### Email Lookup
+Verify:
 
-- matching Customer email returns Traveller;
-- non-matching email returns existing not-found result;
-- Traveller email is not queried directly.
+- valid Customer email resolves the associated Traveller;
+- unknown email returns existing not-found result;
+- Traveller.email is never queried;
+- Customer relation is used as the authoritative email source.
 
-### Preferences
+---
+
+## 32. Tests — Preferences
+
+Verify:
 
 - empty/default preferences;
 - populated preferences;
-- nested JSON-compatible preferences;
-- null/legacy persistence value;
-- round-trip preservation.
+- nested objects;
+- arrays;
+- boolean values;
+- numeric values;
+- null-compatible values where supported;
+- persistence round-trip;
+- legacy null preferences.
 
-### Existing Behaviour
-
-- Traveller identity;
-- name;
-- timestamps;
-- existing Traveller-specific fields.
-
----
-
-## 29. Prisma Validation
-
-After implementation:
-
-`npx prisma validate`
-
-MUST pass.
-
-No database connection or migration execution is required for acceptance unless explicitly required by the repository's normal implementation process.
+No test may use `any` merely to simplify fixture construction.
 
 ---
 
-## 30. Lint Objective
+## 33. Persistence Error Handling
 
-This model specification enables the subsequent Traveller persistence implementation to remove the three Traveller-related:
+Preserve existing persistence error conventions.
 
-`@typescript-eslint/no-explicit-any`
+Do not introduce a new global exception framework.
 
-warnings.
+A missing Customer relationship or invalid persistence state must not be silently converted into:
 
-Expected downstream warning transition:
-
-**14 → 11**
-
-No other lint warnings are to be addressed as part of the Traveller implementation.
-
----
-
-## 31. Build and Regression
-
-The downstream implementation MUST verify:
-
-- focused Traveller tests;
-- full Jest regression;
-- TypeScript build;
-- Prisma validation;
-- lint.
-
-Existing baseline:
-
-- 84 suites;
-- 684 tests;
-- 0 failures;
-- 14 lint warnings.
-
-No regression may be accepted solely because the new Traveller tests pass.
+- null;
+- empty identifier;
+- dummy Customer;
+- fabricated Traveller data.
 
 ---
 
-## 32. Explicitly Out of Scope
+## 34. Type Safety
 
-This specification MUST NOT address:
+The three targeted Traveller persistence `no-explicit-any` warnings MUST be removed.
+
+The implementation MUST NOT introduce:
+
+- new `any`;
+- `Record<string, any>`;
+- unsafe casts;
+- non-null assertions solely to satisfy TypeScript;
+- lint suppressions.
+
+If a type cannot be safely established from the canonical persistence model:
+
+STOP and report the issue.
+
+---
+
+## 35. Out of Scope
+
+The following MUST NOT be changed:
 
 - Reservation persistence;
 - Journey persistence;
 - PrismaService;
 - Prisma client lifecycle;
 - repository ownership;
+- Customer domain model;
+- Customer Prisma model;
+- Customer repository;
 - API presenters;
 - frontend;
 - pricing;
@@ -595,139 +648,242 @@ This specification MUST NOT address:
 - accommodation;
 - Hotelbeds;
 - PayFast;
-- unrelated lint warnings;
-- Customer domain redesign;
-- Customer repository redesign.
+- unrelated lint warnings.
 
 ---
 
-## 33. Acceptance Criteria
+## 36. Acceptance Criteria
 
-### AC-01 — Traveller Ownership
+### AC-01 — Customer Association
 
-Traveller remains a distinct domain entity/aggregate.
+Traveller persistence uses the explicit Customer context established by B2B.
 
-### AC-02 — Customer Relationship
+### AC-02 — Required Customer
 
-Persistence retains the required Customer relationship without adding customerId to the domain Traveller solely for persistence.
+Prisma Traveller.customerId remains required.
 
-### AC-03 — Email Authority
+### AC-03 — No Implicit Customer
 
-Customer.email is the authoritative persisted email source.
+No Customer is created or inferred during Traveller persistence.
 
-### AC-04 — Email Lookup
+### AC-04 — Email Ownership
 
-Traveller repository email lookup resolves through Customer rather than a nonexistent Traveller.email field.
+Customer.email remains the authoritative persisted email.
 
-### AC-05 — Preferences
+### AC-05 — Email Lookup
+
+Traveller lookup by email resolves through Customer.
+
+### AC-06 — No Duplicate Email
+
+No email field is added to Prisma Traveller.
+
+### AC-07 — Preferences
 
 TravellerPreferences remains:
 
 `Record<string, unknown>`
 
-### AC-06 — Preference Persistence
+### AC-08 — Preferences Persistence
 
-Traveller preferences have an explicit JSON-compatible persistence representation.
+Traveller preferences are represented by the approved nullable JSON-compatible Traveller field.
 
-### AC-07 — Schema Safety
-
-Only the approved Traveller preferences field may be added to the Prisma model.
-
-### AC-08 — Domain Isolation
-
-No Prisma types enter the domain.
-
-### AC-09 — Repository Contract
-
-ITravellerRepository remains unchanged.
-
-### AC-10 — Mapper
+### AC-09 — Mapper
 
 Traveller persistence mapping is explicitly typed in both directions.
 
-### AC-11 — Existing Behaviour
+### AC-10 — Domain Isolation
 
-Existing Traveller behaviour remains unchanged.
+No Prisma types enter the domain or repository interface.
 
-### AC-12 — Data Safety
+### AC-11 — Repository Contract
 
-Existing Traveller records remain readable.
+The completed B2B repository contract remains intact.
 
-### AC-13 — Tests
+### AC-12 — Repository Ownership
+
+Traveller repository ownership remains canonical.
+
+### AC-13 — Existing Behaviour
+
+Traveller creation and retrieval semantics remain unchanged except for the corrected persistence relationship.
+
+### AC-14 — Tests
 
 Focused Traveller persistence tests pass.
 
-### AC-14 — Regression
+### AC-15 — Regression
 
 Full Jest regression passes.
 
-### AC-15 — Build
+### AC-16 — Build
 
 Build passes.
 
-### AC-16 — Prisma
+### AC-17 — Prisma
 
 Prisma validation passes.
 
-### AC-17 — Lint
+### AC-18 — Lint
 
-The downstream implementation removes the three Traveller persistence no-explicit-any warnings.
+Warnings reduce from:
 
-### AC-18 — Scope
+14 → 11
+
+with the three targeted Traveller persistence warnings removed.
+
+### AC-19 — Scope
 
 Reservation, Journey and PrismaService remain untouched.
 
 ---
 
-## 34. Downstream Implementation Specification Boundary
+## 37. Verification Requirements
 
-This document establishes the persistence model.
+### Focused Tests
 
-The subsequent implementation MUST apply this model to:
+Run the relevant Traveller:
 
-- Prisma Traveller representation;
-- Traveller mapper;
-- Traveller repository;
-- relevant focused tests.
+- mapper tests;
+- repository tests;
+- persistence tests;
+- creation/persistence integration tests.
 
-The implementation MUST NOT reinterpret or expand this model.
+Report exact suite and test counts.
 
-If implementation reveals a contradiction with an authoritative existing GCT Core document, STOP and report the contradiction rather than silently changing the model.
+### Full Regression
+
+Run:
+
+`npm test -- --runInBand`
+
+Report:
+
+- suites passed;
+- suites failed;
+- tests passed;
+- tests failed;
+- skipped;
+- exit status.
+
+### Build
+
+Run:
+
+`npm run build`
+
+### Prisma Validation
+
+Run:
+
+`npx prisma validate`
+
+Do not:
+
+- reset the database;
+- push schema changes to an uncontrolled database;
+- apply destructive migrations.
+
+### Lint
+
+Run:
+
+`npm run lint`
+
+Report:
+
+- errors;
+- warnings;
+- baseline;
+- final;
+- warnings removed;
+- remaining no-explicit-any.
+
+Expected final warning count:
+
+11.
+
+### TypeScript / Language Service
+
+Check all changed Traveller persistence files.
+
+Report any errors.
 
 ---
 
-## 35. Verification Report
+## 38. Warning Accounting
 
-Copilot's final implementation report MUST include:
+Baseline:
+
+14 warnings.
+
+Target:
+
+11 warnings.
+
+Targeted:
+
+3 Traveller persistence warnings.
+
+No unrelated warnings may be remediated.
+
+If the final count differs:
+
+1. report the exact difference;
+2. identify which warning changed;
+3. explain why;
+4. do not expand scope to fix unrelated warnings.
+
+---
+
+## 39. Scope Audit
+
+Before completion confirm:
+
+- Traveller Prisma preferences field added: YES, if required by the approved model;
+- Customer relationship preserved;
+- Customer email remains authoritative;
+- Traveller mapper updated;
+- Traveller repository updated;
+- Traveller creation context from B2B preserved;
+- no Customer schema redesign;
+- no Customer domain redesign;
+- no Reservation changes;
+- no Journey changes;
+- no PrismaService changes;
+- no repository ownership changes;
+- no API changes;
+- no provider changes;
+- no unrelated lint remediation;
+- no suppressions;
+- no database changes unless explicitly authorised by the normal migration workflow;
+- no Hotelbeds calls;
+- no PayFast calls;
+- no commit created.
+
+---
+
+## 40. Final Copilot Report
+
+Return:
 
 ### Implementation Status
 
 - completed / partially completed / blocked
 
-### Persistence Model
+### Persistence Model Implemented
 
 State:
 
-- Traveller ownership;
+- Traveller identity mapping;
 - Customer relationship;
-- email authority;
+- email ownership;
 - preferences representation;
-- Prisma changes.
+- Prisma schema change.
 
 ### Files Changed
 
-List all source, test and Prisma files.
-
-### Verification
-
-Report:
-
-- focused tests;
-- full Jest regression;
-- build;
-- Prisma validation;
-- lint;
-- TypeScript/language-service.
+List every changed source, test and Prisma file.
 
 ### Warning Reduction
 
@@ -736,19 +892,33 @@ Report:
 - baseline;
 - final;
 - warnings removed;
-- remaining no-explicit-any.
+- remaining no-explicit-any;
+- other warnings.
+
+### Verification
+
+Report:
+
+- focused Traveller tests;
+- full Jest regression;
+- build;
+- Prisma validation;
+- lint;
+- TypeScript/language-service.
 
 ### Scope Audit
 
 Confirm:
 
+- Customer domain modified: NO;
+- Customer Prisma model modified: NO;
+- Traveller domain modified: NO;
 - Reservation modified: NO;
 - Journey modified: NO;
 - PrismaService modified: NO;
 - repository ownership modified: NO;
-- Customer redesign: NO;
-- Prisma schema modified: YES/NO;
-- database modified: NO;
+- API modified: NO;
+- database modified: YES/NO;
 - ESLint configuration modified: NO;
 - TypeScript configuration modified: NO;
 - suppressions added: NO;
@@ -762,27 +932,23 @@ List any unresolved issue preventing completion.
 
 ---
 
-## 36. Completion Boundary
+## 41. Completion Boundary
 
-This specification ends at the Traveller persistence model.
-
-After approval, Copilot may implement only the Traveller persistence changes defined here.
+This iteration ends after Traveller persistence mapping and verification.
 
 Do not proceed to:
 
 - Reservation persistence;
 - Journey persistence;
 - PrismaService;
-- remaining persistence lint warnings.
+- remaining persistence warnings.
 
-If the approved model cannot be implemented without an additional architectural decision:
+If implementation reveals that the approved model is insufficient, STOP and report:
 
-STOP and report:
+**BLOCKED — ADDITIONAL TRAVELLER PERSISTENCE MODEL DECISION REQUIRED**
 
-**BLOCKED — ADDITIONAL PERSISTENCE MODEL DECISION REQUIRED**
+Do not make an additional architectural decision implicitly.
 
-Do not make the additional decision implicitly.
-
-After implementation and verification, the result will be reviewed for architect acceptance.
+After the Copilot implementation report, the result will be reviewed for architect acceptance.
 
 The user performs the commit after acceptance.

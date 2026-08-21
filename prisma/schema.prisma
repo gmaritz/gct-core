@@ -627,6 +627,7 @@ model Traveller {
   title                String?
   firstName            String
   lastName             String
+  preferences          Json?
   dateOfBirth          DateTime? @db.Date
   countryId            String?
   passportNumber       String?
