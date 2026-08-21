@@ -5,8 +5,25 @@
  */
 import { JourneyDTO } from '@application/dto';
 
+export interface JourneyJSONResponse {
+  readonly id: string;
+  readonly journeyCode: string;
+  readonly travelerId: string;
+  readonly name: string;
+  readonly description: string;
+  readonly status: string;
+  readonly dateRange: {
+    readonly startDate: string;
+    readonly endDate: string;
+  };
+  readonly durationDays: number;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly finalizedAt: string | null;
+}
+
 export class JourneyPresenter {
-  static toJSON(dto: JourneyDTO): any {
+  static toJSON(dto: JourneyDTO): JourneyJSONResponse {
     return {
       id: dto.id,
       journeyCode: dto.journeyCode,
@@ -25,7 +42,7 @@ export class JourneyPresenter {
     };
   }
 
-  static toJSONList(dtos: JourneyDTO[]): any[] {
+  static toJSONList(dtos: JourneyDTO[]): JourneyJSONResponse[] {
     return dtos.map((dto) => this.toJSON(dto));
   }
 

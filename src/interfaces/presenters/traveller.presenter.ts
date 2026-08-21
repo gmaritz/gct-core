@@ -5,8 +5,19 @@
  */
 import { TravellerDTO } from '@application/dto';
 
+export interface TravellerJSONResponse {
+  readonly id: string;
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly fullName: string;
+  readonly email: string;
+  readonly preferences: TravellerDTO["preferences"];
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
 export class TravellerPresenter {
-  static toJSON(dto: TravellerDTO): any {
+  static toJSON(dto: TravellerDTO): TravellerJSONResponse {
     return {
       id: dto.id,
       firstName: dto.firstName,
@@ -19,7 +30,7 @@ export class TravellerPresenter {
     };
   }
 
-  static toJSONList(dtos: TravellerDTO[]): any[] {
+  static toJSONList(dtos: TravellerDTO[]): TravellerJSONResponse[] {
     return dtos.map((dto) => this.toJSON(dto));
   }
 }
