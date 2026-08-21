@@ -6,7 +6,7 @@ import { ValueObject } from '../shared/value-object';
  * Represents a period with start and end dates.
  * Date ranges are immutable and compared by value.
  */
-export class DateRange extends ValueObject {
+export class DateRange extends ValueObject<{ startDate: Date; endDate: Date }> {
   private constructor(props: { startDate: Date; endDate: Date }) {
     super(props);
   }

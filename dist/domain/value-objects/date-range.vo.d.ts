@@ -5,7 +5,10 @@ import { ValueObject } from '../shared/value-object';
  * Represents a period with start and end dates.
  * Date ranges are immutable and compared by value.
  */
-export declare class DateRange extends ValueObject {
+export declare class DateRange extends ValueObject<{
+    startDate: Date;
+    endDate: Date;
+}> {
     private constructor();
     static create(startDate: Date, endDate: Date): DateRange;
     get startDate(): Date;

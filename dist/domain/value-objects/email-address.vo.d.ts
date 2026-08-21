@@ -5,7 +5,9 @@ import { ValueObject } from '../shared/value-object';
  * Represents a validated email address.
  * Email addresses are immutable and compared by value.
  */
-export declare class EmailAddress extends ValueObject {
+export declare class EmailAddress extends ValueObject<{
+    value: string;
+}> {
     private constructor();
     static create(email: string): EmailAddress;
     get value(): string;

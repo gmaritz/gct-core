@@ -6,7 +6,7 @@ import { ValueObject } from '../shared/value-object';
  * Represents a validated email address.
  * Email addresses are immutable and compared by value.
  */
-export class EmailAddress extends ValueObject {
+export class EmailAddress extends ValueObject<{ value: string }> {
   private constructor(props: { value: string }) {
     super(props);
   }

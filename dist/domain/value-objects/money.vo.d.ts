@@ -5,7 +5,10 @@ import { ValueObject } from '../shared/value-object';
  * Represents a monetary amount with a specific currency.
  * Money is immutable and can be compared by value.
  */
-export declare class Money extends ValueObject {
+export declare class Money extends ValueObject<{
+    amount: number;
+    currency: string;
+}> {
     private constructor();
     static create(amount: number, currency: string): Money;
     get amount(): number;

@@ -6,7 +6,7 @@ import { ValueObject } from '../shared/value-object';
  * Represents a monetary amount with a specific currency.
  * Money is immutable and can be compared by value.
  */
-export class Money extends ValueObject {
+export class Money extends ValueObject<{ amount: number; currency: string }> {
   private constructor(props: { amount: number; currency: string }) {
     super(props);
   }
