@@ -4,6 +4,7 @@ import {
   AccommodationSearchContext,
   AccommodationProviderCapabilityType,
   AccommodationSearchCriteria,
+  AccommodationSearchResult,
   AccommodationSearchQuery,
   AccommodationSearchSource,
   DefaultAccommodationDiscoveryEngine,
@@ -70,7 +71,7 @@ function createProvider(
         },
       })),
     },
-    async search(criteria: AccommodationSearchCriteria) {
+    async search(criteria: AccommodationSearchCriteria): Promise<AccommodationSearchResult> {
       behavior?.onSearch?.(criteria);
 
       if (behavior?.throwError) {
@@ -229,7 +230,7 @@ describe("AccommodationDiscoveryEngine", () => {
     };
 
     const validator = {
-      validate() {
+      validate(): { valid: false; errors: Array<{ code: number; field: string; message: string }> } {
         return {
           valid: false,
           errors: [

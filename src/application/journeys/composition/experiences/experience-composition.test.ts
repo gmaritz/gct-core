@@ -40,7 +40,14 @@ function createContext(): ExperienceCompositionContext {
 describe("ExperienceCompositionFramework", () => {
   it("constructs and composes immutable journey experiences", async () => {
     const framework = new ExperienceCompositionFramework({
-      resolve: async () => [
+      resolve: async (): Promise<ReadonlyArray<{
+        readonly experienceId: string;
+        readonly name: string;
+        readonly source: ExperienceSource;
+        readonly type: ExperienceType;
+        readonly priority: ExperiencePriority;
+        readonly sequence: ReturnType<typeof createExperienceSequence>;
+      }>> => [
         {
           experienceId: "exp-2002",
           name: "Sunset Coastal Drive",
@@ -100,7 +107,14 @@ describe("ExperienceCompositionFramework", () => {
 
   it("exposes compile-safe enums and contracts", async () => {
     const framework = new ExperienceCompositionFramework({
-      resolve: () => [
+      resolve: (): ReadonlyArray<{
+        readonly experienceId: string;
+        readonly name: string;
+        readonly source: ExperienceSource;
+        readonly type: ExperienceType;
+        readonly priority: ExperiencePriority;
+        readonly sequence: ReturnType<typeof createExperienceSequence>;
+      }> => [
         {
           experienceId: "exp-3001",
           name: "Table Mountain Cableway",

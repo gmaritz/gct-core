@@ -1,6 +1,6 @@
 import { PlatformInfoService } from "../../../application/platform";
 
-export function createOpenApiInfo() {
+export function createOpenApiInfo(): Record<string, unknown> {
 	const platformInfoService = new PlatformInfoService();
 	const platformInfo = platformInfoService.getPlatformInfo();
 

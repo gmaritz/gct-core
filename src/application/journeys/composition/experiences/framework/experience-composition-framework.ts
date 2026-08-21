@@ -63,7 +63,7 @@ function toJourneyExperience(
 export class ExperienceCompositionFramework {
   public constructor(
     private readonly candidateProvider: ExperienceCandidateProvider = {
-      resolve: () => EMPTY_CANDIDATES,
+      resolve: (): ReadonlyArray<ExperienceCompositionCandidate> => EMPTY_CANDIDATES,
     },
   ) {}
 

@@ -98,7 +98,7 @@ function createRatesProvider(
         },
       ],
     },
-    async search() {
+    async search() : Promise<{ accommodations: never[]; metadata: { provider: string; generatedAt: Date; version: string; }; }> {
       return {
         accommodations: [],
         metadata: {
@@ -108,7 +108,7 @@ function createRatesProvider(
         },
       };
     },
-    async rates(query) {
+    async rates(query) : Promise<AccommodationRateResult> {
       behavior?.onRates?.(query);
 
       if (behavior?.throwError) {

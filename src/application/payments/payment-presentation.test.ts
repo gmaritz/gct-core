@@ -228,7 +228,7 @@ function createEngineResult(overrides?: {
   success?: boolean;
   payment?: Payment | null;
   pending?: boolean;
-}) {
+}): ReturnType<typeof createPaymentEngineResult> {
   const baseValidation = createPaymentValidationResult({
     stage: PaymentValidationStage.REQUEST,
     errors: [],

@@ -1,5 +1,5 @@
-export declare function createOpenApiServers(): {
-    url: string;
-    description: string;
-}[];
+export declare function createOpenApiServers(): ReadonlyArray<{
+    readonly url: string;
+    readonly description: string;
+}>;
 //# sourceMappingURL=servers.d.ts.map

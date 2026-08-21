@@ -58,7 +58,7 @@ function createInvoice(status: InvoiceStatus = InvoiceStatus.DRAFT, overrides?: 
   return Invoice.create(createInvoiceComposition({ status, ...(overrides ?? {}) }));
 }
 
-function createValidationResult(success = true) {
+function createValidationResult(success = true): ReturnType<typeof createInvoiceValidationResult> {
   return createInvoiceValidationResult({
     stage: InvoiceValidationStage.LIFECYCLE_READINESS,
     errors: success

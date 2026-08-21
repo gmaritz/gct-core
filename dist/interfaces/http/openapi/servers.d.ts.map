@@ -1,1 +1,1 @@
-{"version":3,"file":"servers.d.ts","sourceRoot":"","sources":["../../../../src/interfaces/http/openapi/servers.ts"],"names":[],"mappings":"AAAA,wBAAgB,oBAAoB;;;IAOnC"}
+{"version":3,"file":"servers.d.ts","sourceRoot":"","sources":["../../../../src/interfaces/http/openapi/servers.ts"],"names":[],"mappings":"AAAA,wBAAgB,oBAAoB,IAAI,aAAa,CAAC;IAAE,QAAQ,CAAC,GAAG,EAAE,MAAM,CAAC;IAAC,QAAQ,CAAC,WAAW,EAAE,MAAM,CAAA;CAAE,CAAC,CAO5G"}

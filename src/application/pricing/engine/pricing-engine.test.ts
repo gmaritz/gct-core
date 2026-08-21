@@ -100,7 +100,7 @@ function createRequest(): PricingEngineRequest {
   };
 }
 
-function createValidation(valid: boolean) {
+function createValidation(valid: boolean): ReturnType<typeof createPricingValidationResult> {
   return createPricingValidationResult({
     stage: PricingValidationStage.REQUEST,
     errors: valid

@@ -12,6 +12,7 @@ import {
   DefaultAccommodationAvailabilityService,
   DefaultHotelbedsAuthentication,
   DefaultHotelbedsAvailabilityExecutor,
+  HotelbedsIntegrationConfig,
   HotelbedsAvailabilityRequestBuilder,
   HotelbedsProvider,
   HotelbedsTransport,
@@ -366,7 +367,7 @@ export function createLiveAvailabilityService(
 
   const catalogueService = new HotelCatalogueService(observedRepository);
   const providerRegistry = new InMemoryProviderRegistry();
-  const loadEffectiveConfiguration = () => loadHotelbedsIntegrationConfig(effectiveEnvironment);
+  const loadEffectiveConfiguration = (): HotelbedsIntegrationConfig => loadHotelbedsIntegrationConfig(effectiveEnvironment);
   const availabilityExecutor = new DefaultHotelbedsAvailabilityExecutor(
     loadEffectiveConfiguration,
     new DefaultHotelbedsAuthentication(loadEffectiveConfiguration),

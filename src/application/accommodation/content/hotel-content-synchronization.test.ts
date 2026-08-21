@@ -1,5 +1,6 @@
 import {
   createHotelbedsIntegrationResult,
+  HotelbedsIntegrationResult,
   HotelbedsGateway,
   HotelbedsIntegrationErrorCode,
   HotelbedsRequest,
@@ -24,7 +25,7 @@ class StubHotelbedsGateway implements HotelbedsGateway {
 
   public constructor(private readonly behavior: StubGatewayBehavior) {}
 
-  public async execute<T>(request: HotelbedsRequest) {
+  public async execute<T>(request: HotelbedsRequest): Promise<HotelbedsIntegrationResult<T>> {
     this.seenRequests.push(request);
     this.callCount += 1;
 
@@ -71,16 +72,16 @@ class FailingRepository implements HotelContentRepository {
     throw new Error("persistence down");
   }
 
-  public async findByProviderHotelCode() {
+  public async findByProviderHotelCode() : Promise<null> {
     return null;
   }
 
-  public async all() {
+  public async all() : Promise<never[]> {
     return [];
   }
 }
 
-function hotel(code: number, name: string) {
+function hotel(code: number, name: string) : { code: number; name: { content: string; }; description: { content: string; }[]; categoryCode: string; categoryName: string; accommodationTypeCode: string; accommodationTypeName: string; destinationCode: string; destinationName: string; latitude: string; longitude: string; address: { content: string; city: string; countryCode: string; countryName: string; }; facilities: { facilityCode: number; facilityName: string; facilityGroupCode: number; facilityGroupName: string; }[]; images: { path: string; order: number; }[]; } {
   return {
     code,
     name: { content: name },
@@ -320,7 +321,7 @@ describe("HotelbedsContentSynchronizationService", () => {
     expect(result.errors[0]?.code).toBe(HotelbedsIntegrationErrorCode.PROVIDER_ERROR);
   });
 
-  it("uses active catalogue codes as the authoritative boundary", async () => {
+  it("uses active catalogue codes as the authoritative boundary", async () : Promise<void> => {
     const catalogue = new InMemoryHotelCatalogueRepository();
     await catalogue.upsert({ hotelCode: "1", starGrading: 4, destinationCode: "CPT", zoneCode: "1", zoneName: "Cape Town", active: true });
     const gateway = new StubHotelbedsGateway({ responses: [{ hotels: [hotel(1, "One"), hotel(999, "Outside")] }] });
@@ -338,7 +339,7 @@ describe("HotelbedsContentSynchronizationService", () => {
     expect(gateway.seenRequests[0]?.query?.codes).toBe("1");
   });
 
-  it("continues successfully and reports supplier-missing hotels", async () => {
+  it("continues successfully and reports supplier-missing hotels", async () : Promise<void> => {
     const gateway = new StubHotelbedsGateway({ responses: [{ hotels: [] }] });
     const service = new HotelbedsContentSynchronizationService(
       gateway,
@@ -356,7 +357,7 @@ describe("HotelbedsContentSynchronizationService", () => {
     expect(result.failedBatches).toEqual([]);
   });
 
-  it("retries retryable failures with bounded backoff", async () => {
+  it("retries retryable failures with bounded backoff", async () : Promise<void> => {
     const gateway = new StubHotelbedsGateway({
       responses: [{ hotels: [hotel(1, "One")] }, { hotels: [hotel(1, "One")] }],
       failuresAtCall: 1,
@@ -379,7 +380,7 @@ describe("HotelbedsContentSynchronizationService", () => {
     expect(result.retryCount).toBe(1);
   });
 
-  it("processes bounded batches sequentially and applies QPS pacing", async () => {
+  it("processes bounded batches sequentially and applies QPS pacing", async () : Promise<void> => {
     const delays: number[] = [];
     const gateway = new StubHotelbedsGateway({
       responses: [
@@ -395,7 +396,7 @@ describe("HotelbedsContentSynchronizationService", () => {
       undefined,
       [],
       undefined,
-      { batchSize: 1, maxQps: 2, maxRetries: 0, retryBaseDelayMs: 1, sleep: async (delayMs) => { delays.push(delayMs); } },
+      { batchSize: 1, maxQps: 2, maxRetries: 0, retryBaseDelayMs: 1, sleep: async (delayMs): Promise<void> => { delays.push(delayMs); } },
     );
 
     const result = await service.synchronizeFull({ selectedHotelCodes: ["1", "2", "3"] });
@@ -406,7 +407,7 @@ describe("HotelbedsContentSynchronizationService", () => {
     expect(delays.length).toBeGreaterThanOrEqual(2);
   });
 
-  it("resumes a failed full synchronization from the first incomplete batch", async () => {
+  it("resumes a failed full synchronization from the first incomplete batch", async () : Promise<void> => {
     const stateRepository = new InMemoryHotelContentSyncStateRepository();
     const contentRepository = new InMemoryHotelContentRepository();
     const firstGateway = new StubHotelbedsGateway({

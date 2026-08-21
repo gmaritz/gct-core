@@ -66,7 +66,7 @@ function createHttpsResponse(
   return {
     statusCode,
     headers,
-    on(event, listener) {
+    on(event, listener) : HotelbedsHttpsResponse {
       if (event === "data") (listener as (chunk: Buffer) => void)(body);
       if (event === "end") (listener as () => void)();
       return this;
@@ -90,7 +90,7 @@ function createHttpsRequest(
 }
 
 describe("APP-008.3-R4 Hotelbeds availability transport execution", () => {
-  it("executes deterministic multi-batch requests via explicit provider availability operation", async () => {
+  it("executes deterministic multi-batch requests via explicit provider availability operation", async () : Promise<void> => {
     const calls: ReadonlyArray<{ path: string; method: string; body: unknown }> = [];
     const transport: HotelbedsTransport = {
       execute: async (_config, request) => {
@@ -150,7 +150,7 @@ describe("APP-008.3-R4 Hotelbeds availability transport execution", () => {
     expect(result.responses).toEqual([]);
   });
 
-  it("sends API-key, X-Signature and explicit gzip support headers", async () => {
+  it("sends API-key, X-Signature and explicit gzip support headers", async () : Promise<void> => {
     let capturedRequest: HotelbedsTransportRequest | undefined;
     const transport: HotelbedsTransport = {
       execute: async (_config, request) => {
@@ -489,7 +489,7 @@ describe("APP-008.3-R4 Hotelbeds availability transport execution", () => {
     expect(response?.retryable).toBe(true);
   });
 
-  it("applies configured QPS and concurrency protection before supplier execution", async () => {
+  it("applies configured QPS and concurrency protection before supplier execution", async () : Promise<void> => {
     const config = createConfig({
       availabilityMaxQps: 2,
       availabilityMaxConcurrency: 2,
@@ -519,7 +519,7 @@ describe("APP-008.3-R4 Hotelbeds availability transport execution", () => {
         maxQps: 2,
         maxConcurrency: 2,
         now: () => now,
-        sleep: async (delayMs) => {
+        sleep: async (delayMs): Promise<void> => {
           sleepCalls.push(delayMs);
           now += delayMs;
         },
@@ -538,7 +538,7 @@ describe("APP-008.3-R4 Hotelbeds availability transport execution", () => {
     expect(started.length).toBe(3);
   });
 
-  it("preserves retry attempts behind supplier protection and rejects invalid resilience settings", async () => {
+  it("preserves retry attempts behind supplier protection and rejects invalid resilience settings", async () : Promise<void> => {
     const config = createConfig({
       availabilityMaxQps: 3,
       availabilityMaxConcurrency: 1,
@@ -575,7 +575,7 @@ describe("APP-008.3-R4 Hotelbeds availability transport execution", () => {
         maxQps: 3,
         maxConcurrency: 1,
         now: () => now,
-        sleep: async (delayMs) => {
+        sleep: async (delayMs): Promise<void> => {
           now += delayMs;
         },
       },

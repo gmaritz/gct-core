@@ -614,13 +614,13 @@ describe("Invoice aggregate", () => {
   it("protects aggregate state from exposed collection mutation", () => {
     const invoice = Invoice.create(createComposition());
 
-    const mutateAllocations = () => {
+    const mutateAllocations = (): void => {
       (invoice.paymentAllocations as Array<unknown>).push({});
     };
-    const mutateAdjustments = () => {
+    const mutateAdjustments = (): void => {
       (invoice.adjustments as Array<unknown>).push({});
     };
-    const mutateExternalReferences = () => {
+    const mutateExternalReferences = (): void => {
       (invoice.externalReferences as Array<unknown>).push({});
     };
 

@@ -195,7 +195,7 @@ describe("PayFast gateway integration", () => {
         apiVersion: "v1",
       },
       {
-        execute: async () => ({ status: 200, ok: true, body: JSON.stringify({ status: "UNKNOWN_STATE" }) }),
+        execute: async (): Promise<{ status: number; ok: boolean; body: string }> => ({ status: 200, ok: true, body: JSON.stringify({ status: "UNKNOWN_STATE" }) }),
       },
     );
 
@@ -280,7 +280,7 @@ describe("PayFast gateway integration", () => {
         apiVersion: "v1",
       },
       {
-        execute: async (request) => {
+        execute: async (request): Promise<{ status: number; ok: boolean; body: string }> => {
           invocationOrder.push(request.url);
           if (request.url.includes("/refunds/query/")) {
             return { status: 200, ok: true, body: JSON.stringify({ amount_available_for_refund: "27200" }) };

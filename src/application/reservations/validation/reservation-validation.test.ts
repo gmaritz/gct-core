@@ -8,7 +8,7 @@ import {
   ReservationValidationErrorCode,
 } from "@application/reservations/validation";
 
-function createReservation() {
+function createReservation(): Reservation {
   return Reservation.create({
     identity: { id: "reservation-001" },
     status: ReservationStatus.CONFIRMED,

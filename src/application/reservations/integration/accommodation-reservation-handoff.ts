@@ -87,11 +87,11 @@ export function createAccommodationBookingRequests(
     const occupancy = pricing.occupancy ?? pricing.rate.occupancy;
     validateOccupancy(occupancy);
     return Object.freeze({
-      accommodation: pricing.accommodation ?? (() => { throw new Error("Selected accommodation is required for booking handoff."); })(),
+      accommodation: pricing.accommodation ?? (() : NonNullable<AccommodationBookingRequest["accommodation"]> => { throw new Error("Selected accommodation is required for booking handoff."); })(),
       room: reservation.room,
       rate: reservation.rate,
       providerReference: reservation.supplierReference,
-      stayPeriod: pricing.stayPeriod ?? (() => { throw new Error("Selected stay period is required for booking handoff."); })(),
+      stayPeriod: pricing.stayPeriod ?? (() : NonNullable<AccommodationBookingRequest["stayPeriod"]> => { throw new Error("Selected stay period is required for booking handoff."); })(),
       occupancy,
       holder: input.holder,
       guests: input.guests,

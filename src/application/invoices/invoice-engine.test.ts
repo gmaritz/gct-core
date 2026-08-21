@@ -15,6 +15,7 @@ import {
   createInvoicePolicyContext,
   createInvoicePolicyResult,
   InvoiceOperation,
+  InvoicePolicyEvaluation,
   InvoicePolicyOutcome,
   InvoicePolicyPriority,
   InvoiceRequiredAction,
@@ -58,7 +59,7 @@ function createInvoice(status: InvoiceStatus = InvoiceStatus.DRAFT, overrides?: 
   });
 }
 
-function createValidation(success = true) {
+function createValidation(success = true): ReturnType<typeof createInvoiceValidationResult> {
   return createInvoiceValidationResult({
     stage: InvoiceValidationStage.LIFECYCLE_READINESS,
     errors: success
@@ -80,7 +81,7 @@ function createValidation(success = true) {
   });
 }
 
-function createPolicy(outcome: InvoicePolicyOutcome) {
+function createPolicy(outcome: InvoicePolicyOutcome): InvoicePolicyEvaluation {
   const permitted = outcome !== InvoicePolicyOutcome.DENY && outcome !== InvoicePolicyOutcome.REQUIRE_ACTION;
   return Object.freeze({
     permitted,

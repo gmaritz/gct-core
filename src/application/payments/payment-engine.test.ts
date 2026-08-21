@@ -92,7 +92,7 @@ function createRequest(): PaymentEngineRequest {
   };
 }
 
-function createValidation(success: boolean) {
+function createValidation(success: boolean): ReturnType<typeof createPaymentValidationResult> {
   return createPaymentValidationResult({
     stage: PaymentValidationStage.REQUEST,
     errors: success
@@ -219,7 +219,7 @@ function createPaymentAggregate(): Payment {
 }
 
 describe("PaymentEngine", () => {
-  it("supports constructor injection and compile safety", async () => {
+  it("supports constructor injection and compile safety", async () : Promise<void> => {
     const engine = new PaymentEngine(
       {
         execute: () => createValidation(true),
@@ -245,25 +245,25 @@ describe("PaymentEngine", () => {
 
     const engine = new PaymentEngine(
       {
-        execute: () => {
+        execute: (): ReturnType<typeof createPaymentValidationResult> => {
           events.push("validation");
           return createValidation(true);
         },
       } as unknown as PaymentValidationPipeline,
       {
-        evaluate: () => {
+        evaluate: (): PaymentPolicyEvaluation => {
           events.push("policy");
           return createPolicy(PaymentPolicyOutcome.ALLOW);
         },
       } as unknown as PaymentPolicyPipeline,
       {
-        execute: () => {
+        execute: (): PaymentProcessingResult => {
           events.push("processing");
           return createProcessingResult([PaymentProcessingStatus.COMPLETED]);
         },
       } as unknown as PaymentProcessingPipeline,
       {
-        create: () => {
+        create: (): Payment => {
           events.push("aggregate");
           return createPaymentAggregate();
         },
@@ -282,25 +282,25 @@ describe("PaymentEngine", () => {
 
     const engine = new PaymentEngine(
       {
-        execute: () => {
+        execute: (): ReturnType<typeof createPaymentValidationResult> => {
           events.push("validation");
           return createValidation(false);
         },
       } as unknown as PaymentValidationPipeline,
       {
-        evaluate: () => {
+        evaluate: (): PaymentPolicyEvaluation => {
           events.push("policy");
           return createPolicy(PaymentPolicyOutcome.ALLOW);
         },
       } as unknown as PaymentPolicyPipeline,
       {
-        execute: () => {
+        execute: (): PaymentProcessingResult => {
           events.push("processing");
           return createProcessingResult([PaymentProcessingStatus.COMPLETED]);
         },
       } as unknown as PaymentProcessingPipeline,
       {
-        create: () => {
+        create: (): Payment => {
           events.push("aggregate");
           return createPaymentAggregate();
         },
@@ -321,25 +321,25 @@ describe("PaymentEngine", () => {
 
     const engine = new PaymentEngine(
       {
-        execute: () => {
+        execute: (): ReturnType<typeof createPaymentValidationResult> => {
           events.push("validation");
           return createValidation(true);
         },
       } as unknown as PaymentValidationPipeline,
       {
-        evaluate: () => {
+        evaluate: (): PaymentPolicyEvaluation => {
           events.push("policy");
           return createPolicy(PaymentPolicyOutcome.DENY);
         },
       } as unknown as PaymentPolicyPipeline,
       {
-        execute: () => {
+        execute: (): PaymentProcessingResult => {
           events.push("processing");
           return createProcessingResult([PaymentProcessingStatus.COMPLETED]);
         },
       } as unknown as PaymentProcessingPipeline,
       {
-        create: () => {
+        create: (): Payment => {
           events.push("aggregate");
           return createPaymentAggregate();
         },
@@ -359,25 +359,25 @@ describe("PaymentEngine", () => {
 
     const engine = new PaymentEngine(
       {
-        execute: () => {
+        execute: (): ReturnType<typeof createPaymentValidationResult> => {
           events.push("validation");
           return createValidation(true);
         },
       } as unknown as PaymentValidationPipeline,
       {
-        evaluate: () => {
+        evaluate: (): PaymentPolicyEvaluation => {
           events.push("policy");
           return createPolicy(PaymentPolicyOutcome.REQUIRE_ACTION);
         },
       } as unknown as PaymentPolicyPipeline,
       {
-        execute: () => {
+        execute: (): PaymentProcessingResult => {
           events.push("processing");
           return createProcessingResult([PaymentProcessingStatus.COMPLETED]);
         },
       } as unknown as PaymentProcessingPipeline,
       {
-        create: () => {
+        create: (): Payment => {
           events.push("aggregate");
           return createPaymentAggregate();
         },
@@ -398,25 +398,25 @@ describe("PaymentEngine", () => {
 
     const engine = new PaymentEngine(
       {
-        execute: () => {
+        execute: (): ReturnType<typeof createPaymentValidationResult> => {
           events.push("validation");
           return createValidation(true);
         },
       } as unknown as PaymentValidationPipeline,
       {
-        evaluate: () => {
+        evaluate: (): PaymentPolicyEvaluation => {
           events.push("policy");
           return createPolicy(PaymentPolicyOutcome.ALLOW);
         },
       } as unknown as PaymentPolicyPipeline,
       {
-        execute: () => {
+        execute: (): PaymentProcessingResult => {
           events.push("processing");
           return createProcessingResult([PaymentProcessingStatus.FAILED]);
         },
       } as unknown as PaymentProcessingPipeline,
       {
-        create: () => {
+        create: (): Payment => {
           events.push("aggregate");
           return createPaymentAggregate();
         },
@@ -433,16 +433,16 @@ describe("PaymentEngine", () => {
   it("propagates processing PENDING and SKIPPED outcomes", async () => {
     const engine = new PaymentEngine(
       {
-        execute: () => createValidation(true),
+        execute: (): ReturnType<typeof createPaymentValidationResult> => createValidation(true),
       } as unknown as PaymentValidationPipeline,
       {
-        evaluate: () => createPolicy(PaymentPolicyOutcome.ALLOW),
+        evaluate: (): PaymentPolicyEvaluation => createPolicy(PaymentPolicyOutcome.ALLOW),
       } as unknown as PaymentPolicyPipeline,
       {
-        execute: () => createProcessingResult([PaymentProcessingStatus.PENDING, PaymentProcessingStatus.SKIPPED]),
+        execute: (): PaymentProcessingResult => createProcessingResult([PaymentProcessingStatus.PENDING, PaymentProcessingStatus.SKIPPED]),
       } as unknown as PaymentProcessingPipeline,
       {
-        create: () => createPaymentAggregate(),
+        create: (): Payment => createPaymentAggregate(),
       },
     );
 
@@ -459,16 +459,16 @@ describe("PaymentEngine", () => {
   it("returns immutable engine results", async () => {
     const engine = new PaymentEngine(
       {
-        execute: () => createValidation(true),
+        execute: (): ReturnType<typeof createPaymentValidationResult> => createValidation(true),
       } as unknown as PaymentValidationPipeline,
       {
-        evaluate: () => createPolicy(PaymentPolicyOutcome.ALLOW),
+        evaluate: (): PaymentPolicyEvaluation => createPolicy(PaymentPolicyOutcome.ALLOW),
       } as unknown as PaymentPolicyPipeline,
       {
-        execute: () => createProcessingResult([PaymentProcessingStatus.COMPLETED]),
+        execute: (): PaymentProcessingResult => createProcessingResult([PaymentProcessingStatus.COMPLETED]),
       } as unknown as PaymentProcessingPipeline,
       {
-        create: () => createPaymentAggregate(),
+        create: (): Payment => createPaymentAggregate(),
       },
     );
 

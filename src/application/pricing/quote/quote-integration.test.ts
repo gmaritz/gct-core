@@ -69,7 +69,7 @@ function createPricingAggregate(): Pricing {
   });
 }
 
-function createSuccessfulPricingEngineResult() {
+function createSuccessfulPricingEngineResult(): ReturnType<typeof createPricingEngineResult> {
   return createPricingEngineResult({
     successful: true,
     pricing: createPricingAggregate(),
@@ -83,7 +83,7 @@ function createSuccessfulPricingEngineResult() {
   });
 }
 
-function createFailedPricingEngineResult() {
+function createFailedPricingEngineResult(): ReturnType<typeof createPricingEngineResult> {
   return createPricingEngineResult({
     successful: false,
     pricing: null,

@@ -18,7 +18,11 @@ import {
 } from "@application/payments/models";
 import { Payment } from "@application/payments/aggregate";
 
-function createProviderReference() {
+function createProviderReference(): {
+  providerIdentifier: string;
+  reference: string;
+  correlationId: string;
+} {
   return {
     providerIdentifier: "gateway-a",
     reference: "ref-1001",

@@ -4,7 +4,7 @@ import {
   HotelbedsIntegrationErrorCode,
 } from "@application/accommodation";
 
-function createRequest() {
+function createRequest() : { operation: "availability"; method: "POST"; path: "/hotel-api/1.0/hotels"; body: { stay: { checkIn: string; checkOut: string; }; occupancies: { rooms: 1; adults: number; children: number; paxes: { type: "AD"; }[]; }[]; hotels: { hotel: number[]; }; sourceMarket: string; }; correlationId: string; requestId: string; } {
   return {
     operation: "availability" as const,
     method: "POST" as const,

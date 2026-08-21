@@ -168,7 +168,7 @@ export class DefaultHotelbedsAvailabilityExecutor implements HotelbedsAvailabili
   private readonly options: HotelbedsAvailabilityExecutorOptions;
 
   public constructor(
-    private readonly configLoader: () => HotelbedsIntegrationConfig = () =>
+    private readonly configLoader: () => HotelbedsIntegrationConfig = (): HotelbedsIntegrationConfig =>
       loadHotelbedsIntegrationConfig(),
     private readonly authentication: HotelbedsAuthentication = new DefaultHotelbedsAuthentication(),
     private readonly transport: HotelbedsTransport = new FetchHotelbedsTransport(),

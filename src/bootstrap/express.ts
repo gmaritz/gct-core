@@ -40,7 +40,7 @@ function createCorsOptions(configuration: ApplicationConfiguration): CorsOptions
 	}
 
 	return {
-		origin: (origin, callback) => {
+		origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void): void => {
 			if (!origin || developmentOrigins.has(origin)) {
 				callback(null, true);
 				return;

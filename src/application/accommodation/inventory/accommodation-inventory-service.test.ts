@@ -100,7 +100,7 @@ function createInventoryProvider(
         },
       ],
     },
-    async search() {
+    async search() : Promise<{ accommodations: never[]; metadata: { provider: string; generatedAt: Date; version: string; }; }> {
       return {
         accommodations: [],
         metadata: {
@@ -110,7 +110,7 @@ function createInventoryProvider(
         },
       };
     },
-    async availability(query: AccommodationInventoryQuery) {
+    async availability(query: AccommodationInventoryQuery) : Promise<AccommodationAvailabilityResult> {
       behavior?.onAvailability?.(query);
 
       if (behavior?.throwError) {

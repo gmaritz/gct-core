@@ -5,7 +5,10 @@ import {
 } from "@application/reservations";
 import { JourneyAccommodationPricingInput, JourneyAccommodationReservationInput } from "@application/journeys/models";
 
-function createInput(stopId: string, rateStatus: "BOOKABLE" | "RECHECK_REQUIRED", amount: number) {
+function createInput(stopId: string, rateStatus: "BOOKABLE" | "RECHECK_REQUIRED", amount: number): {
+  pricing: JourneyAccommodationPricingInput;
+  reservation: JourneyAccommodationReservationInput;
+} {
   const accommodation = {
     identity: { id: `hotel-${stopId}`, name: `Hotel ${stopId}` },
     category: "Boutique Hotel" as const,

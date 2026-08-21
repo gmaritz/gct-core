@@ -25,7 +25,10 @@ function isValidDate(value: unknown): value is Date {
   return value instanceof Date && !Number.isNaN(value.getTime());
 }
 
-function createError(code: ReservationValidationErrorCode, message: string) {
+function createError(
+  code: ReservationValidationErrorCode,
+  message: string,
+): Readonly<{ readonly code: ReservationValidationErrorCode; readonly message: string }> {
   return Object.freeze({ code, message });
 }
 

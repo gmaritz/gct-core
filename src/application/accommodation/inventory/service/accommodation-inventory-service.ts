@@ -51,7 +51,7 @@ function cloneMetadata(metadata: AccommodationResultMetadata): AccommodationResu
 
 function cloneAvailabilityOptions(
   options: NonNullable<Extract<AccommodationAvailabilityResult, { readonly kind: "ACCOMMODATION" }>["availabilityOptions"]>,
-) {
+): NonNullable<Extract<AccommodationAvailabilityResult, { readonly kind: "ACCOMMODATION" }>["availabilityOptions"]> {
   return Object.freeze({
     roomOptions: Object.freeze(options.roomOptions.map((room) => Object.freeze({
       reference: Object.freeze({ ...room.reference }),

@@ -63,7 +63,7 @@ function buildGatewayContext(
   operation: PaymentProviderOperation,
   amount: number,
   engineResult: PaymentEngineResult,
-) {
+): ReturnType<typeof createPaymentProviderContext> {
   const gatewayRequest = createPaymentGatewayRequest({
     paymentReference: payment.reference,
     reservationReference: payment.reservationSnapshot.reservationReference,

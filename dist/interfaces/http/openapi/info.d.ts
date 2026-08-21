@@ -1,14 +1,2 @@
-export declare function createOpenApiInfo(): {
-    title: string;
-    version: string;
-    description: string;
-    contact: {
-        name: string;
-        email: string;
-    };
-    license: {
-        name: string;
-        url: string;
-    };
-};
+export declare function createOpenApiInfo(): Record<string, unknown>;
 //# sourceMappingURL=info.d.ts.map

@@ -69,7 +69,7 @@ function createHttpsResponse(
   return {
     statusCode,
     headers,
-    on(event, listener) {
+    on(event, listener) : HotelbedsHttpsResponse {
       if (event === "data") (listener as (chunk: Buffer) => void)(Buffer.from(body));
       if (event === "end") (listener as () => void)();
       return this;
@@ -278,7 +278,7 @@ describe("APP-008.1 Hotelbeds integration foundation", () => {
       expect(headers["X-Request-Id"]).toBe("req-001");
     });
 
-    it("changes signature when timestamp changes", () => {
+    it("changes signature when timestamp changes", () : void => {
       const authenticationA = new DefaultHotelbedsAuthentication(
         () => createConfig(),
         { now: () => new Date("2026-08-09T00:00:00.000Z") },
@@ -333,10 +333,10 @@ describe("APP-008.1 Hotelbeds integration foundation", () => {
     });
 
     it("maps timeout failures", async () => {
-      const transport = new FetchHotelbedsTransport((options, callback) => {
+      const transport = new FetchHotelbedsTransport((options, callback): ReturnType<HotelbedsHttpsRequestLike> => {
         const request = {
-          on: () => request,
-          setTimeout: (_timeoutMs: number, handler: () => void) => {
+          on: (): ReturnType<HotelbedsHttpsRequestLike> => request,
+          setTimeout: (_timeoutMs: number, handler: () => void): ReturnType<HotelbedsHttpsRequestLike> => {
             handler();
             return request;
           },
@@ -358,15 +358,15 @@ describe("APP-008.1 Hotelbeds integration foundation", () => {
     });
 
     it("maps network failures", async () => {
-      const transport = new FetchHotelbedsTransport((options, _callback) => {
+      const transport = new FetchHotelbedsTransport((options, _callback): ReturnType<HotelbedsHttpsRequestLike> => {
         const request = {
-          on: (_event: "error", listener: (error: Error) => void) => {
+          on: (_event: "error", listener: (error: Error) => void): ReturnType<HotelbedsHttpsRequestLike> => {
             const error = new Error("network down") as Error & { code?: string };
             error.code = "ECONNRESET";
             listener(error);
             return request;
           },
-          setTimeout: () => request,
+          setTimeout: (): ReturnType<HotelbedsHttpsRequestLike> => request,
           write: () => true,
           end: () => undefined,
           destroy: () => undefined,
@@ -428,7 +428,7 @@ describe("APP-008.1 Hotelbeds integration foundation", () => {
   });
 
   describe("gateway", () => {
-    it("returns successful provider call result", async () => {
+    it("returns successful provider call result", async () : Promise<void> => {
       const transport: HotelbedsTransport = {
         execute: async () => ({
           status: 200,
@@ -456,7 +456,7 @@ describe("APP-008.1 Hotelbeds integration foundation", () => {
       expect(result.providerResponse?.status).toBe(200);
     });
 
-    it("returns canonical provider failure for non-retryable and retryable responses", async () => {
+    it("returns canonical provider failure for non-retryable and retryable responses", async () : Promise<void> => {
       const firstTransport: HotelbedsTransport = {
         execute: async () => ({
           status: 401,
@@ -489,7 +489,7 @@ describe("APP-008.1 Hotelbeds integration foundation", () => {
       expect(rateLimitFailure.errors[0]?.code).toBe(HotelbedsIntegrationErrorCode.RATE_LIMITED);
     });
 
-    it("returns malformed response error for unusable success payload", async () => {
+    it("returns malformed response error for unusable success payload", async () : Promise<void> => {
       const transport: HotelbedsTransport = {
         execute: async () => ({
           status: 200,
@@ -513,7 +513,7 @@ describe("APP-008.1 Hotelbeds integration foundation", () => {
       expect(result.errors[0]?.code).toBe(HotelbedsIntegrationErrorCode.MALFORMED_RESPONSE);
     });
 
-    it("keeps credentials and signatures out of public result contracts", async () => {
+    it("keeps credentials and signatures out of public result contracts", async () : Promise<void> => {
       const transport: HotelbedsTransport = {
         execute: async () => ({
           status: 401,
@@ -539,7 +539,7 @@ describe("APP-008.1 Hotelbeds integration foundation", () => {
       expect(serialized).not.toContain("Api-key");
     });
 
-    it("returns immutable result objects", async () => {
+    it("returns immutable result objects", async () : Promise<void> => {
       const transport: HotelbedsTransport = {
         execute: async () => ({
           status: 200,

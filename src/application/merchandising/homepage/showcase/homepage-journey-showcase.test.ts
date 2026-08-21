@@ -46,11 +46,11 @@ function createCompositionResult(id: string, destination: string): JourneyCompos
 }
 
 describe("HomepageJourneyShowcaseService", () => {
-  it("invokes journey composition, presentation mapping, and view model provider", async () => {
+  it("invokes journey composition, presentation mapping, and view model provider", async () : Promise<void> => {
     const events: string[] = [];
     const service = new HomepageJourneyShowcaseService(
       {
-        execute: async () => {
+        execute: async (): Promise<JourneyCompositionResult> => {
           events.push("composition");
           return createCompositionResult("journey-001", "Cape Winelands");
         },
@@ -78,7 +78,7 @@ describe("HomepageJourneyShowcaseService", () => {
     expect(events).toContain("provider");
   });
 
-  it("handles empty showcase results when composition produces no successful journeys", async () => {
+  it("handles empty showcase results when composition produces no successful journeys", async () : Promise<void> => {
     const service = new HomepageJourneyShowcaseService(
       {
         execute: async () =>

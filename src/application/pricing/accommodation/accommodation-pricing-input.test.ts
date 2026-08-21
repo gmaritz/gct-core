@@ -34,7 +34,7 @@ function createInput(stopId: string, accommodationId: string, amount: number): J
   };
 }
 
-function createBaseRequest() {
+function createBaseRequest(): ReturnType<typeof withAccommodationPricingInputs> {
   return {
     currency: Currency.ZAR,
     summary: createPricingSummary({ productId: "package-1", productType: "PACKAGE", description: "Package" }),

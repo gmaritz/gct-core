@@ -204,6 +204,14 @@ relevant warnings/errors;
 scope confirmation;
 any genuine implementation issues.
 
+Must repost on:
+
+capability complete;
+provider integration complete;
+business lifecycle complete;
+UI prerequisite;
+post-UI operational functionality.
+
 The report is then provided to the architect.
 
 # 3.5  STAGE 5 — ARCHITECT ACCEPTANCE

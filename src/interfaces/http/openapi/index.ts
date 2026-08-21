@@ -5,7 +5,7 @@ import { platformPaths } from "./paths/platform.paths";
 import { apiResponseSchema, pagedResponseSchema } from "./schemas/api-response.schema";
 import { problemDetailsSchema } from "./schemas/problem-details.schema";
 
-export function createOpenApiDocument() {
+export function createOpenApiDocument(): Record<string, unknown> {
 	return {
 		openapi: "3.1.0",
 		info: createOpenApiInfo(),

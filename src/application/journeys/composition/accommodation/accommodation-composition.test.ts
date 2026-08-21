@@ -156,7 +156,7 @@ function createContext(
 }
 
 describe("AccommodationCompositionAdapter", () => {
-  it("orchestrates canonical accommodation services and transforms to journey accommodations", async () => {
+  it("orchestrates canonical accommodation services and transforms to journey accommodations", async () : Promise<void> => {
     const accommodation = createAccommodation("acc-1001", "Signal Hill Lodge");
     const discoveryCalls: AccommodationSearchQuery[] = [];
     const contentCalls: AccommodationContentQuery[] = [];
@@ -165,25 +165,25 @@ describe("AccommodationCompositionAdapter", () => {
 
     const adapter = new AccommodationCompositionAdapter(
       {
-        search: async (query) => {
+        search: async (query): Promise<ReturnType<typeof createSearchResult>> => {
           discoveryCalls.push(query);
           return createSearchResult([accommodation]);
         },
       },
       {
-        execute: async (query) => {
+        execute: async (query): Promise<ReturnType<typeof createContentResult>> => {
           contentCalls.push(query);
           return createContentResult(createAccommodation("acc-1001", "Signal Hill Signature Lodge"));
         },
       },
       {
-        execute: async (query) => {
+        execute: async (query): Promise<ReturnType<typeof createAvailabilityResult>> => {
           inventoryCalls.push(query);
           return createAvailabilityResult(accommodation, true);
         },
       },
       {
-        execute: async (query) => {
+        execute: async (query): Promise<ReturnType<typeof createRateResult>> => {
           rateCalls.push(query);
           return createRateResult(query.identifier);
         },
@@ -206,7 +206,7 @@ describe("AccommodationCompositionAdapter", () => {
     ]);
   });
 
-  it("returns immutable canonical collections", async () => {
+  it("returns immutable canonical collections", async () : Promise<void> => {
     const accommodation = createAccommodation("acc-1002", "Vineyard House");
 
     const adapter = new AccommodationCompositionAdapter(
@@ -230,7 +230,7 @@ describe("AccommodationCompositionAdapter", () => {
     expect(Object.isFrozen(result[0])).toBe(true);
   });
 
-  it("preserves stop context, room/rate hierarchy, occupancy and supplier references", async () => {
+  it("preserves stop context, room/rate hierarchy, occupancy and supplier references", async () : Promise<void> => {
     const accommodation = createAccommodation("acc-stop-1", "Stop One Hotel");
     const room = {
       reference: { provider: "hotelbeds", opaqueReference: "room-1" },
@@ -328,19 +328,19 @@ describe("AccommodationCompositionAdapter", () => {
     })).toThrow("does not belong");
   });
 
-  it("isolates downstream service failures and composes when sufficient data exists", async () => {
+  it("isolates downstream service failures and composes when sufficient data exists", async () : Promise<void> => {
     const accommodation = createAccommodation("acc-1003", "Harbour View Residence");
 
     const adapter = new AccommodationCompositionAdapter(
       {
-        search: async () =>
+        search: async (): Promise<ReturnType<typeof createSearchResult>> =>
           createSearchResult([
             accommodation,
             createAccommodation("acc-1004", "Mountain Terrace"),
           ]),
       },
       {
-        execute: async (query) => {
+        execute: async (query): Promise<ReturnType<typeof createContentResult>> => {
           if (query.identifier === "acc-1004") {
             throw new Error("content timeout");
           }
@@ -349,14 +349,14 @@ describe("AccommodationCompositionAdapter", () => {
         },
       },
       {
-        execute: async (query) =>
+        execute: async (query): Promise<ReturnType<typeof createAvailabilityResult>> =>
           createAvailabilityResult(
             query.identifier === "acc-1003" ? accommodation : createAccommodation("acc-1004", "Mountain Terrace"),
             true,
           ),
       },
       {
-        execute: async (query) => createRateResult(query.identifier),
+        execute: async (query): Promise<ReturnType<typeof createRateResult>> => createRateResult(query.identifier),
       },
     );
 
@@ -366,7 +366,7 @@ describe("AccommodationCompositionAdapter", () => {
     expect(result.map((entry) => entry.accommodationId)).toEqual(["acc-1003", "acc-1004"]);
   });
 
-  it("filters out accommodations without sufficient availability or rate data", async () => {
+  it("filters out accommodations without sufficient availability or rate data", async () : Promise<void> => {
     const accommodation = createAccommodation("acc-1005", "Peninsula Escape");
 
     const adapter = new AccommodationCompositionAdapter(
@@ -392,25 +392,25 @@ describe("AccommodationCompositionAdapter", () => {
     expect(result).toEqual([]);
   });
 
-  it("returns empty result when discovery fails", async () => {
+  it("returns empty result when discovery fails", async () : Promise<void> => {
     const adapter = new AccommodationCompositionAdapter(
       {
-        search: async () => {
+        search: async (): Promise<never> => {
           throw new Error("discovery failed");
         },
       },
       {
-        execute: async () => {
+        execute: async (): Promise<never> => {
           throw new Error("not called");
         },
       },
       {
-        execute: async () => {
+        execute: async (): Promise<never> => {
           throw new Error("not called");
         },
       },
       {
-        execute: async () => {
+        execute: async (): Promise<never> => {
           throw new Error("not called");
         },
       },
@@ -421,23 +421,23 @@ describe("AccommodationCompositionAdapter", () => {
     expect(result).toEqual([]);
   });
 
-  it("exposes compile-safe canonical contracts", async () => {
+  it("exposes compile-safe canonical contracts", async () : Promise<void> => {
     const adapter: AccommodationCompositionAdapter = new AccommodationCompositionAdapter(
       {
         search: async () => createSearchResult([]),
       },
       {
-        execute: async () => {
+        execute: async (): Promise<never> => {
           throw new Error("unused");
         },
       },
       {
-        execute: async () => {
+        execute: async (): Promise<never> => {
           throw new Error("unused");
         },
       },
       {
-        execute: async () => {
+        execute: async (): Promise<never> => {
           throw new Error("unused");
         },
       },

@@ -1,7 +1,11 @@
 import { AccommodationBookingOrchestrationService } from "./accommodation-booking-orchestration";
 import { ReservationStatus } from "../aggregate";
+import { JourneyAccommodationPricingInput, JourneyAccommodationReservationInput } from "@application/journeys/models";
 
-function input(status: "BOOKABLE" | "RECHECK_REQUIRED" = "BOOKABLE") {
+function input(status: "BOOKABLE" | "RECHECK_REQUIRED" = "BOOKABLE"): {
+  pricing: JourneyAccommodationPricingInput;
+  reservation: JourneyAccommodationReservationInput;
+} {
   const accommodation = {
     identity: { id: "hotel-1", name: "Hotel" }, category: "Boutique Hotel" as const,
     location: { country: "ZA", region: "WC", city: "Cape Town", suburb: "", latitude: 0, longitude: 0 },

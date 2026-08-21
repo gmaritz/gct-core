@@ -127,10 +127,10 @@ describe("Accommodation availability orchestration service", () => {
     const provider = {
       providerId: "hotelbeds",
       capabilities: { capabilities: [] },
-      async search() {
+      async search() : Promise<{ accommodations: never[]; metadata: { generatedAt: Date; version: string; }; }> {
         return { accommodations: [], metadata: { generatedAt: new Date(), version: "1.0.0" } };
       },
-      async executeAvailabilityRequests(requests: unknown[]) {
+      async executeAvailabilityRequests(requests: unknown[]) : Promise<{ provider: string; operation: string; completedAt: Date; responses: { requestIndex: number; request: (typeof rawResponses)[number]["request"]; success: boolean; retryable: boolean; attempts: number; errors: never[]; body: { hotels: { code: number; name: string; rooms: { code: string; rates: { rateType: string; allotment: number; sellingRate: string; }[]; }[]; }[]; }; }[]; }> {
         expect(requests).toHaveLength(1);
         return {
           provider: "hotelbeds",
@@ -139,7 +139,7 @@ describe("Accommodation availability orchestration service", () => {
           responses: rawResponses,
         };
       },
-      mapAvailabilityResponse(responses: unknown[]) {
+      mapAvailabilityResponse(responses: unknown[]) : { kind: string; result: AccommodationAvailabilityResult; } {
         expect(responses).toEqual(rawResponses);
         return { kind: "ACCOMMODATION", result: createAvailabilityResult("hotelbeds") };
       },

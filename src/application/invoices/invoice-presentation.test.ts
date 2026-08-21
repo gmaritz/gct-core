@@ -5,6 +5,7 @@ import {
   InvoiceEngineOutcome,
   InvoiceEngineResult as EngineResult,
   InvoiceOperation,
+  InvoicePolicyEvaluation,
   InvoicePolicyOutcome,
   InvoicePolicyPriority,
   InvoiceRequiredAction,
@@ -78,7 +79,7 @@ function createInvoice(status: InvoiceStatus = InvoiceStatus.DRAFT): Invoice {
   return Invoice.create(createComposition(status));
 }
 
-function createValidation() {
+function createValidation(): ReturnType<typeof createInvoiceValidationResult> {
   return createInvoiceValidationResult({
     stage: InvoiceValidationStage.LIFECYCLE_READINESS,
     errors: [],
@@ -91,7 +92,7 @@ function createValidation() {
   });
 }
 
-function createPolicy(outcome: InvoicePolicyOutcome) {
+function createPolicy(outcome: InvoicePolicyOutcome): InvoicePolicyEvaluation {
   const permitted = outcome !== InvoicePolicyOutcome.DENY && outcome !== InvoicePolicyOutcome.REQUIRE_ACTION;
   return Object.freeze({
     permitted,

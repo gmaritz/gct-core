@@ -29,7 +29,7 @@ function createSignature(apiKey: string, secret: string, timestamp: string): str
 
 export class DefaultHotelbedsAuthentication implements HotelbedsAuthentication {
   public constructor(
-    private readonly configLoader: () => HotelbedsIntegrationConfig = () =>
+    private readonly configLoader: () => HotelbedsIntegrationConfig = (): HotelbedsIntegrationConfig =>
       loadHotelbedsIntegrationConfig(),
     private readonly clock: HotelbedsClock = new SystemHotelbedsClock(),
   ) {}

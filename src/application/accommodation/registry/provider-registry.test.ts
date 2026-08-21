@@ -44,7 +44,7 @@ function createProvider(
         },
       })),
     },
-    async search(criteria: AccommodationSearchCriteria) {
+    async search(criteria: AccommodationSearchCriteria) : Promise<{ accommodations: never[]; metadata: { provider: string; generatedAt: Date; version: string; }; }> {
       void criteria;
       return {
         accommodations: [],

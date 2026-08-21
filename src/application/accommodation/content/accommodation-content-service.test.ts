@@ -28,7 +28,7 @@ function createQuery(overrides: Partial<AccommodationContentQuery> = {}): Accomm
   };
 }
 
-function createAccommodation(providerId: string, accommodationId: string, name: string) {
+function createAccommodation(providerId: string, accommodationId: string, name: string) : { identity: { id: string; name: string; }; category: string; location: { country: string; region: string; city: string; suburb: string; latitude: number; longitude: number; }; rating: { stars: number; classification: string; }; images: never[]; amenities: never[]; policies: never[]; contacts: never[]; providerReference: { provider: string; providerAccommodationId: string; }; } {
   return {
     identity: {
       id: accommodationId,
@@ -84,7 +84,7 @@ function createProvider(
         },
       ],
     },
-    async search() {
+    async search() : Promise<{ accommodations: never[]; metadata: { provider: string; generatedAt: Date; version: string; }; }> {
       return {
         accommodations: [],
         metadata: {
@@ -94,7 +94,7 @@ function createProvider(
         },
       };
     },
-    async content(identifier) {
+    async content(identifier) : Promise<{ accommodation: { identity: { id: string; name: string; }; category: string; location: { country: string; region: string; city: string; suburb: string; latitude: number; longitude: number; }; rating: { stars: number; classification: string; }; images: never[]; amenities: never[]; policies: never[]; contacts: never[]; providerReference: { provider: string; providerAccommodationId: string; }; }; metadata: { provider: string; generatedAt: Date; version: string; }; }> {
       void identifier;
 
       if (behavior?.throwError) {
