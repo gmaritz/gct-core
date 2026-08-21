@@ -24,7 +24,7 @@ async function run() {
             maxRetries: config.contentMaxRetries,
             retryBaseDelayMs: config.contentRetryBaseDelayMs,
         });
-        console.log(JSON.stringify({
+        process.stdout.write(`${JSON.stringify({
             catalogueHotelsSelected: result.selectedHotelCount,
             batches: result.batchCount,
             requests: result.requestCount,
@@ -37,7 +37,7 @@ async function run() {
             finalState: result.finalState,
             success: result.success,
             errors: result.errors,
-        }, null, 2));
+        }, null, 2)}\n`);
         if (!result.success)
             process.exitCode = 1;
     }
@@ -46,7 +46,7 @@ async function run() {
     }
 }
 void run().catch((error) => {
-    console.error(error instanceof Error ? error.message : "Initial synchronization failed.");
+    process.stderr.write(`${error instanceof Error ? error.message : "Initial synchronization failed."}\n`);
     process.exitCode = 1;
 });
 //# sourceMappingURL=initial-content-sync.js.map

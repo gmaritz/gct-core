@@ -63,7 +63,7 @@ async function run() {
                 ? stateAfterSecond.lastSuccessfulCheckpoint.toISOString()
                 : null,
         };
-        console.log(JSON.stringify(output, null, 2));
+        process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
     }
     finally {
         await (0, prisma_1.disconnectPrisma)();
@@ -71,7 +71,7 @@ async function run() {
 }
 run().catch((error) => {
     const message = error instanceof Error ? error.message : "Unknown verification failure.";
-    console.error(message);
+    process.stderr.write(`${message}\n`);
     process.exit(1);
 });
 //# sourceMappingURL=verify-content-sync.js.map

@@ -51,7 +51,7 @@ class ConsoleLogger {
             console.warn(serialisedEntry);
             return;
         }
-        console.info(serialisedEntry);
+        process.stdout.write(`${serialisedEntry}\n`);
     }
     info(message, ...meta) {
         this.write("INFO", message, ...meta);

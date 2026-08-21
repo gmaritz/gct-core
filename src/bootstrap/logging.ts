@@ -75,7 +75,7 @@ class ConsoleLogger implements Logger {
 			return;
 		}
 
-		console.info(serialisedEntry);
+		process.stdout.write(`${serialisedEntry}\n`);
 	}
 
 	info(message: string, ...meta: unknown[]): void {

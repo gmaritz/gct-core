@@ -26,7 +26,7 @@ async function run(): Promise<void> {
       retryBaseDelayMs: config.contentRetryBaseDelayMs,
     });
 
-    console.log(JSON.stringify({
+    process.stdout.write(`${JSON.stringify({
       catalogueHotelsSelected: result.selectedHotelCount,
       batches: result.batchCount,
       requests: result.requestCount,
@@ -39,7 +39,7 @@ async function run(): Promise<void> {
       finalState: result.finalState,
       success: result.success,
       errors: result.errors,
-    }, null, 2));
+    }, null, 2)}\n`);
 
     if (!result.success) process.exitCode = 1;
   } finally {
@@ -48,6 +48,6 @@ async function run(): Promise<void> {
 }
 
 void run().catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : "Initial synchronization failed.");
+  process.stderr.write(`${error instanceof Error ? error.message : "Initial synchronization failed."}\n`);
   process.exitCode = 1;
 });

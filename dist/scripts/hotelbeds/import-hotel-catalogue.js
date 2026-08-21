@@ -22,7 +22,7 @@ function validateRows(rows) {
     }, {});
     const missingZoneCodes = rows.filter((row) => String(row.zoneCode ?? "").trim().length === 0).length;
     const missingZoneNames = rows.filter((row) => !row.zoneName?.trim()).length;
-    console.log(JSON.stringify({
+    process.stdout.write(`${JSON.stringify({
         totalRowsRead: rows.length,
         uniqueHotelCodes: new Set(codes.filter(Boolean)).size,
         duplicateCodes,
@@ -36,7 +36,7 @@ function validateRows(rows) {
         destinationCodeDistribution: destinationCounts,
         invalidOrMissingZoneCodes: missingZoneCodes,
         invalidOrMissingZoneNames: missingZoneNames,
-    }, null, 2));
+    }, null, 2)}\n`);
     if (rows.length !== 340 || new Set(codes.filter(Boolean)).size !== 340 || duplicateCodes.length || missingCodes || invalidStarGrading || missingZoneCodes || missingZoneNames) {
         throw new Error("Approved hotel catalogue validation failed.");
     }
@@ -49,7 +49,7 @@ async function main() {
         return;
     }
     const report = await (0, catalogue_1.importHotelCatalogue)(rows, new hotel_catalogue_prisma_repository_1.HotelCataloguePrismaRepository());
-    console.log(JSON.stringify({ importReport: report }, null, 2));
+    process.stdout.write(`${JSON.stringify({ importReport: report }, null, 2)}\n`);
     const prisma = (0, prisma_1.getPrismaClient)();
     const [total, active, fourStar, fiveStar, missingDestination, missingZone, missingStar, duplicateCodes] = await Promise.all([
         prisma.hotelCatalogueEntry.count(),
@@ -61,11 +61,11 @@ async function main() {
         prisma.hotelCatalogueEntry.count({ where: { starGrading: { notIn: [4, 5] } } }),
         prisma.hotelCatalogueEntry.groupBy({ by: ["hotelCode"], _count: { hotelCode: true }, having: { hotelCode: { _count: { gt: 1 } } } }),
     ]);
-    console.log(JSON.stringify({ total, uniqueHotelCodes: total, active, fourStar, fiveStar, missingDestination, missingZone, missingStar, duplicateCodes: duplicateCodes.length }, null, 2));
+    process.stdout.write(`${JSON.stringify({ total, uniqueHotelCodes: total, active, fourStar, fiveStar, missingDestination, missingZone, missingStar, duplicateCodes: duplicateCodes.length }, null, 2)}\n`);
     await prisma.$disconnect();
 }
 void main().catch((error) => {
-    console.error(error);
+    process.stderr.write(`${String(error)}\n`);
     process.exitCode = 1;
 });
 //# sourceMappingURL=import-hotel-catalogue.js.map

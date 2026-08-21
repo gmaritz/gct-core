@@ -435,17 +435,17 @@ export async function runLiveVerification(
 async function main(): Promise<void> {
   const environment = loadR8DotEnv();
   if (!parseLiveVerificationFlag(environment.HOTELBEDS_AVAILABILITY_LIVE_VERIFY)) {
-    console.log("Hotelbeds live availability verification is disabled.");
+    process.stdout.write("Hotelbeds live availability verification is disabled.\n");
     return;
   }
 
   const effectiveEnvironment = createR8EffectiveEnvironment(environment);
   const outcome = await runLiveVerification(effectiveEnvironment);
 
-  console.log(JSON.stringify({
+  process.stdout.write(`${JSON.stringify({
     status: outcome.status,
     ...outcome.report,
-  }, null, 2));
+  }, null, 2)}\n`);
 }
 
 if (require.main === module) {

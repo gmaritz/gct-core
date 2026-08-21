@@ -103,7 +103,7 @@ async function run(): Promise<void> {
         : null,
     };
 
-    console.log(JSON.stringify(output, null, 2));
+    process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
   } finally {
     await disconnectPrisma();
   }
@@ -111,6 +111,6 @@ async function run(): Promise<void> {
 
 run().catch((error: unknown) => {
   const message = error instanceof Error ? error.message : "Unknown verification failure.";
-  console.error(message);
+  process.stderr.write(`${message}\n`);
   process.exit(1);
 });

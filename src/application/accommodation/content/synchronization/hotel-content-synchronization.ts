@@ -378,7 +378,7 @@ export class HotelbedsContentSynchronizationService {
     const missingHotelCodes = new Set(canResume ? existingState.missingHotelCodes ?? [] : []);
     const failedBatches = new Set(canResume ? existingState.failedBatches ?? [] : []);
     let lastRequestAt = 0;
-    const sleep = this.settings.sleep ?? ((delayMs: number) => new Promise<void>((resolve) => setTimeout(resolve, delayMs)));
+    const sleep = this.settings.sleep ?? ((delayMs: number): Promise<void> => new Promise<void>((resolve) => setTimeout(resolve, delayMs)));
     const minRequestIntervalMs = 1000 / maxQps;
     const runningState: HotelContentSyncState = createState({
       ...existingState,
