@@ -25,7 +25,7 @@ export declare class Reservation extends AggregateRoot {
     private confirmedAt;
     private cancelledAt;
     private constructor();
-    static create(travelerId: string, journeyId: string, totalPrice: Money): Reservation;
+    static create(travelerId: string, journeyId: string, totalPrice: Money, reservationNumber: string): Reservation;
     static restore(id: string, reservationNumber: string, travelerId: string, journeyId: string, status: ReservationStatus, totalPrice: Money, createdAt: Date, confirmedAt: Date | null, cancelledAt: Date | null): Reservation;
     confirm(): void;
     cancel(reason: string): void;
@@ -38,6 +38,5 @@ export declare class Reservation extends AggregateRoot {
     getConfirmedAt(): Date | null;
     getCancelledAt(): Date | null;
     isValid(): boolean;
-    private static generateReservationNumber;
 }
 //# sourceMappingURL=reservation.aggregate.d.ts.map

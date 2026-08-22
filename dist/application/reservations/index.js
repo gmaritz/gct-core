@@ -19,6 +19,7 @@ __exportStar(require("./models"), exports);
 __exportStar(require("./validation"), exports);
 __exportStar(require("./policies"), exports);
 __exportStar(require("./builder"), exports);
+__exportStar(require("./repository"), exports);
 __exportStar(require("./service"), exports);
 __exportStar(require("./presentation"), exports);
 __exportStar(require("./integration"), exports);

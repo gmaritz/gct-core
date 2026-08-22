@@ -33,15 +33,17 @@ class Reservation extends aggregate_root_1.AggregateRoot {
         this.confirmedAt = confirmedAt;
         this.cancelledAt = cancelledAt;
     }
-    static create(travelerId, journeyId, totalPrice) {
+    static create(travelerId, journeyId, totalPrice, reservationNumber) {
         if (!travelerId) {
             throw new reservation_exception_1.InvalidReservationException('Traveller ID is required');
         }
         if (!journeyId) {
             throw new reservation_exception_1.InvalidReservationException('Journey ID is required');
         }
+        if (!reservationNumber || reservationNumber.trim().length === 0) {
+            throw new reservation_exception_1.InvalidReservationException('Reservation number is required');
+        }
         const id = (0, uuid_1.v4)();
-        const reservationNumber = this.generateReservationNumber();
         const reservation = new Reservation(id, reservationNumber, travelerId, journeyId, ReservationStatus.PENDING, totalPrice);
         reservation.addDomainEvent(new reservation_event_1.ReservationCreatedEvent(id, travelerId, journeyId));
         return reservation;
@@ -98,12 +100,6 @@ class Reservation extends aggregate_root_1.AggregateRoot {
             this.journeyId.length > 0 &&
             this.status !== null &&
             this.totalPrice !== null);
-    }
-    static generateReservationNumber() {
-        const prefix = 'RES';
-        const timestamp = Date.now().toString().slice(-6);
-        const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-        return `${prefix}-${timestamp}-${random}`;
     }
 }
 exports.Reservation = Reservation;

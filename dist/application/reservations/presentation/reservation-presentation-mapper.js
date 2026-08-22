@@ -76,7 +76,7 @@ class ReservationPresentationMapper {
         const accommodationNames = reservation.accommodationSnapshots.map((snapshot) => snapshot.propertyName);
         const outstandingActions = resolveOutstandingActions(result);
         const reservationPresentation = (0, models_1.createReservationPresentationModel)({
-            reservationNumber: reservation.identity.id,
+            reservationNumber: reservation.reservationNumber,
             journey: {
                 journeyId: reservation.journeySnapshot.journeyId,
                 title: reservation.journeySnapshot.title,

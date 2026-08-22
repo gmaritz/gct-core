@@ -1,4 +1,4 @@
-import { AccommodationSnapshot, JourneySnapshot, PaymentSnapshot, PricingSnapshot, ReservationMetadata, TravellerSnapshot } from "../models";
+import { AccommodationSnapshot, JourneySnapshot, PaymentSnapshot, PricingSnapshot, ReservationMetadata, SupplierReference, TravellerSnapshot } from "../models";
 import { ReservationValidationResult } from "./models";
 export interface ReservationSnapshotSet {
     readonly journeySnapshot?: JourneySnapshot;
@@ -6,6 +6,7 @@ export interface ReservationSnapshotSet {
     readonly accommodationSnapshots?: ReadonlyArray<AccommodationSnapshot>;
     readonly pricingSnapshot?: PricingSnapshot;
     readonly paymentSnapshot?: PaymentSnapshot;
+    readonly supplierReferences?: ReadonlyArray<SupplierReference>;
     readonly metadata?: ReservationMetadata;
 }
 export declare class ReservationSnapshotValidator {

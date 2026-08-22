@@ -8,6 +8,7 @@ import { ReservationViewModelProvider } from "./reservation-view-model-provider"
 function createReservation(): Reservation {
   return Reservation.create({
     identity: { id: "reservation-0101" },
+    reservationNumber: "RES-010101-PRS1",
     status: ReservationStatus.QUOTED,
     journeySnapshot: {
       snapshotId: "journey-snap-0101",
@@ -133,7 +134,7 @@ describe("ReservationPresentationMapper", () => {
     const output = mapper.map(createReservationResult());
 
     expect(output).not.toBeNull();
-    expect(output?.reservation.reservationNumber).toBe("reservation-0101");
+    expect(output?.reservation.reservationNumber).toBe("RES-010101-PRS1");
     expect(output?.reservation.travellers.travellerCount).toBe(2);
     expect(output?.reservation.accommodationSummary).toBe("Harbour View House +1 more");
     expect(output?.reservation.pricingSummary?.display).toBe("ZAR 52000.00");
@@ -169,7 +170,7 @@ describe("ReservationViewModelProvider", () => {
     const provider = new ReservationViewModelProvider(mapper);
     const viewModel = provider.provideViewModel(output.reservation, output.lifecycle);
 
-    expect(viewModel.id).toBe("reservation-0101");
+    expect(viewModel.id).toBe("RES-010101-PRS1");
     expect(viewModel.title).toBe("Cape Explorer Signature");
     expect(viewModel.statusBadgeStyle).toBe("warning");
     expect(viewModel.travellers).toBe("Ari Jacobs +1");

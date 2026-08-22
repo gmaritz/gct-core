@@ -687,10 +687,19 @@ model Booking {
   travelDate       DateTime @db.Date
   returnDate       DateTime? @db.Date
   bookingStatusId  String
+  reservationLifecycleCode String?
   totalAmount      Decimal        @db.Decimal(19,4)
   currencyId       String
   specialRequests String?
   internalNotes   String?
+  journeySnapshot Json?
+  travellerSnapshots Json?
+  accommodationSnapshots Json?
+  pricingSnapshot Json?
+  paymentSnapshot Json?
+  supplierReferences Json?
+  reservationTimeline Json?
+  reservationMetadata Json?
 
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
@@ -716,6 +725,7 @@ model Booking {
   @@index([travelDate])
   @@index([bookingStatusId])
   @@index([currencyId])
+  @@index([reservationLifecycleCode])
   @@map("booking")
 }
 

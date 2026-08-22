@@ -1,6 +1,7 @@
 import { Reservation, ReservationStatus } from "@application/reservations/aggregate";
 import { ReservationBuildResult, createReservationBuildResult, ReservationBuilder } from "@application/reservations/builder";
 import { ReservationTimelineMilestone } from "@application/reservations/models";
+import { ReservationRepository } from "@application/reservations/repository";
 import {
   createReservationPolicyResult,
   ReservationPolicyOutcome,
@@ -27,6 +28,7 @@ import {
 function createReservation(): Reservation {
   return Reservation.create({
     identity: { id: "reservation-001" },
+    reservationNumber: "RES-000001-SVC1",
     status: ReservationStatus.CREATED,
     journeySnapshot: {
       snapshotId: "journey-snap-001",
@@ -87,6 +89,7 @@ function createRequest(): ReservationServiceRequest {
   return Object.freeze({
     query: {
       requestId: "reservation-request-001",
+      customerId: "customer-001",
       journeyId: "journey-1001",
       checkInDate: new Date("2026-08-10T00:00:00.000Z"),
       checkOutDate: new Date("2026-08-14T00:00:00.000Z"),
@@ -168,6 +171,7 @@ function createBuildResult(successful: boolean): ReservationBuildResult {
 describe("ReservationService", () => {
   it("orchestrates validation, policy and builder in order", async () => {
     const events: string[] = [];
+    let persisted = false;
 
     const service = new ReservationService(
       {
@@ -188,12 +192,23 @@ describe("ReservationService", () => {
           return createBuildResult(true);
         },
       } as unknown as ReservationBuilder,
+      {
+        save: async () => {
+          persisted = true;
+        },
+        findById: async () => null,
+        findByReservationNumber: async () => null,
+        findByTravellerId: async () => [],
+        findByJourneyId: async () => [],
+        delete: async () => undefined,
+      } as ReservationRepository,
     );
 
     const result = await service.execute(createRequest());
 
     expect(events).toEqual(["validation", "policy", "builder"]);
     expect(result.successful).toBe(true);
+    expect(persisted).toBe(true);
   });
 
   it("stops when validation fails", async () => {
@@ -218,6 +233,14 @@ describe("ReservationService", () => {
           return createBuildResult(true);
         },
       } as unknown as ReservationBuilder,
+      {
+        save: async () => undefined,
+        findById: async () => null,
+        findByReservationNumber: async () => null,
+        findByTravellerId: async () => [],
+        findByJourneyId: async () => [],
+        delete: async () => undefined,
+      } as ReservationRepository,
     );
 
     const result = await service.execute(createRequest());
@@ -249,6 +272,14 @@ describe("ReservationService", () => {
           return createBuildResult(true);
         },
       } as unknown as ReservationBuilder,
+      {
+        save: async () => undefined,
+        findById: async () => null,
+        findByReservationNumber: async () => null,
+        findByTravellerId: async () => [],
+        findByJourneyId: async () => [],
+        delete: async () => undefined,
+      } as ReservationRepository,
     );
 
     const result = await service.execute(createRequest());
@@ -259,6 +290,7 @@ describe("ReservationService", () => {
   });
 
   it("returns successful result when builder succeeds", async () => {
+    let savedContextCustomerId = "";
     const service = new ReservationService(
       {
         execute: () => createValidation(true),
@@ -269,12 +301,23 @@ describe("ReservationService", () => {
       {
         build: () => createBuildResult(true),
       } as unknown as ReservationBuilder,
+      {
+        save: async (_reservation, context) => {
+          savedContextCustomerId = context.customerId;
+        },
+        findById: async () => null,
+        findByReservationNumber: async () => null,
+        findByTravellerId: async () => [],
+        findByJourneyId: async () => [],
+        delete: async () => undefined,
+      } as ReservationRepository,
     );
 
     const result: ReservationResult = await service.execute(createRequest());
 
     expect(result.successful).toBe(true);
     expect(result.reservation?.identity.id).toBe("reservation-001");
+    expect(savedContextCustomerId).toBe("customer-001");
   });
 });
 

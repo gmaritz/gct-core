@@ -6,6 +6,7 @@ function createComposition(): ReservationComposition {
     identity: {
       id: "reservation-001",
     },
+    reservationNumber: "RES-123456-ABCD",
     status: ReservationStatus.CREATED,
     journeySnapshot: {
       snapshotId: "journey-snap-001",
@@ -98,6 +99,7 @@ describe("Reservation aggregate", () => {
     const reservation = Reservation.create(createComposition());
 
     expect(reservation.identity.id).toBe("reservation-001");
+    expect(reservation.reservationNumber).toBe("RES-123456-ABCD");
     expect(reservation.status).toBe(ReservationStatus.CREATED);
     expect(reservation.journeySnapshot.journeyId).toBe("journey-1001");
     expect(reservation.travellerSnapshots).toHaveLength(1);
@@ -151,8 +153,14 @@ describe("Reservation aggregate", () => {
       travellerSnapshots: [],
     };
 
+    const missingReservationNumber = {
+      ...createComposition(),
+      reservationNumber: "",
+    };
+
     expect(() => Reservation.create(missingIdentity)).toThrow("Reservation identity is required.");
     expect(() => Reservation.create(missingTravellers)).toThrow("At least one traveller snapshot is required.");
+    expect(() => Reservation.create(missingReservationNumber)).toThrow("Reservation number is required.");
   });
 
   it("supports restore for immutable historical snapshots", () => {

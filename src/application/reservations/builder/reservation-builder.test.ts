@@ -33,6 +33,7 @@ function createContext(policyResult: ReservationPolicyResult = createPolicyResul
   return Object.freeze({
     validatedRequest: {
       requestId: "reservation-request-001",
+      customerId: "customer-001",
       journeyId: "journey-1001",
       checkInDate: new Date("2026-08-10T00:00:00.000Z"),
       checkOutDate: new Date("2026-08-14T00:00:00.000Z"),
@@ -43,6 +44,7 @@ function createContext(policyResult: ReservationPolicyResult = createPolicyResul
         },
       ],
     },
+    reservationNumber: "RES-123456-B001",
     snapshots: {
       journeySnapshot: {
         snapshotId: "journey-snap-001",
@@ -133,6 +135,7 @@ describe("ReservationBuilder", () => {
 
     expect(result.successful).toBe(true);
     expect(result.reservation?.identity.id).toBe("reservation-request-001");
+    expect(result.reservation?.reservationNumber).toBe("RES-123456-B001");
     expect(result.reservation?.status).toBe(ReservationStatus.CREATED);
     expect(result.reservation?.timeline[0]?.milestone).toBe(ReservationTimelineMilestone.CREATED);
     expect(validatorCalls).toEqual(["reservation-request-001"]);

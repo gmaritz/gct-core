@@ -12,6 +12,7 @@ export interface ReservationIdentity {
 }
 export interface ReservationComposition {
     readonly identity: ReservationIdentity;
+    readonly reservationNumber: string;
     readonly status: ReservationStatus;
     readonly journeySnapshot: JourneySnapshot;
     readonly travellerSnapshots: ReadonlyArray<TravellerSnapshot>;
@@ -24,6 +25,7 @@ export interface ReservationComposition {
 }
 export declare class Reservation {
     readonly identity: ReservationIdentity;
+    readonly reservationNumber: string;
     readonly status: ReservationStatus;
     readonly journeySnapshot: JourneySnapshot;
     readonly travellerSnapshots: ReadonlyArray<TravellerSnapshot>;

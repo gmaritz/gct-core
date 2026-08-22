@@ -4,10 +4,22 @@ exports.ReservationPrismaRepository = void 0;
 const mappers_1 = require("@application/mappers");
 const prisma_service_1 = require("../prisma/prisma.service");
 class ReservationPrismaRepository {
-    async save(aggregate) {
+    async save(aggregate, context) {
         const data = mappers_1.ReservationMapper.toPersistence(aggregate);
         const prisma = prisma_service_1.PrismaService.getInstance();
         try {
+            if (context) {
+                if (context.bookingEndDate.getTime() < context.bookingStartDate.getTime()) {
+                    throw new Error('Booking end date must be on or after booking start date.');
+                }
+                const customer = await prisma.customer.findUnique({
+                    where: { id: context.customerId },
+                    select: { id: true },
+                });
+                if (!customer) {
+                    throw new Error(`Customer ${context.customerId} does not exist.`);
+                }
+            }
             await prisma.reservation.upsert({
                 where: { id: aggregate.getId() },
                 update: data,

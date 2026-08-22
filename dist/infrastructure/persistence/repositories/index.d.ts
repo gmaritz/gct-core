@@ -6,4 +6,5 @@
 export { TravellerPrismaRepository } from './traveller-prisma.repository';
 export { JourneyPrismaRepository } from './journey-prisma.repository';
 export { ReservationPrismaRepository } from './reservation-prisma.repository';
+export { CanonicalReservationPrismaRepository } from './canonical-reservation-prisma.repository';
 //# sourceMappingURL=index.d.ts.map

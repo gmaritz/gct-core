@@ -2,7 +2,9 @@ import { ApplicationService } from "../../application-service";
 import { Reservation } from "../aggregate";
 import { ReservationBuilder, ReservationBuildResult } from "../builder";
 import { ReservationPolicyContext, ReservationPolicyPipeline } from "../policies";
+import { ReservationRepository } from "../repository";
 import { ReservationValidationPipeline, ReservationValidationResult } from "../validation";
+import { generateReservationNumber } from "./reservation-number.generator";
 import {
   createReservationServiceContext,
   ReservationServiceContext,
@@ -70,6 +72,7 @@ export class ReservationService
     private readonly validationPipeline: ReservationValidationPipeline,
     private readonly policyPipeline: ReservationPolicyPipeline,
     private readonly builder: ReservationBuilder,
+    private readonly repository: ReservationRepository,
   ) {}
 
   public async execute(request: ReservationServiceRequest): Promise<ReservationResult> {
@@ -111,9 +114,18 @@ export class ReservationService
       metadata: policyContext.reservationRequest.metadata,
       timelineSeed: policyContext.reservationRequest.timelineSeed,
       reservation: policyContext.reservationRequest.reservation,
+      reservationNumber: generateReservationNumber(),
     });
 
     const builtContext = withBuilderResult(policyContext, builderResult);
+
+    if (builderResult.successful && builderResult.reservation) {
+      await this.repository.save(builderResult.reservation, {
+        customerId: policyContext.reservationRequest.query.customerId,
+        bookingStartDate: policyContext.reservationRequest.query.checkInDate,
+        bookingEndDate: policyContext.reservationRequest.query.checkOutDate,
+      });
+    }
 
     return createReservationResult({
       successful: builderResult.successful,

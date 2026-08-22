@@ -3,17 +3,32 @@
  * 
  * Implements IReservationRepository using Prisma.
  */
-import { IReservationRepository } from '@domain/repositories';
+import { IReservationRepository, ReservationPersistenceContext } from '@domain/repositories';
 import { Reservation } from '@domain/aggregates';
 import { ReservationMapper } from '@application/mappers';
 import { PrismaService } from '../prisma/prisma.service';
 
 export class ReservationPrismaRepository implements IReservationRepository {
-  async save(aggregate: Reservation): Promise<void> {
+  async save(aggregate: Reservation, context?: ReservationPersistenceContext): Promise<void> {
     const data = ReservationMapper.toPersistence(aggregate);
     const prisma = PrismaService.getInstance();
 
     try {
+      if (context) {
+        if (context.bookingEndDate.getTime() < context.bookingStartDate.getTime()) {
+          throw new Error('Booking end date must be on or after booking start date.');
+        }
+
+        const customer = await prisma.customer.findUnique({
+          where: { id: context.customerId },
+          select: { id: true },
+        });
+
+        if (!customer) {
+          throw new Error(`Customer ${context.customerId} does not exist.`);
+        }
+      }
+
       await prisma.reservation.upsert({
         where: { id: aggregate.getId() },
         update: data,

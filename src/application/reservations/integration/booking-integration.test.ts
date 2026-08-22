@@ -7,6 +7,7 @@ import { BookingIntegrationRequest } from "./models";
 function createReservation(): Reservation {
   return Reservation.create({
     identity: { id: "reservation-2001" },
+    reservationNumber: "RES-200001-BKG1",
     status: ReservationStatus.CREATED,
     journeySnapshot: {
       snapshotId: "journey-snap-2001",

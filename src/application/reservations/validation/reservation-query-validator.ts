@@ -10,6 +10,7 @@ export interface ReservationTravellerRequest {
 
 export interface ReservationQuery {
   readonly requestId: string;
+  readonly customerId: string;
   readonly journeyId: string;
   readonly checkInDate: Date;
   readonly checkOutDate: Date;
@@ -47,7 +48,13 @@ export class ReservationQueryValidator {
       });
     }
 
-    if (isBlank(query.requestId) || isBlank(query.journeyId) || !Array.isArray(query.travellers) || query.travellers.length === 0) {
+    if (
+      isBlank(query.requestId)
+      || isBlank(query.customerId)
+      || isBlank(query.journeyId)
+      || !Array.isArray(query.travellers)
+      || query.travellers.length === 0
+    ) {
       errors.push(createError(ReservationValidationErrorCode.INVALID_STRUCTURE, "Reservation query structure is invalid."));
     }
 

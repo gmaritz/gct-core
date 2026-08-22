@@ -7,6 +7,7 @@ export interface ReservationTravellerRequest {
 }
 export interface ReservationQuery {
     readonly requestId: string;
+    readonly customerId: string;
     readonly journeyId: string;
     readonly checkInDate: Date;
     readonly checkOutDate: Date;

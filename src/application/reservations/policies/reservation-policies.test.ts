@@ -21,6 +21,7 @@ import {
 function createReservation(): Reservation {
   return Reservation.create({
     identity: { id: "reservation-001" },
+    reservationNumber: "RES-000001-POL1",
     status: ReservationStatus.CONFIRMED,
     journeySnapshot: {
       snapshotId: "journey-snap-001",

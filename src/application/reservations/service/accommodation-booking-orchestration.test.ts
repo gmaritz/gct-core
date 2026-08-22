@@ -44,7 +44,7 @@ describe("AccommodationBookingOrchestrationService", () => {
 
     const result = await service.execute({
       pricing,
-      reservation: { query: { requestId: "r1", journeyId: "j1", checkInDate: new Date("2026-10-01"), checkOutDate: new Date("2026-10-04"), travellers: [{ travellerId: "t1", fullName: "Ari" }] }, snapshots: { journeySnapshot: { snapshotId: "j", capturedAt: new Date(), version: "1", journeyId: "j1", title: "Journey" }, travellerSnapshots: [{ snapshotId: "t", capturedAt: new Date(), version: "1", travellerId: "t1", fullName: "Ari" }], metadata: { createdAt: new Date(), updatedAt: new Date(), version: "1" } }, metadata: { createdAt: new Date(), updatedAt: new Date(), version: "1" }, timelineSeed: [] },
+      reservation: { query: { requestId: "r1", customerId: "customer-001", journeyId: "j1", checkInDate: new Date("2026-10-01"), checkOutDate: new Date("2026-10-04"), travellers: [{ travellerId: "t1", fullName: "Ari" }] }, snapshots: { journeySnapshot: { snapshotId: "j", capturedAt: new Date(), version: "1", journeyId: "j1", title: "Journey" }, travellerSnapshots: [{ snapshotId: "t", capturedAt: new Date(), version: "1", travellerId: "t1", fullName: "Ari" }], metadata: { createdAt: new Date(), updatedAt: new Date(), version: "1" } }, metadata: { createdAt: new Date(), updatedAt: new Date(), version: "1" }, timelineSeed: [] },
       handoff: { packageId: "package-1", pricingInputs: [selected.pricing], reservationInputs: [selected.reservation], finalPackagePrice: { amount: 0, currency: "ZAR" }, holder: { firstName: "Ari", lastName: "A", email: "ari@example.com" }, guests: [{ roomIndex: 0, type: "ADULT", firstName: "Ari", lastName: "A" }], idempotencyKey: "id-1" },
     });
 

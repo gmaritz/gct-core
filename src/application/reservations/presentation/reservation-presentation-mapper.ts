@@ -108,7 +108,7 @@ export class ReservationPresentationMapper {
     const outstandingActions = resolveOutstandingActions(result);
 
     const reservationPresentation = createReservationPresentationModel({
-      reservationNumber: reservation.identity.id,
+      reservationNumber: reservation.reservationNumber,
       journey: {
         journeyId: reservation.journeySnapshot.journeyId,
         title: reservation.journeySnapshot.title,

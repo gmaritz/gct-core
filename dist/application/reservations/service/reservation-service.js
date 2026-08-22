@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReservationService = void 0;
+const reservation_number_generator_1 = require("./reservation-number.generator");
 const models_1 = require("./models");
 function createReservationResult(input) {
     return Object.freeze({
@@ -28,10 +29,11 @@ function createPolicyContext(context, validationResult) {
     });
 }
 class ReservationService {
-    constructor(validationPipeline, policyPipeline, builder) {
+    constructor(validationPipeline, policyPipeline, builder, repository) {
         this.validationPipeline = validationPipeline;
         this.policyPipeline = policyPipeline;
         this.builder = builder;
+        this.repository = repository;
     }
     async execute(request) {
         const serviceContext = (0, models_1.createReservationServiceContext)(request);
@@ -66,8 +68,16 @@ class ReservationService {
             metadata: policyContext.reservationRequest.metadata,
             timelineSeed: policyContext.reservationRequest.timelineSeed,
             reservation: policyContext.reservationRequest.reservation,
+            reservationNumber: (0, reservation_number_generator_1.generateReservationNumber)(),
         });
         const builtContext = (0, models_1.withBuilderResult)(policyContext, builderResult);
+        if (builderResult.successful && builderResult.reservation) {
+            await this.repository.save(builderResult.reservation, {
+                customerId: policyContext.reservationRequest.query.customerId,
+                bookingStartDate: policyContext.reservationRequest.query.checkInDate,
+                bookingEndDate: policyContext.reservationRequest.query.checkOutDate,
+            });
+        }
         return createReservationResult({
             successful: builderResult.successful,
             reservation: builderResult.reservation,

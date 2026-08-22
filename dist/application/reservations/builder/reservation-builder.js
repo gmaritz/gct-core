@@ -24,12 +24,14 @@ function createComposition(context) {
         identity: Object.freeze({
             id: context.validatedRequest.requestId,
         }),
+        reservationNumber: context.reservationNumber,
         status: aggregate_1.ReservationStatus.CREATED,
         journeySnapshot: context.snapshots.journeySnapshot,
         travellerSnapshots: context.snapshots.travellerSnapshots ?? Object.freeze([]),
         accommodationSnapshots: context.snapshots.accommodationSnapshots,
         pricingSnapshot: context.snapshots.pricingSnapshot,
         paymentSnapshot: context.snapshots.paymentSnapshot,
+        supplierReferences: context.snapshots.supplierReferences,
         timeline: cloneTimeline(context.timelineSeed),
         metadata: Object.freeze({
             createdAt: cloneDate(context.metadata.createdAt),

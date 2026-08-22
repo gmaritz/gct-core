@@ -11,6 +11,7 @@ import {
 function createReservation(): Reservation {
   return Reservation.create({
     identity: { id: "reservation-001" },
+    reservationNumber: "RES-000001-VAL1",
     status: ReservationStatus.CONFIRMED,
     journeySnapshot: {
       snapshotId: "journey-snap-001",
@@ -122,6 +123,7 @@ describe("Reservation validation pipeline", () => {
     const result = pipeline.execute({
       query: {
         requestId: "req-001",
+        customerId: "customer-001",
         journeyId: "journey-1001",
         checkInDate: new Date("2026-08-10T00:00:00.000Z"),
         checkOutDate: new Date("2026-08-14T00:00:00.000Z"),
@@ -167,6 +169,7 @@ describe("Reservation validation pipeline", () => {
     const result = pipeline.execute({
       query: {
         requestId: "",
+        customerId: "",
         journeyId: "journey-1001",
         checkInDate: new Date("2026-08-10T00:00:00.000Z"),
         checkOutDate: new Date("2026-08-14T00:00:00.000Z"),
@@ -189,6 +192,7 @@ describe("Reservation validation pipeline", () => {
     const result = pipeline.execute({
       query: {
         requestId: "req-002",
+        customerId: "customer-001",
         journeyId: "journey-1001",
         checkInDate: new Date("2026-08-10T00:00:00.000Z"),
         checkOutDate: new Date("2026-08-14T00:00:00.000Z"),

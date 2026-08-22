@@ -2,6 +2,7 @@ import { ApplicationService } from "../../application-service";
 import { Reservation } from "../aggregate";
 import { ReservationBuilder, ReservationBuildResult } from "../builder";
 import { ReservationPolicyPipeline } from "../policies";
+import { ReservationRepository } from "../repository";
 import { ReservationValidationPipeline } from "../validation";
 import { ReservationServiceRequest } from "./models";
 export interface ReservationResultMetadata {
@@ -20,7 +21,8 @@ export declare class ReservationService implements ApplicationService<Reservatio
     private readonly validationPipeline;
     private readonly policyPipeline;
     private readonly builder;
-    constructor(validationPipeline: ReservationValidationPipeline, policyPipeline: ReservationPolicyPipeline, builder: ReservationBuilder);
+    private readonly repository;
+    constructor(validationPipeline: ReservationValidationPipeline, policyPipeline: ReservationPolicyPipeline, builder: ReservationBuilder, repository: ReservationRepository);
     execute(request: ReservationServiceRequest): Promise<ReservationResult>;
 }
 export type { ReservationBuildResult };

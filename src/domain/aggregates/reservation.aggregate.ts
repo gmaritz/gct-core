@@ -55,7 +55,8 @@ export class Reservation extends AggregateRoot {
   static create(
     travelerId: string,
     journeyId: string,
-    totalPrice: Money
+    totalPrice: Money,
+    reservationNumber: string,
   ): Reservation {
     if (!travelerId) {
       throw new InvalidReservationException('Traveller ID is required');
@@ -63,9 +64,11 @@ export class Reservation extends AggregateRoot {
     if (!journeyId) {
       throw new InvalidReservationException('Journey ID is required');
     }
+    if (!reservationNumber || reservationNumber.trim().length === 0) {
+      throw new InvalidReservationException('Reservation number is required');
+    }
 
     const id = uuidv4();
-    const reservationNumber = this.generateReservationNumber();
     const reservation = new Reservation(
       id,
       reservationNumber,
@@ -182,12 +185,5 @@ export class Reservation extends AggregateRoot {
       this.status !== null &&
       this.totalPrice !== null
     );
-  }
-
-  private static generateReservationNumber(): string {
-    const prefix = 'RES';
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `${prefix}-${timestamp}-${random}`;
   }
 }

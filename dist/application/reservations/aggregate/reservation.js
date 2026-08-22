@@ -135,6 +135,7 @@ function ensureInvariant(condition, message) {
 }
 function validateRequiredComposition(composition) {
     ensureInvariant(!isBlank(composition.identity?.id), "Reservation identity is required.");
+    ensureInvariant(!isBlank(composition.reservationNumber), "Reservation number is required.");
     ensureInvariant(typeof composition.status === "string", "Reservation status is required.");
     ensureInvariant(!isBlank(composition.journeySnapshot?.journeyId), "Journey snapshot is required.");
     ensureInvariant(!isBlank(composition.journeySnapshot?.snapshotId), "Journey snapshot is required.");
@@ -147,6 +148,7 @@ class Reservation {
     constructor(composition) {
         validateRequiredComposition(composition);
         this.identity = freezeIdentity(composition.identity);
+        this.reservationNumber = composition.reservationNumber;
         this.status = composition.status;
         this.journeySnapshot = freezeJourneySnapshot(composition.journeySnapshot);
         this.travellerSnapshots = Object.freeze(composition.travellerSnapshots.map(freezeTravellerSnapshot));

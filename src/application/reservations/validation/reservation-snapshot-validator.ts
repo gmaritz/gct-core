@@ -4,6 +4,7 @@ import {
   PaymentSnapshot,
   PricingSnapshot,
   ReservationMetadata,
+  SupplierReference,
   TravellerSnapshot,
 } from "../models";
 import { ReservationValidationErrorCode, createReservationValidationResult, ReservationValidationResult } from "./models";
@@ -14,6 +15,7 @@ export interface ReservationSnapshotSet {
   readonly accommodationSnapshots?: ReadonlyArray<AccommodationSnapshot>;
   readonly pricingSnapshot?: PricingSnapshot;
   readonly paymentSnapshot?: PaymentSnapshot;
+  readonly supplierReferences?: ReadonlyArray<SupplierReference>;
   readonly metadata?: ReservationMetadata;
 }
 

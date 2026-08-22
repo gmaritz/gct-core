@@ -6,6 +6,7 @@ import { ReservationSnapshotSet } from "../../validation";
 
 export interface ReservationBuilderContext {
   readonly validatedRequest: ReservationQuery;
+  readonly reservationNumber: string;
   readonly snapshots: ReservationSnapshotSet;
   readonly approvedPolicyResult: ReservationPolicyResult;
   readonly metadata: ReservationMetadata;

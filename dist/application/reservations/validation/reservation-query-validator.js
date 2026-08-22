@@ -26,7 +26,11 @@ class ReservationQueryValidator {
                 },
             });
         }
-        if (isBlank(query.requestId) || isBlank(query.journeyId) || !Array.isArray(query.travellers) || query.travellers.length === 0) {
+        if (isBlank(query.requestId)
+            || isBlank(query.customerId)
+            || isBlank(query.journeyId)
+            || !Array.isArray(query.travellers)
+            || query.travellers.length === 0) {
             errors.push(createError(models_1.ReservationValidationErrorCode.INVALID_STRUCTURE, "Reservation query structure is invalid."));
         }
         if (!isValidDate(query.checkInDate) || !isValidDate(query.checkOutDate) || query.checkOutDate <= query.checkInDate) {

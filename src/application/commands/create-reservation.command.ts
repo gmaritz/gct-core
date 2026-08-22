@@ -5,9 +5,13 @@
  */
 export class CreateReservationCommand {
   constructor(
+    readonly customerId: string,
     readonly travelerId: string,
     readonly journeyId: string,
     readonly amount: number,
-    readonly currency: string
+    readonly currency: string,
+    readonly bookingStartDate: Date,
+    readonly bookingEndDate: Date,
+    readonly bookingStatus?: string,
   ) {}
 }
