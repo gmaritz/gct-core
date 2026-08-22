@@ -7,7 +7,7 @@
 | Document ID | SPEC-029 |
 | Title | Repository & Persistence Architecture |
 | Version | 2.0 |
-| Status | Draft — Architect Review Required |
+| Status | Approved |
 | Classification | Implementation Specification |
 | Owner | GCT Core System Architecture |
 | Project | GCT Core |

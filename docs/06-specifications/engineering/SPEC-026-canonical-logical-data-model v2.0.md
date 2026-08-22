@@ -7,7 +7,7 @@
 | Document ID | SPEC-026 |
 | Title | Canonical Logical Data Model |
 | Version | 2.0 |
-| Status | Draft — Architect Review Required |
+| Status | Approved |
 | Classification | Internal |
 | Owner | GCT Core System Architecture |
 | Project | GCT Core |

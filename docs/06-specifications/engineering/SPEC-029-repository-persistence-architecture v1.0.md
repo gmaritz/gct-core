@@ -8,7 +8,7 @@
 |----------|-------|
 | Specification | SPEC-029 |
 | Title | Repository & Persistence Architecture |
-| Status | Draft |
+| Status | Superseded |
 | Depends On | SPEC-026, SPEC-027, SPEC-028 |
 | Target Implementation | Node.js, Prisma ORM, PostgreSQL |
 

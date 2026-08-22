@@ -9,7 +9,7 @@
 | Specification ID | SPEC-028 |
 | Title | Prisma Data Model |
 | Project | Go Cape Tours (GCT Core) |
-| Status | Draft |
+| Status | Superseded |
 | Owner | Platform Engineering |
 | Depends On | SPEC-026 – Canonical Logical Data Model |
 | Depends On | SPEC-027 – Physical Data Model |

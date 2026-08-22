@@ -6,8 +6,8 @@
 |---|---|
 | Document ID | SPEC-030 |
 | Title | Reservation Persistence Reconciliation & Implementation |
-| Version | 1.1 |
-| Status | Draft — Architect Review Required |
+| Version | 2.0 |
+| Status | Verified |
 | Classification | Implementation Specification |
 | Owner | GCT Core System Architecture |
 | Project | GCT Core |
@@ -1188,7 +1188,7 @@ It does not restart or redesign GCT Core.
 
 # 53. Next Stage
 
-After SPEC-030 v1.1 is architect-approved:
+After SPEC-030 v2.0 is architect-approved:
 
 1. Copilot receives the approved implementation specification.
 2. Copilot inspects the current repository.
@@ -1214,8 +1214,8 @@ After SPEC-030 v1.1 is architect-approved:
 
 **Document:** SPEC-030 — Reservation Persistence Reconciliation & Implementation
 
-**Version:** 1.1
+**Version:** 2.0
 
-**Status:** Draft — Architect Review Required
+**Status:** Verified
 
 **Next Stage:** Architect Approval → Copilot Implementation

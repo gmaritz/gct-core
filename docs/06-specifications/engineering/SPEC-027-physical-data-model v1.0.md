@@ -1,7 +1,7 @@
 # SPEC-027 – Physical Data Model
 
 **Version:** 1.0  
-**Status:** Draft  
+**Status:** Superseded  
 **Classification:** Internal  
 **Owner:** Enterprise Architecture  
 **Project:** GCT Core Platform

@@ -102,7 +102,7 @@ Together these specifications define the complete enterprise technical blueprint
 | SPEC-027 | Physical Data Model |
 | SPEC-028 | Prisma Data Model |
 | SPEC-029 | Repository & Persistence Architecture |
-| SPEC-030 | Application Layer Architecture |
+| SPEC-030 | Reservation Persistence Reconciliation & Implementation |
 | SPEC-031 | Presentation Layer Architecture |
 | SPEC-032 | Security & Identity Architecture |
 | SPEC-033 | Integration & External Systems Architecture |
@@ -130,7 +130,7 @@ Together these specifications define the complete enterprise technical blueprint
 | Architecture Domain | Primary Specifications |
 |---------------------|------------------------|
 | Data Architecture | SPEC-026, SPEC-027, SPEC-028, SPEC-029 |
-| Application Architecture | SPEC-030, SPEC-031 |
+| Application Architecture | SPEC-030 (historical), SPEC-031 |
 | Security | SPEC-032 |
 | Integration | SPEC-033 |
 | Infrastructure | SPEC-034 |
@@ -332,7 +332,7 @@ The Go Cape Tours Enterprise Architecture consists of the following specificatio
 - SPEC-027 – Physical Data Model
 - SPEC-028 – Prisma Data Model
 - SPEC-029 – Repository & Persistence Architecture
-- SPEC-030 – Application Layer Architecture
+- SPEC-030 – Reservation Persistence Reconciliation & Implementation
 - SPEC-031 – Presentation Layer Architecture
 - SPEC-032 – Security & Identity Architecture
 - SPEC-033 – Integration & External Systems Architecture

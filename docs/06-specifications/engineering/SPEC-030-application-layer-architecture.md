@@ -8,7 +8,7 @@
 |----------|-------|
 | Specification | SPEC-030 |
 | Title | Application Layer Architecture |
-| Status | Draft |
+| Status | Superseded |
 | Depends On | SPEC-026, SPEC-027, SPEC-028, SPEC-029 |
 | Target Implementation | Node.js, TypeScript, Prisma ORM, PostgreSQL |
 

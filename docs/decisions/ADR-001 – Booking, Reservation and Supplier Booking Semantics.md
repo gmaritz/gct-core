@@ -7,7 +7,7 @@
 | ADR ID | ADR-001 |
 | Title | Booking, Reservation and Supplier Booking Semantics |
 | Version | 1.0.0 |
-| Status | Proposed |
+| Status | Approved |
 | Classification | Architecture Decision |
 | Owner | GCT Core System Architecture |
 | Applies To | GCT Core |
@@ -28,7 +28,7 @@
 
 # Status
 
-**PROPOSED — ARCHITECTURE REVIEW REQUIRED**
+**APPROVED**
 
 This ADR records the proposed architectural reconciliation resulting from the read-only review of the current GCT Core repository and the clarified Go Cape Tours business model.
 

@@ -7,7 +7,7 @@
 | Document ID | SPEC-028 |
 | Title | Prisma Data Model |
 | Version | 2.0 |
-| Status | Draft — Architect Review Required |
+| Status | Approved |
 | Classification | Implementation Specification |
 | Owner | GCT Core System Architecture |
 | Project | GCT Core |
