@@ -1,10 +1,8 @@
 import { Reservation, ReservationStatus } from "@application/reservations/aggregate";
 import { ReservationTimelineMilestone } from "@application/reservations/models";
-import {
-  ReservationPersistenceContext,
-} from "@application/reservations/repository";
+import { ReservationPersistenceContext } from "@application/reservations/repository";
+import { PrismaClient } from "@prisma/client";
 
-import { PrismaService } from "../prisma/prisma.service";
 import { CanonicalReservationPrismaRepository } from "./canonical-reservation-prisma.repository";
 
 type JsonRecord = Record<string, unknown>;
@@ -12,6 +10,7 @@ type JsonRecord = Record<string, unknown>;
 type StoredBooking = {
   id: string;
   customerId: string;
+  reservationNumber: string;
   bookingNumber: string;
   bookingDate: Date;
   travelDate: Date;
@@ -28,6 +27,14 @@ type StoredBooking = {
   supplierReferences: Array<JsonRecord> | null;
   reservationTimeline: Array<JsonRecord> | null;
   reservationMetadata: JsonRecord | null;
+  bookingId?: string | null;
+  bookingItemId?: string | null;
+  supplierId?: string | null;
+  reservationReference?: string | null;
+  reservationStatusId?: string | null;
+  reservedAt?: Date | null;
+  confirmedAt?: Date | null;
+  cancelledAt?: Date | null;
 };
 
 function createReservation(status: ReservationStatus = ReservationStatus.CREATED, id = "reservation-001", number = "RES-123456-ABCD"): Reservation {
@@ -116,6 +123,13 @@ function createReservation(status: ReservationStatus = ReservationStatus.CREATED
         version: "1.0.0",
         providerId: "supplier-a",
         supplierBookingReference: "SB-001",
+        bookingId: "booking-001",
+        bookingItemId: "booking-item-001",
+        supplierId: "supplier-001",
+        reservationReference: "SUP-RES-001",
+        reservationStatusId: "supplier-confirmed",
+        reservedAt: new Date("2026-08-22T10:02:00.000Z"),
+        confirmedAt: new Date("2026-08-22T10:03:00.000Z"),
       },
     ],
     timeline: [
@@ -158,7 +172,7 @@ function createPrismaMock(): {
     };
     reservation: {
       upsert: (input: { where: { id: string }; update: StoredBooking; create: StoredBooking }) => Promise<void>;
-      findUnique: (input: { where: { id?: string; bookingNumber?: string }; select: Record<string, boolean> }) => Promise<StoredBooking | null>;
+      findUnique: (input: { where: { id?: string; reservationNumber?: string }; select: Record<string, boolean> }) => Promise<StoredBooking | null>;
       findMany: (input: { select: Record<string, boolean> }) => Promise<StoredBooking[]>;
       delete: (input: { where: { id: string } }) => Promise<void>;
     };
@@ -245,21 +259,21 @@ function createPrismaMock(): {
         if (throwUpsert) {
           throw new Error("Simulated upsert failure");
         }
-        const existingId = reservationByNumber.get(update.bookingNumber);
+        const existingId = reservationByNumber.get(update.reservationNumber);
         if (existingId && existingId !== where.id) {
-          throw new Error("Unique constraint failed on bookingNumber");
+          throw new Error("Unique constraint failed on reservationNumber");
         }
 
         const payload = reservationStore.has(where.id) ? update : create;
         reservationStore.set(where.id, payload);
-        reservationByNumber.set(payload.bookingNumber, where.id);
+        reservationByNumber.set(payload.reservationNumber!, where.id);
       },
-      findUnique: async ({ where }: { where: { id?: string; bookingNumber?: string } }): Promise<StoredBooking | null> => {
+      findUnique: async ({ where }: { where: { id?: string; reservationNumber?: string } }): Promise<StoredBooking | null> => {
         if (where.id) {
           return reservationStore.get(where.id) ?? null;
         }
-        if (where.bookingNumber) {
-          const id = reservationByNumber.get(where.bookingNumber);
+        if (where.reservationNumber) {
+          const id = reservationByNumber.get(where.reservationNumber);
           return id ? reservationStore.get(id) ?? null : null;
         }
         return null;
@@ -269,8 +283,8 @@ function createPrismaMock(): {
       },
       delete: async ({ where }: { where: { id: string } }): Promise<void> => {
         const existing = reservationStore.get(where.id);
-        if (existing) {
-          reservationByNumber.delete(existing.bookingNumber);
+        if (existing?.reservationNumber) {
+          reservationByNumber.delete(existing.reservationNumber);
         }
         reservationStore.delete(where.id);
       },
@@ -289,27 +303,21 @@ function createPrismaMock(): {
 }
 
 describe("CanonicalReservationPrismaRepository", () => {
-  afterEach(async () => {
-    await PrismaService.disconnect();
-  });
-
   it("persists canonical reservation state through the Reservation root", async () => {
     const mock = createPrismaMock();
-    PrismaService.setInstance(mock.prisma);
-    const repository = new CanonicalReservationPrismaRepository();
+    const repository = new CanonicalReservationPrismaRepository(mock.prisma as unknown as PrismaClient);
 
     const reservation = createReservation();
     await repository.save(reservation, createContext());
 
     expect(mock.reservationStore.size).toBe(1);
     expect(mock.bookingStore.size).toBe(0);
-    expect(mock.reservationStore.get(reservation.identity.id)?.bookingNumber).toBe("RES-123456-ABCD");
+    expect(mock.reservationStore.get(reservation.identity.id)?.reservationNumber).toBe("RES-123456-ABCD");
   });
 
   it("persists and reconstructs a canonical reservation round-trip", async () => {
     const mock = createPrismaMock();
-    PrismaService.setInstance(mock.prisma);
-    const repository = new CanonicalReservationPrismaRepository();
+    const repository = new CanonicalReservationPrismaRepository(mock.prisma as unknown as PrismaClient);
 
     const reservation = createReservation();
     await repository.save(reservation, createContext());
@@ -324,15 +332,79 @@ describe("CanonicalReservationPrismaRepository", () => {
     expect(restored?.journeySnapshot.journeyId).toBe("journey-1001");
     expect(restored?.accommodationSnapshots[0]?.occupancy?.rooms[0]?.childAges).toEqual([8]);
     expect(restored?.supplierReferences[0]?.providerId).toBe("supplier-a");
+    expect(restored?.supplierReferences[0]?.bookingId).toBe("booking-001");
+    expect(restored?.supplierReferences[0]?.bookingItemId).toBe("booking-item-001");
+    expect(restored?.supplierReferences[0]?.supplierId).toBe("supplier-001");
+    expect(restored?.supplierReferences[0]?.reservationReference).toBe("SUP-RES-001");
+    expect(restored?.supplierReferences[0]?.reservationStatusId).toBe("supplier-confirmed");
+    expect(restored?.supplierReferences[0]?.confirmedAt?.toISOString()).toBe("2026-08-22T10:03:00.000Z");
     expect(restored?.pricingSnapshot?.currency).toBe("ZAR");
     expect(restored?.timeline[0]?.milestone).toBe(ReservationTimelineMilestone.CREATED);
     expect(restored?.metadata.version).toBe("1.0.0");
   });
 
+  it("reads legacy Booking state only when no canonical Reservation exists", async () => {
+    const mock = createPrismaMock();
+    const repository = new CanonicalReservationPrismaRepository(mock.prisma as unknown as PrismaClient);
+
+    const reservation = createReservation();
+    await repository.save(reservation, createContext());
+    const persisted = mock.reservationStore.get(reservation.identity.id);
+
+    if (!persisted) {
+      throw new Error("Missing canonical reservation in test setup");
+    }
+
+    mock.reservationStore.clear();
+    mock.bookingStore.set(reservation.identity.id, {
+      ...persisted,
+      reservationNumber: undefined as never,
+      bookingNumber: persisted.reservationNumber,
+    });
+
+    const restored = await repository.findById(reservation.identity.id);
+
+    expect(restored?.reservationNumber).toBe(reservation.reservationNumber);
+    expect(mock.reservationStore.size).toBe(0);
+  });
+
+  it("reconciles retained supplier fulfilment columns into the canonical Reservation", async () => {
+    const mock = createPrismaMock();
+    const repository = new CanonicalReservationPrismaRepository(mock.prisma as unknown as PrismaClient);
+    const reservation = createReservation();
+
+    await repository.save(reservation, createContext());
+    const persisted = mock.reservationStore.get(reservation.identity.id);
+    if (!persisted) {
+      throw new Error("Missing canonical reservation in test setup");
+    }
+
+    persisted.supplierReferences = null;
+    persisted.bookingId = "booking-legacy-001";
+    persisted.bookingItemId = "booking-item-legacy-001";
+    persisted.supplierId = "supplier-legacy-001";
+    persisted.reservationReference = "SUP-LEGACY-001";
+    persisted.reservationStatusId = "supplier-confirmed";
+    persisted.reservedAt = new Date("2026-08-22T10:02:00.000Z");
+    persisted.confirmedAt = new Date("2026-08-22T10:03:00.000Z");
+    persisted.cancelledAt = null;
+
+    const restored = await repository.findById(reservation.identity.id);
+    const supplierFulfilment = restored?.supplierReferences[0];
+
+    expect(supplierFulfilment?.bookingId).toBe("booking-legacy-001");
+    expect(supplierFulfilment?.bookingItemId).toBe("booking-item-legacy-001");
+    expect(supplierFulfilment?.supplierId).toBe("supplier-legacy-001");
+    expect(supplierFulfilment?.reservationReference).toBe("SUP-LEGACY-001");
+    expect(supplierFulfilment?.reservationStatusId).toBe("supplier-confirmed");
+    expect(supplierFulfilment?.confirmedAt?.toISOString()).toBe("2026-08-22T10:03:00.000Z");
+    expect(restored?.identity.id).toBe(reservation.identity.id);
+    expect(mock.bookingStore.size).toBe(0);
+  });
+
   it("preserves all six canonical lifecycle values", async () => {
     const mock = createPrismaMock();
-    PrismaService.setInstance(mock.prisma);
-    const repository = new CanonicalReservationPrismaRepository();
+    const repository = new CanonicalReservationPrismaRepository(mock.prisma as unknown as PrismaClient);
 
     const states: ReservationStatus[] = [
       ReservationStatus.CREATED,
@@ -353,8 +425,7 @@ describe("CanonicalReservationPrismaRepository", () => {
 
   it("retrieves by reservation number and filters by traveller and journey", async () => {
     const mock = createPrismaMock();
-    PrismaService.setInstance(mock.prisma);
-    const repository = new CanonicalReservationPrismaRepository();
+    const repository = new CanonicalReservationPrismaRepository(mock.prisma as unknown as PrismaClient);
 
     const reservationA = createReservation(ReservationStatus.CREATED, "reservation-a", "RES-A-0001");
     const reservationB = createReservation(ReservationStatus.CONFIRMED, "reservation-b", "RES-B-0001");
@@ -373,8 +444,7 @@ describe("CanonicalReservationPrismaRepository", () => {
 
   it("fails when required persistence context is missing or invalid", async () => {
     const mock = createPrismaMock();
-    PrismaService.setInstance(mock.prisma);
-    const repository = new CanonicalReservationPrismaRepository();
+    const repository = new CanonicalReservationPrismaRepository(mock.prisma as unknown as PrismaClient);
     const reservation = createReservation();
 
     await expect(repository.save(reservation, {
@@ -392,8 +462,7 @@ describe("CanonicalReservationPrismaRepository", () => {
 
   it("fails closed for invalid lifecycle reconstruction", async () => {
     const mock = createPrismaMock();
-    PrismaService.setInstance(mock.prisma);
-    const repository = new CanonicalReservationPrismaRepository();
+    const repository = new CanonicalReservationPrismaRepository(mock.prisma as unknown as PrismaClient);
 
     const reservation = createReservation();
     await repository.save(reservation, createContext());
@@ -411,20 +480,18 @@ describe("CanonicalReservationPrismaRepository", () => {
 
   it("fails on reservation-number uniqueness conflicts", async () => {
     const mock = createPrismaMock();
-    PrismaService.setInstance(mock.prisma);
-    const repository = new CanonicalReservationPrismaRepository();
+    const repository = new CanonicalReservationPrismaRepository(mock.prisma as unknown as PrismaClient);
 
     await repository.save(createReservation(ReservationStatus.CREATED, "reservation-a", "RES-CONFLICT-0001"), createContext());
 
     await expect(
       repository.save(createReservation(ReservationStatus.CREATED, "reservation-b", "RES-CONFLICT-0001"), createContext()),
-    ).rejects.toThrow("Unique constraint failed on bookingNumber");
+    ).rejects.toThrow("Unique constraint failed on reservationNumber");
   });
 
   it("keeps transactional boundary when persistence fails", async () => {
     const mock = createPrismaMock();
-    PrismaService.setInstance(mock.prisma);
-    const repository = new CanonicalReservationPrismaRepository();
+    const repository = new CanonicalReservationPrismaRepository(mock.prisma as unknown as PrismaClient);
 
     mock.throwOnUpsert();
 

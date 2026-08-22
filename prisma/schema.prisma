@@ -609,6 +609,7 @@ model Customer {
   travellers        Traveller[]
   quotes            Quote[]
   bookings          Booking[]
+  reservations      Reservation[]
   customerType      CustomerType @relation(fields: [customerTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   preferredLanguage Language?  @relation(fields: [preferredLanguageId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   preferredCurrency Currency?  @relation(fields: [preferredCurrencyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -798,12 +799,26 @@ model BookingNote {
 
 model Reservation {
   id                   String      @id @default(uuid())
-  bookingId            String
-  bookingItemId        String
-  supplierId           String
+  reservationNumber    String?     @unique
+  customerId           String?
+  bookingStartDate     DateTime?   @db.Date
+  bookingEndDate       DateTime?   @db.Date
+  reservationLifecycleCode String?
+  journeySnapshot      Json?
+  travellerSnapshots   Json?
+  accommodationSnapshots Json?
+  pricingSnapshot      Json?
+  paymentSnapshot      Json?
+  supplierReferences   Json?
+  reservationTimeline  Json?
+  reservationMetadata  Json?
+
+  bookingId            String?
+  bookingItemId        String?
+  supplierId           String?
   reservationReference String?
-  reservationStatusId  String
-  reservedAt           DateTime
+  reservationStatusId  String?
+  reservedAt           DateTime?
   confirmedAt          DateTime?
   cancelledAt          DateTime?
 
@@ -814,15 +829,18 @@ model Reservation {
   deletedAt            DateTime?
   deletedBy            String?
 
-  booking              Booking     @relation(fields: [bookingId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  bookingItem          BookingItem @relation(fields: [bookingItemId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  supplier             Supplier    @relation(fields: [supplierId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  reservationStatus    ReservationStatus @relation(fields: [reservationStatusId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  customer             Customer?   @relation(fields: [customerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  booking              Booking?    @relation(fields: [bookingId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  bookingItem          BookingItem? @relation(fields: [bookingItemId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  supplier             Supplier?   @relation(fields: [supplierId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  reservationStatus    ReservationStatus? @relation(fields: [reservationStatusId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([bookingId])
   @@index([bookingItemId])
   @@index([supplierId])
   @@index([reservationStatusId])
+  @@index([customerId])
+  @@index([reservationLifecycleCode])
   @@map("reservation")
 }
 

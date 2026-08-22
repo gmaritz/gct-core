@@ -5,22 +5,13 @@ import {
   ReservationPersistenceContext,
   ReservationRepository,
 } from "@application/reservations/repository";
-import { PrismaService } from "../prisma/prisma.service";
-
-const BOOKING_STATUS_BY_LIFECYCLE: Record<ReservationStatus, string> = {
-  [ReservationStatus.CREATED]: "DRAFT",
-  [ReservationStatus.QUOTED]: "PLANNED",
-  [ReservationStatus.CONFIRMED]: "CONFIRMED",
-  [ReservationStatus.AMENDED]: "PLANNED",
-  [ReservationStatus.CANCELLED]: "CANCELLED",
-  [ReservationStatus.COMPLETED]: "COMPLETED",
-};
+import { getPrismaClient } from "../../../bootstrap/prisma";
 
 const VALID_LIFECYCLE = new Set<string>(Object.values(ReservationStatus));
 
 type PersistedBooking = {
   id: string;
-  bookingNumber: string;
+  reservationNumber?: string | null;
   reservationLifecycleCode: string | null;
   journeySnapshot: Prisma.JsonValue | null;
   travellerSnapshots: Prisma.JsonValue | null;
@@ -30,6 +21,18 @@ type PersistedBooking = {
   supplierReferences: Prisma.JsonValue | null;
   reservationTimeline: Prisma.JsonValue | null;
   reservationMetadata: Prisma.JsonValue | null;
+  bookingId?: string | null;
+  bookingItemId?: string | null;
+  supplierId?: string | null;
+  reservationReference?: string | null;
+  reservationStatusId?: string | null;
+  reservedAt?: Date | null;
+  confirmedAt?: Date | null;
+  cancelledAt?: Date | null;
+};
+
+type LegacyBooking = Omit<PersistedBooking, "reservationNumber"> & {
+  bookingNumber: string;
 };
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -112,14 +115,59 @@ function toPersistenceJson(reservation: Reservation): {
   };
 }
 
+function toSupplierReference(booking: PersistedBooking | LegacyBooking): {
+  snapshotId: string;
+  capturedAt: Date;
+  version: string;
+  providerId: string;
+  supplierBookingReference: string;
+  confirmationNumber?: string;
+  bookingId?: string;
+  bookingItemId?: string;
+  supplierId?: string;
+  reservationReference?: string;
+  reservationStatusId?: string;
+  reservedAt?: Date;
+  confirmedAt?: Date;
+  cancelledAt?: Date;
+} | null {
+  if (!booking.bookingId && !booking.bookingItemId && !booking.supplierId && !booking.reservationReference && !booking.reservationStatusId) {
+    return null;
+  }
+
+  return {
+    snapshotId: `${booking.id}-supplier-fulfilment`,
+    capturedAt: booking.reservedAt ?? new Date(0),
+    version: "legacy-1.0.0",
+    providerId: booking.supplierId ?? "legacy",
+    supplierBookingReference: booking.reservationReference ?? "",
+    bookingId: booking.bookingId ?? undefined,
+    bookingItemId: booking.bookingItemId ?? undefined,
+    supplierId: booking.supplierId ?? undefined,
+    reservationReference: booking.reservationReference ?? undefined,
+    reservationStatusId: booking.reservationStatusId ?? undefined,
+    reservedAt: booking.reservedAt ?? undefined,
+    confirmedAt: booking.confirmedAt ?? undefined,
+    cancelledAt: booking.cancelledAt ?? undefined,
+  };
+}
+
 function toNullableJsonInput(
   value: Prisma.JsonObject | null,
 ): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput {
   return value === null ? Prisma.DbNull : (value as Prisma.InputJsonValue);
 }
 
-function toDomain(booking: PersistedBooking): Reservation {
+function toDomain(booking: PersistedBooking | LegacyBooking): Reservation {
   const lifecycle = parseLifecycle(booking.reservationLifecycleCode);
+  const reservationNumber = "reservationNumber" in booking && typeof booking.reservationNumber === "string"
+    ? booking.reservationNumber
+    : "bookingNumber" in booking
+      ? booking.bookingNumber
+      : null;
+  if (!reservationNumber) {
+    throw new Error("Reservation reconstruction failed: reservation number is missing.");
+  }
   const journeySnapshot = expectObject(booking.journeySnapshot, "journeySnapshot");
   const travellerSnapshots = expectArray(booking.travellerSnapshots, "travellerSnapshots");
   const accommodationSnapshots = booking.accommodationSnapshots
@@ -134,6 +182,7 @@ function toDomain(booking: PersistedBooking): Reservation {
   const supplierReferences = booking.supplierReferences
     ? expectArray(booking.supplierReferences, "supplierReferences")
     : [];
+  const legacySupplierReference = toSupplierReference(booking);
   const timeline = booking.reservationTimeline
     ? expectArray(booking.reservationTimeline, "reservationTimeline")
     : [];
@@ -141,7 +190,7 @@ function toDomain(booking: PersistedBooking): Reservation {
 
   return Reservation.restore({
     identity: { id: booking.id },
-    reservationNumber: booking.bookingNumber,
+    reservationNumber,
     status: lifecycle,
     journeySnapshot: {
       snapshotId: String(journeySnapshot.snapshotId ?? ""),
@@ -235,14 +284,25 @@ function toDomain(booking: PersistedBooking): Reservation {
           balanceOutstanding: Number(paymentSnapshot.balanceOutstanding ?? 0),
         }
       : undefined,
-    supplierReferences: supplierReferences.map((item) => ({
+    supplierReferences: [
+      ...supplierReferences.map((item) => ({
       snapshotId: String(item.snapshotId ?? ""),
       capturedAt: parseDate(item.capturedAt, "supplierReference.capturedAt"),
       version: String(item.version ?? ""),
       providerId: String(item.providerId ?? ""),
       supplierBookingReference: String(item.supplierBookingReference ?? ""),
       confirmationNumber: typeof item.confirmationNumber === "string" ? item.confirmationNumber : undefined,
-    })),
+        bookingId: typeof item.bookingId === "string" ? item.bookingId : undefined,
+        bookingItemId: typeof item.bookingItemId === "string" ? item.bookingItemId : undefined,
+        supplierId: typeof item.supplierId === "string" ? item.supplierId : undefined,
+        reservationReference: typeof item.reservationReference === "string" ? item.reservationReference : undefined,
+        reservationStatusId: typeof item.reservationStatusId === "string" ? item.reservationStatusId : undefined,
+        reservedAt: item.reservedAt ? parseOptionalDate(item.reservedAt) : undefined,
+        confirmedAt: item.confirmedAt ? parseOptionalDate(item.confirmedAt) : undefined,
+        cancelledAt: item.cancelledAt ? parseOptionalDate(item.cancelledAt) : undefined,
+      })),
+      ...(legacySupplierReference ? [legacySupplierReference] : []),
+    ],
     timeline: timeline.map((item) => ({
       snapshotId: String(item.snapshotId ?? ""),
       capturedAt: parseDate(item.capturedAt, "timeline.capturedAt"),
@@ -274,55 +334,17 @@ function assertPersistenceContext(context: ReservationPersistenceContext): void 
   }
 }
 
-async function resolveLookupId(
-  prisma: PrismaClient,
-  model: "bookingStatus" | "currency",
-  code: string,
-): Promise<string> {
-  if (model === "bookingStatus") {
-    const status = await prisma.bookingStatus.upsert({
-      where: { code },
-      update: { name: code },
-      create: { code, name: code, active: true },
-      select: { id: true },
-    });
-    return status.id;
-  }
-
-  const currency = await prisma.currency.upsert({
-    where: { code },
-    update: { name: code },
-    create: { code, name: code, active: true },
-    select: { id: true },
-  });
-  return currency.id;
+function getCanonicalReservationModel(prisma: PrismaClient): PrismaClient["reservation"] {
+  return prisma.reservation;
 }
 
-function getCanonicalReservationModel(prisma: PrismaClient): {
-  upsert: (args: { where: { id: string }; update: Record<string, unknown>; create: Record<string, unknown> }) => Promise<unknown>;
-  findUnique: (args: { where: { id?: string; bookingNumber?: string }; select: Record<string, boolean> }) => Promise<PersistedBooking | null>;
-  findMany: (args: { select: Record<string, boolean> }) => Promise<PersistedBooking[]>;
-  delete: (args: { where: { id: string } }) => Promise<unknown>;
-} {
-  const reservationModel = (prisma as PrismaClient & { reservation?: any }).reservation;
-  if (!reservationModel) {
-    throw new Error("Canonical Reservation persistence model is unavailable; legacy Booking persistence is not authoritative.");
-  }
-  return reservationModel;
-}
-
-function getLegacyBookingModel(prisma: PrismaClient): {
-  findUnique: (args: { where: { id?: string; bookingNumber?: string }; select: Record<string, boolean> }) => Promise<PersistedBooking | null>;
-  findMany: (args: { select: Record<string, boolean> }) => Promise<PersistedBooking[]>;
-} {
-  const bookingModel = (prisma as PrismaClient & { booking?: any }).booking;
-  if (!bookingModel) {
-    return null as never;
-  }
-  return bookingModel;
+function getLegacyBookingModel(prisma: PrismaClient): PrismaClient["booking"] {
+  return prisma.booking;
 }
 
 export class CanonicalReservationPrismaRepository implements ReservationRepository {
+  public constructor(private readonly prisma: PrismaClient = getPrismaClient()) {}
+
   public async save(reservation: Reservation, context: ReservationPersistenceContext): Promise<void> {
     assertPersistenceContext(context);
 
@@ -330,9 +352,8 @@ export class CanonicalReservationPrismaRepository implements ReservationReposito
       throw new Error("Reservation pricing snapshot is required for persistence.");
     }
 
-    const prisma = PrismaService.getInstance() as PrismaClient;
+    const prisma = this.prisma;
     const reservationModel = getCanonicalReservationModel(prisma);
-    const statusCode = BOOKING_STATUS_BY_LIFECYCLE[reservation.status];
     const lifecycleCode = reservation.status;
 
     if (!VALID_LIFECYCLE.has(lifecycleCode)) {
@@ -351,21 +372,14 @@ export class CanonicalReservationPrismaRepository implements ReservationReposito
         throw new Error(`Customer ${context.customerId} does not exist.`);
       }
 
-      const bookingStatusId = await resolveLookupId(tx as unknown as PrismaClient, "bookingStatus", statusCode);
-      const currencyId = await resolveLookupId(tx as unknown as PrismaClient, "currency", reservation.pricingSnapshot!.currency);
-
       await reservationModel.upsert({
         where: { id: reservation.identity.id },
         update: {
           customerId: context.customerId,
-          bookingNumber: reservation.reservationNumber,
-          bookingDate: reservation.metadata.createdAt,
-          travelDate: context.bookingStartDate,
-          returnDate: context.bookingEndDate,
-          bookingStatusId,
+          reservationNumber: reservation.reservationNumber,
+          bookingStartDate: context.bookingStartDate,
+          bookingEndDate: context.bookingEndDate,
           reservationLifecycleCode: lifecycleCode,
-          totalAmount: reservation.pricingSnapshot!.totalPrice,
-          currencyId,
           journeySnapshot: snapshotJson.journeySnapshot,
           travellerSnapshots: snapshotJson.travellerSnapshots,
           accommodationSnapshots: snapshotJson.accommodationSnapshots,
@@ -378,14 +392,10 @@ export class CanonicalReservationPrismaRepository implements ReservationReposito
         create: {
           id: reservation.identity.id,
           customerId: context.customerId,
-          bookingNumber: reservation.reservationNumber,
-          bookingDate: reservation.metadata.createdAt,
-          travelDate: context.bookingStartDate,
-          returnDate: context.bookingEndDate,
-          bookingStatusId,
+          reservationNumber: reservation.reservationNumber,
+          bookingStartDate: context.bookingStartDate,
+          bookingEndDate: context.bookingEndDate,
           reservationLifecycleCode: lifecycleCode,
-          totalAmount: reservation.pricingSnapshot!.totalPrice,
-          currencyId,
           journeySnapshot: snapshotJson.journeySnapshot,
           travellerSnapshots: snapshotJson.travellerSnapshots,
           accommodationSnapshots: snapshotJson.accommodationSnapshots,
@@ -400,12 +410,20 @@ export class CanonicalReservationPrismaRepository implements ReservationReposito
   }
 
   public async findById(id: string): Promise<Reservation | null> {
-    const prisma = PrismaService.getInstance() as PrismaClient;
+    const prisma = this.prisma;
     const record = await getCanonicalReservationModel(prisma).findUnique({
       where: { id },
       select: {
         id: true,
-        bookingNumber: true,
+        reservationNumber: true,
+        bookingId: true,
+        bookingItemId: true,
+        supplierId: true,
+        reservationReference: true,
+        reservationStatusId: true,
+        reservedAt: true,
+        confirmedAt: true,
+        cancelledAt: true,
         reservationLifecycleCode: true,
         journeySnapshot: true,
         travellerSnapshots: true,
@@ -448,12 +466,20 @@ export class CanonicalReservationPrismaRepository implements ReservationReposito
   }
 
   public async findByReservationNumber(reservationNumber: string): Promise<Reservation | null> {
-    const prisma = PrismaService.getInstance() as PrismaClient;
+    const prisma = this.prisma;
     const record = await getCanonicalReservationModel(prisma).findUnique({
-      where: { bookingNumber: reservationNumber },
+      where: { reservationNumber },
       select: {
         id: true,
-        bookingNumber: true,
+        reservationNumber: true,
+        bookingId: true,
+        bookingItemId: true,
+        supplierId: true,
+        reservationReference: true,
+        reservationStatusId: true,
+        reservedAt: true,
+        confirmedAt: true,
+        cancelledAt: true,
         reservationLifecycleCode: true,
         journeySnapshot: true,
         travellerSnapshots: true,
@@ -496,11 +522,19 @@ export class CanonicalReservationPrismaRepository implements ReservationReposito
   }
 
   public async findByTravellerId(travellerId: string): Promise<ReadonlyArray<Reservation>> {
-    const prisma = PrismaService.getInstance() as PrismaClient;
+    const prisma = this.prisma;
     const records = await getCanonicalReservationModel(prisma).findMany({
       select: {
         id: true,
-        bookingNumber: true,
+        reservationNumber: true,
+        bookingId: true,
+        bookingItemId: true,
+        supplierId: true,
+        reservationReference: true,
+        reservationStatusId: true,
+        reservedAt: true,
+        confirmedAt: true,
+        cancelledAt: true,
         reservationLifecycleCode: true,
         journeySnapshot: true,
         travellerSnapshots: true,
@@ -551,11 +585,19 @@ export class CanonicalReservationPrismaRepository implements ReservationReposito
   }
 
   public async findByJourneyId(journeyId: string): Promise<ReadonlyArray<Reservation>> {
-    const prisma = PrismaService.getInstance() as PrismaClient;
+    const prisma = this.prisma;
     const records = await getCanonicalReservationModel(prisma).findMany({
       select: {
         id: true,
-        bookingNumber: true,
+        reservationNumber: true,
+        bookingId: true,
+        bookingItemId: true,
+        supplierId: true,
+        reservationReference: true,
+        reservationStatusId: true,
+        reservedAt: true,
+        confirmedAt: true,
+        cancelledAt: true,
         reservationLifecycleCode: true,
         journeySnapshot: true,
         travellerSnapshots: true,
@@ -601,7 +643,7 @@ export class CanonicalReservationPrismaRepository implements ReservationReposito
   }
 
   public async delete(id: string): Promise<void> {
-    const prisma = PrismaService.getInstance() as PrismaClient;
+    const prisma = this.prisma;
     await getCanonicalReservationModel(prisma).delete({ where: { id } });
   }
 }

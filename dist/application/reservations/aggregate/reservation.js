@@ -83,6 +83,14 @@ function freezeSupplierReference(reference) {
         providerId: reference.providerId,
         supplierBookingReference: reference.supplierBookingReference,
         confirmationNumber: reference.confirmationNumber,
+        bookingId: reference.bookingId,
+        bookingItemId: reference.bookingItemId,
+        supplierId: reference.supplierId,
+        reservationReference: reference.reservationReference,
+        reservationStatusId: reference.reservationStatusId,
+        reservedAt: reference.reservedAt ? cloneDate(reference.reservedAt) : undefined,
+        confirmedAt: reference.confirmedAt ? cloneDate(reference.confirmedAt) : undefined,
+        cancelledAt: reference.cancelledAt ? cloneDate(reference.cancelledAt) : undefined,
     });
 }
 function freezeTimelineEntry(entry) {

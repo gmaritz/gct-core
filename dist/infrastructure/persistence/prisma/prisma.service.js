@@ -1,17 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PrismaService = void 0;
-/**
- * Prisma Service
- *
- * Centralizes Prisma client management and lifecycle.
- */
 class PrismaService {
     static getInstance() {
         if (!this.instance) {
-            // Import PrismaClient dynamically to avoid dependency issues
-            // In actual implementation, this will connect to the database
-            throw new Error('Prisma client must be initialized before use');
+            throw new Error("Prisma client must be initialized before use");
         }
         return this.instance;
     }
