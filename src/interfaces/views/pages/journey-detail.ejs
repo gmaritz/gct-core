@@ -1,0 +1,17 @@
+<article class="journey-detail">
+  <div class="container">
+    <header class="journey-detail__header">
+      <img class="journey-detail__image" src="<%= journeyDetailViewModel.image.src %>" alt="<%= journeyDetailViewModel.image.alt %>" width="<%= journeyDetailViewModel.image.width %>" height="<%= journeyDetailViewModel.image.height %>">
+      <p class="journey-detail__eyebrow"><%= journeyDetailViewModel.id %></p>
+      <h1><%= journeyDetailViewModel.title %></h1>
+      <p><%= journeyDetailViewModel.subtitle %></p>
+      <p><strong><%= journeyDetailViewModel.destination %></strong> · <%= journeyDetailViewModel.duration %></p>
+      <% if (journeyDetailViewModel.summary) { %><p><%= journeyDetailViewModel.summary %></p><% } %>
+    </header>
+    <section aria-labelledby="journey-itinerary-title"><h2 id="journey-itinerary-title">Itinerary foundation</h2><% if (journeyDetailViewModel.itinerary.length === 0) { %><p>Itinerary details will be confirmed during planning.</p><% } else { %><ol><% journeyDetailViewModel.itinerary.forEach((item) => { %><li>Day <%= item.day %>: <%= item.label %></li><% }); %></ol><% } %></section>
+    <section aria-labelledby="journey-accommodation-title"><h2 id="journey-accommodation-title">Accommodation</h2><% journeyDetailViewModel.accommodation.forEach((stay) => { %><p><strong><%= stay.name %></strong><% if (stay.category) { %> · <%= stay.category %><% } %></p><% }); %></section>
+    <section aria-labelledby="journey-experiences-title"><h2 id="journey-experiences-title">Included experiences</h2><ul><% journeyDetailViewModel.experiences.forEach((experience) => { %><li><%= experience.name %></li><% }); %></ul></section>
+    <section aria-label="Journey pricing"><h2>Pricing</h2><p><%= journeyDetailViewModel.price?.display || "Price on request" %></p></section>
+    <a class="button button--primary" href="<%= journeyDetailViewModel.primaryCTA.href %>"><%= journeyDetailViewModel.primaryCTA.label %></a>
+  </div>
+</article>

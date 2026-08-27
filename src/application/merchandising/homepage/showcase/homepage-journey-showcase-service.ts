@@ -34,11 +34,11 @@ import {
   HomepageJourneyShowcaseResult,
 } from "./homepage-journey-showcase-result";
 
-interface JourneyCompositionExecutor {
+export interface JourneyCompositionExecutor {
   execute(query: JourneyCompositionQuery): Promise<JourneyCompositionResult>;
 }
 
-interface FeaturedJourneyDefinition {
+export interface FeaturedJourneyDefinition {
   readonly requestId: string;
   readonly destination: string;
   readonly journeyType: JourneyType;
@@ -46,7 +46,7 @@ interface FeaturedJourneyDefinition {
   readonly nights: number;
 }
 
-const FEATURED_JOURNEYS: ReadonlyArray<FeaturedJourneyDefinition> = Object.freeze([
+export const FEATURED_JOURNEYS: ReadonlyArray<FeaturedJourneyDefinition> = Object.freeze([
   Object.freeze({
     requestId: "homepage-journey-001",
     destination: "Cape Winelands",
@@ -74,36 +74,39 @@ function isFulfilled<T>(result: PromiseSettledResult<T>): result is PromiseFulfi
   return result.status === "fulfilled";
 }
 
+export function createHomepageJourneyQuery(
+  feature: FeaturedJourneyDefinition,
+  timestamp: Date = new Date(),
+): JourneyCompositionQuery {
+  return Object.freeze({
+    journeyType: feature.journeyType,
+    strategy: JourneyCompositionStrategy.CURATED,
+    context: Object.freeze({
+      requestId: feature.requestId,
+      source: JourneyCompositionSource.HOMEPAGE,
+      timestamp: new Date(timestamp),
+    }),
+    travellerRequirements: Object.freeze({
+      minimumTravellers: 2,
+      maximumTravellers: 6,
+      privateOnly: true,
+    }),
+    destinationRequirements: Object.freeze({
+      destinations: Object.freeze([Object.freeze({ name: feature.destination })]),
+    }),
+    stayRequirements: Object.freeze({
+      duration: Object.freeze({
+        days: feature.days,
+        nights: feature.nights,
+        description: `${feature.days} Days / ${feature.nights} Nights`,
+      }),
+    }),
+  });
+}
+
 function createQueries(timestamp: Date): ReadonlyArray<JourneyCompositionQuery> {
   return Object.freeze(
-    FEATURED_JOURNEYS.map((feature) =>
-      Object.freeze({
-        journeyType: feature.journeyType,
-        strategy: JourneyCompositionStrategy.CURATED,
-        context: Object.freeze({
-          requestId: feature.requestId,
-          source: JourneyCompositionSource.HOMEPAGE,
-          timestamp: new Date(timestamp),
-        }),
-        travellerRequirements: Object.freeze({
-          minimumTravellers: 2,
-          maximumTravellers: 6,
-          privateOnly: true,
-        }),
-        destinationRequirements: Object.freeze({
-          destinations: Object.freeze([
-            Object.freeze({ name: feature.destination }),
-          ]),
-        }),
-        stayRequirements: Object.freeze({
-          duration: Object.freeze({
-            days: feature.days,
-            nights: feature.nights,
-            description: `${feature.days} Days / ${feature.nights} Nights`,
-          }),
-        }),
-      }),
-    ),
+    FEATURED_JOURNEYS.map((feature) => createHomepageJourneyQuery(feature, timestamp)),
   );
 }
 
@@ -229,7 +232,7 @@ function createExperienceCandidateProvider(): ExperienceCandidateProvider {
   };
 }
 
-function createDefaultJourneyCompositionService(): JourneyCompositionService {
+export function createDefaultJourneyCompositionService(): JourneyCompositionService {
   const validationPipeline = new JourneyValidationPipeline();
   const policyPipeline = new JourneyPolicyPipeline();
   const accommodationCompositionAdapter = new AccommodationCompositionAdapter(

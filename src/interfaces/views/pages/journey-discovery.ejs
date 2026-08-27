@@ -1,0 +1,18 @@
+<article class="journey-detail">
+  <div class="container">
+    <header class="journey-detail__header">
+      <img class="journey-detail__image" src="<%= journeyDiscoveryViewModel.image.src %>" alt="<%= journeyDiscoveryViewModel.image.alt %>" width="<%= journeyDiscoveryViewModel.image.width %>" height="<%= journeyDiscoveryViewModel.image.height %>">
+      <p class="journey-detail__eyebrow"><%= journeyDiscoveryViewModel.id %></p>
+      <h1><%= journeyDiscoveryViewModel.title %></h1>
+      <p><strong><%= journeyDiscoveryViewModel.destination %></strong> · <%= journeyDiscoveryViewModel.duration %></p>
+    </header>
+    <section aria-labelledby="journey-highlights-title">
+      <h2 id="journey-highlights-title">Journey highlights</h2>
+      <% if (journeyDiscoveryViewModel.highlights.length > 0) { %>
+        <ul><% journeyDiscoveryViewModel.highlights.forEach((highlight) => { %><li><%= highlight %></li><% }); %></ul>
+      <% } else { %><p>Journey highlights will be confirmed during planning.</p><% } %>
+    </section>
+    <section aria-label="Journey pricing"><h2>Pricing</h2><p><%= journeyDiscoveryViewModel.price?.display || "Price on request" %></p></section>
+    <a class="button button--primary" href="<%= journeyDiscoveryViewModel.continuation.href %>"><%= journeyDiscoveryViewModel.continuation.label %></a>
+  </div>
+</article>

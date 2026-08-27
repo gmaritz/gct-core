@@ -86,7 +86,7 @@ class JourneyPresentationMapper {
             badges: createBadges(result),
             callToAction: {
                 label: "View Journey",
-                href: `#journey-${journey.identity.id}`,
+                href: `/ui/journeys/${journey.identity.id}`,
             },
         });
     }

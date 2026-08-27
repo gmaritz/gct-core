@@ -1,12 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.HomepageJourneyShowcaseService = void 0;
+exports.HomepageJourneyShowcaseService = exports.FEATURED_JOURNEYS = void 0;
+exports.createHomepageJourneyQuery = createHomepageJourneyQuery;
+exports.createDefaultJourneyCompositionService = createDefaultJourneyCompositionService;
 exports.createDefaultHomepageJourneyShowcaseService = createDefaultHomepageJourneyShowcaseService;
 const journeys_1 = require("../../../journeys");
 const policies_1 = require("../../../journeys/policies");
 const accommodation_1 = require("../../../accommodation");
 const homepage_journey_showcase_result_1 = require("./homepage-journey-showcase-result");
-const FEATURED_JOURNEYS = Object.freeze([
+exports.FEATURED_JOURNEYS = Object.freeze([
     Object.freeze({
         requestId: "homepage-journey-001",
         destination: "Cape Winelands",
@@ -32,8 +34,8 @@ const FEATURED_JOURNEYS = Object.freeze([
 function isFulfilled(result) {
     return result.status === "fulfilled";
 }
-function createQueries(timestamp) {
-    return Object.freeze(FEATURED_JOURNEYS.map((feature) => Object.freeze({
+function createHomepageJourneyQuery(feature, timestamp = new Date()) {
+    return Object.freeze({
         journeyType: feature.journeyType,
         strategy: journeys_1.JourneyCompositionStrategy.CURATED,
         context: Object.freeze({
@@ -47,9 +49,7 @@ function createQueries(timestamp) {
             privateOnly: true,
         }),
         destinationRequirements: Object.freeze({
-            destinations: Object.freeze([
-                Object.freeze({ name: feature.destination }),
-            ]),
+            destinations: Object.freeze([Object.freeze({ name: feature.destination })]),
         }),
         stayRequirements: Object.freeze({
             duration: Object.freeze({
@@ -58,7 +58,10 @@ function createQueries(timestamp) {
                 description: `${feature.days} Days / ${feature.nights} Nights`,
             }),
         }),
-    })));
+    });
+}
+function createQueries(timestamp) {
+    return Object.freeze(exports.FEATURED_JOURNEYS.map((feature) => createHomepageJourneyQuery(feature, timestamp)));
 }
 function createAccommodation(destination) {
     return {

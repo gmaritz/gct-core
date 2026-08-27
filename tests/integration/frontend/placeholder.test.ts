@@ -59,5 +59,6 @@ describe("Frontend placeholder page", () => {
 		expect(response.text).toContain("Explore Experiences");
 		expect(response.text).toContain("Plan Your Journey");
 		expect(response.text).toContain("View Journey");
+		expect(response.text).toContain('href="/ui/journeys/journey-homepage-journey-001"');
 	});
 });
