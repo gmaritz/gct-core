@@ -29,7 +29,7 @@ class JourneyDiscoveryViewModelProvider {
             price: undefined,
             continuation: Object.freeze({
                 label: "Continue exploring",
-                href: `/ui/journeys/${journey.identity.id}`,
+                href: "/ui/placeholder#journey-planning",
                 style: "primary",
             }),
         });

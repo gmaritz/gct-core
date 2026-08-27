@@ -4,7 +4,7 @@ import ejs from "ejs";
 import { Request, Response } from "express";
 import { getHomepageShowcaseViewModel } from "../../view-models";
 import { DefaultDynamicHomepageJourneyResolver } from "../../../application/merchandising";
-import { JourneyDiscoveryViewModelProvider } from "../../view-models";
+import { JourneyDetailViewModelProvider } from "../../view-models";
 
 async function renderView(response: Response, viewName: string, locals: Record<string, unknown>): Promise<void> {
 	const viewsRoot = path.join(process.cwd(), "src/interfaces/views");
@@ -34,7 +34,7 @@ export async function renderNotFoundPage(_request: Request, response: Response):
 	});
 }
 
-export async function renderJourneyDiscoveryPage(request: Request, response: Response): Promise<void> {
+export async function renderJourneyDetailPage(request: Request, response: Response): Promise<void> {
 	const resolution = await new DefaultDynamicHomepageJourneyResolver().resolve(request.params.journeyId);
 
 	if (resolution.status === "INVALID" || resolution.status === "NOT_FOUND") {
@@ -53,11 +53,11 @@ export async function renderJourneyDiscoveryPage(request: Request, response: Res
 		return;
 	}
 
-	const journeyDiscoveryViewModel = new JourneyDiscoveryViewModelProvider().provide(resolution.journey);
-	await renderView(response, "pages/journey-discovery", {
-		title: journeyDiscoveryViewModel.title,
-		pageTitle: journeyDiscoveryViewModel.title,
+	const journeyDetailViewModel = new JourneyDetailViewModelProvider().provide(resolution.journey);
+	await renderView(response, "pages/journey-detail", {
+		title: journeyDetailViewModel.title,
+		pageTitle: journeyDetailViewModel.title,
 		currentPath: request.path,
-		journeyDiscoveryViewModel,
+		journeyDetailViewModel,
 	});
 }

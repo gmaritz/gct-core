@@ -20,10 +20,30 @@ class JourneyDetailViewModelProvider {
             title,
             subtitle: `${journey.classification.type} experience for curated travel`,
             destination,
+            destinations: Object.freeze(journey.destinations.map((item) => item.name)),
             duration,
             summary: undefined,
             image: Object.freeze(createPlaceholderImage(title)),
-            itinerary: Object.freeze([]),
+            itinerary: Object.freeze(journey.experiences.reduce((days, experience) => {
+                if (!experience.sequence) {
+                    return days;
+                }
+                const day = days.find((item) => item.day === experience.sequence?.day);
+                if (day) {
+                    day.experiences.push(experience.name);
+                    return days;
+                }
+                days.push({
+                    day: experience.sequence.day,
+                    title: experience.sequence.itineraryLabel,
+                    experiences: [experience.name],
+                });
+                return days;
+            }, []).map((item) => Object.freeze({
+                day: item.day,
+                title: item.title,
+                experiences: Object.freeze([...item.experiences]),
+            }))),
             accommodation: Object.freeze(journey.accommodation.map((stay) => Object.freeze({
                 id: stay.accommodationId,
                 name: stay.name,
@@ -35,8 +55,11 @@ class JourneyDetailViewModelProvider {
             experiences: Object.freeze(journey.experiences.map((experience) => Object.freeze({
                 id: experience.experienceId,
                 name: experience.name,
+                type: experience.type,
+                sequence: experience.sequence?.order,
+                day: experience.sequence?.day,
             }))),
-            price: undefined,
+            pricing: Object.freeze({ state: "UNAVAILABLE" }),
             primaryCTA: Object.freeze({ label: "Continue planning", href: "#journey-planning", style: "primary" }),
         });
     }

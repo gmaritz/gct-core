@@ -33,6 +33,8 @@ function freezeExperience(experience: JourneyExperience): JourneyExperience {
   return Object.freeze({
     experienceId: experience.experienceId,
     name: experience.name,
+    type: experience.type,
+    sequence: experience.sequence ? Object.freeze({ ...experience.sequence }) : undefined,
   });
 }
 
@@ -57,6 +59,8 @@ function toJourneyExperience(
   return freezeExperience({
     experienceId: candidate.experienceId,
     name: candidate.name,
+    type: candidate.type,
+    sequence: candidate.sequence,
   });
 }
 

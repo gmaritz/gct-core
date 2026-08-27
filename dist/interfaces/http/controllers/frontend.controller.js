@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.renderPlaceholderPage = renderPlaceholderPage;
 exports.renderNotFoundPage = renderNotFoundPage;
-exports.renderJourneyDiscoveryPage = renderJourneyDiscoveryPage;
+exports.renderJourneyDetailPage = renderJourneyDetailPage;
 const path_1 = __importDefault(require("path"));
 const ejs_1 = __importDefault(require("ejs"));
 const view_models_1 = require("../../view-models");
@@ -35,7 +35,7 @@ async function renderNotFoundPage(_request, response) {
         pageTitle: "Page unavailable",
     });
 }
-async function renderJourneyDiscoveryPage(request, response) {
+async function renderJourneyDetailPage(request, response) {
     const resolution = await new merchandising_1.DefaultDynamicHomepageJourneyResolver().resolve(request.params.journeyId);
     if (resolution.status === "INVALID" || resolution.status === "NOT_FOUND") {
         response.status(404);
@@ -51,12 +51,12 @@ async function renderJourneyDiscoveryPage(request, response) {
         });
         return;
     }
-    const journeyDiscoveryViewModel = new view_models_2.JourneyDiscoveryViewModelProvider().provide(resolution.journey);
-    await renderView(response, "pages/journey-discovery", {
-        title: journeyDiscoveryViewModel.title,
-        pageTitle: journeyDiscoveryViewModel.title,
+    const journeyDetailViewModel = new view_models_2.JourneyDetailViewModelProvider().provide(resolution.journey);
+    await renderView(response, "pages/journey-detail", {
+        title: journeyDetailViewModel.title,
+        pageTitle: journeyDetailViewModel.title,
         currentPath: request.path,
-        journeyDiscoveryViewModel,
+        journeyDetailViewModel,
     });
 }
 //# sourceMappingURL=frontend.controller.js.map

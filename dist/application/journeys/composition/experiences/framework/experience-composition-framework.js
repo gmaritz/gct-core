@@ -9,6 +9,8 @@ function freezeExperience(experience) {
     return Object.freeze({
         experienceId: experience.experienceId,
         name: experience.name,
+        type: experience.type,
+        sequence: experience.sequence ? Object.freeze({ ...experience.sequence }) : undefined,
     });
 }
 function compareBySequence(left, right) {
@@ -24,6 +26,8 @@ function toJourneyExperience(candidate) {
     return freezeExperience({
         experienceId: candidate.experienceId,
         name: candidate.name,
+        type: candidate.type,
+        sequence: candidate.sequence,
     });
 }
 class ExperienceCompositionFramework {

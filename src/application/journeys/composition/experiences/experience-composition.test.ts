@@ -73,10 +73,14 @@ describe("ExperienceCompositionFramework", () => {
       {
         experienceId: "exp-2001",
         name: "Private Vineyard Tasting",
+        type: ExperienceType.WINE,
+        sequence: { day: 1, order: 1, itineraryLabel: "Morning" },
       },
       {
         experienceId: "exp-2002",
         name: "Sunset Coastal Drive",
+        type: ExperienceType.SCENIC,
+        sequence: { day: 2, order: 2, itineraryLabel: "Late afternoon" },
       },
     ]);
     expect(Object.isFrozen(result)).toBe(true);

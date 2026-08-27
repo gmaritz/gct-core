@@ -20,8 +20,8 @@ describe("Frontend dynamic journey detail page", () => {
     expect(response.text).toContain("Cape Winelands Retreat");
     expect(response.text).toContain("Cape Winelands Signature Experience");
     expect(response.text).toContain("Price on request");
-    expect(response.text).toContain("Journey highlights");
-    expect(response.text).toContain("Continue exploring");
+    expect(response.text).toContain("Itinerary");
+    expect(response.text).toContain("Continue planning");
   });
 
   it("renders the established not-found response for an invalid journey", async () => {

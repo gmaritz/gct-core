@@ -43,7 +43,7 @@ describe("JourneyDetailViewModelProvider", () => {
     expect(viewModel.experiences).toEqual([
       { id: "exp-1", name: "Signature cellar experience" },
     ]);
-    expect(viewModel.price).toBeUndefined();
+    expect(viewModel.pricing).toEqual({ state: "UNAVAILABLE" });
     expect(viewModel.primaryCTA.href).toBe("#journey-planning");
     expect(Object.isFrozen(viewModel)).toBe(true);
   });
