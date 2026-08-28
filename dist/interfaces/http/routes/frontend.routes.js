@@ -7,6 +7,7 @@ function createFrontendRouter() {
     const router = (0, express_1.Router)();
     router.get("/placeholder", frontend_controller_1.renderPlaceholderPage);
     router.get("/journeys/:journeyId", frontend_controller_1.renderJourneyDetailPage);
+    router.post("/journeys/:journeyId/select", frontend_controller_1.selectJourney);
     router.get("/404", frontend_controller_1.renderNotFoundPage);
     return router;
 }

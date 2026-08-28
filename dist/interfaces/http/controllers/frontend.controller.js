@@ -6,10 +6,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.renderPlaceholderPage = renderPlaceholderPage;
 exports.renderNotFoundPage = renderNotFoundPage;
 exports.renderJourneyDetailPage = renderJourneyDetailPage;
+exports.selectJourney = selectJourney;
 const path_1 = __importDefault(require("path"));
 const ejs_1 = __importDefault(require("ejs"));
 const view_models_1 = require("../../view-models");
 const merchandising_1 = require("../../../application/merchandising");
+const merchandising_2 = require("../../../application/merchandising");
 const view_models_2 = require("../../view-models");
 async function renderView(response, viewName, locals) {
     const viewsRoot = path_1.default.join(process.cwd(), "src/interfaces/views");
@@ -57,6 +59,29 @@ async function renderJourneyDetailPage(request, response) {
         pageTitle: journeyDetailViewModel.title,
         currentPath: request.path,
         journeyDetailViewModel,
+    });
+}
+async function selectJourney(request, response) {
+    const result = await new merchandising_2.DefaultDynamicHomepageJourneySelector().selectJourney(request.params.journeyId);
+    if (result.status === "INVALID" || result.status === "NOT_FOUND") {
+        response.status(404);
+        await renderNotFoundPage(request, response);
+        return;
+    }
+    if (result.status === "UNAVAILABLE") {
+        response.status(410);
+        await renderView(response, "errors/unavailable", {
+            title: "Journey unavailable",
+            pageTitle: "Journey unavailable",
+            currentPath: request.path,
+        });
+        return;
+    }
+    await renderView(response, "pages/journey-selected", {
+        title: "Journey selected",
+        pageTitle: "Journey selected",
+        currentPath: request.path,
+        selection: result,
     });
 }
 //# sourceMappingURL=frontend.controller.js.map

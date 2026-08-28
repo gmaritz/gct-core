@@ -39,5 +39,6 @@ export interface JourneyDetailViewModel {
     readonly experiences: ReadonlyArray<JourneyDetailExperienceViewModel>;
     readonly pricing: JourneyDetailPricingViewModel;
     readonly primaryCTA: CTAViewModel;
+    readonly selectionAction: CTAViewModel;
 }
 //# sourceMappingURL=journey-detail.viewmodel.d.ts.map

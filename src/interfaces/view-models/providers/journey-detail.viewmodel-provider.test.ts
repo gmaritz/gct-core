@@ -44,7 +44,7 @@ describe("JourneyDetailViewModelProvider", () => {
       { id: "exp-1", name: "Signature cellar experience" },
     ]);
     expect(viewModel.pricing).toEqual({ state: "UNAVAILABLE" });
-    expect(viewModel.primaryCTA.href).toBe("#journey-planning");
+    expect(viewModel.primaryCTA.href).toBe("/ui/journeys/journey-homepage-journey-001/select");
     expect(Object.isFrozen(viewModel)).toBe(true);
   });
 });

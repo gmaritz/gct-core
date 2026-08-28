@@ -21,7 +21,7 @@ describe("Frontend dynamic journey detail page", () => {
     expect(response.text).toContain("Cape Winelands Signature Experience");
     expect(response.text).toContain("Price on request");
     expect(response.text).toContain("Itinerary");
-    expect(response.text).toContain("Continue planning");
+    expect(response.text).toContain("Select this journey");
   });
 
   it("renders the established not-found response for an invalid journey", async () => {

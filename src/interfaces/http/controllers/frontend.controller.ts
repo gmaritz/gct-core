@@ -4,6 +4,7 @@ import ejs from "ejs";
 import { Request, Response } from "express";
 import { getHomepageShowcaseViewModel } from "../../view-models";
 import { DefaultDynamicHomepageJourneyResolver } from "../../../application/merchandising";
+import { DefaultDynamicHomepageJourneySelector } from "../../../application/merchandising";
 import { JourneyDetailViewModelProvider } from "../../view-models";
 
 async function renderView(response: Response, viewName: string, locals: Record<string, unknown>): Promise<void> {
@@ -59,5 +60,32 @@ export async function renderJourneyDetailPage(request: Request, response: Respon
 		pageTitle: journeyDetailViewModel.title,
 		currentPath: request.path,
 		journeyDetailViewModel,
+	});
+}
+
+export async function selectJourney(request: Request, response: Response): Promise<void> {
+	const result = await new DefaultDynamicHomepageJourneySelector().selectJourney(request.params.journeyId);
+
+	if (result.status === "INVALID" || result.status === "NOT_FOUND") {
+		response.status(404);
+		await renderNotFoundPage(request, response);
+		return;
+	}
+
+	if (result.status === "UNAVAILABLE") {
+		response.status(410);
+		await renderView(response, "errors/unavailable", {
+			title: "Journey unavailable",
+			pageTitle: "Journey unavailable",
+			currentPath: request.path,
+		});
+		return;
+	}
+
+	await renderView(response, "pages/journey-selected", {
+		title: "Journey selected",
+		pageTitle: "Journey selected",
+		currentPath: request.path,
+		selection: result,
 	});
 }

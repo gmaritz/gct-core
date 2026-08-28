@@ -60,7 +60,8 @@ class JourneyDetailViewModelProvider {
                 day: experience.sequence?.day,
             }))),
             pricing: Object.freeze({ state: "UNAVAILABLE" }),
-            primaryCTA: Object.freeze({ label: "Continue planning", href: "#journey-planning", style: "primary" }),
+            primaryCTA: Object.freeze({ label: "Select this journey", href: `/ui/journeys/${journey.identity.id}/select`, style: "primary" }),
+            selectionAction: Object.freeze({ label: "Select this journey", href: `/ui/journeys/${journey.identity.id}/select`, style: "primary" }),
         });
     }
 }

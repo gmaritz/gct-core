@@ -11,6 +11,8 @@
     <section aria-labelledby="journey-accommodation-title"><h2 id="journey-accommodation-title">Accommodation</h2><% if (journeyDetailViewModel.accommodation.length === 0) { %><p>Accommodation details will be confirmed during planning.</p><% } else { %><% journeyDetailViewModel.accommodation.forEach((stay) => { %><p><strong><%= stay.name %></strong><% if (stay.category) { %> · <%= stay.category %><% } %><% if (stay.rating) { %> · <%= stay.rating %> stars<% } %><% if (stay.nights) { %> · <%= stay.nights %> nights<% } %></p><% }); %><% } %></section>
     <section aria-labelledby="journey-experiences-title"><h2 id="journey-experiences-title">Included experiences</h2><% if (journeyDetailViewModel.experiences.length === 0) { %><p>No experiences are currently listed.</p><% } else { %><ul><% journeyDetailViewModel.experiences.forEach((experience) => { %><li><%= experience.name %><% if (experience.type) { %> · <%= experience.type %><% } %></li><% }); %></ul><% } %></section>
     <section aria-label="Journey pricing"><h2>Pricing</h2><p><%= journeyDetailViewModel.pricing.state === "AVAILABLE" && journeyDetailViewModel.pricing.price ? journeyDetailViewModel.pricing.price.display : "Price on request" %></p></section>
-    <a class="button button--primary" href="<%= journeyDetailViewModel.primaryCTA.href %>"><%= journeyDetailViewModel.primaryCTA.label %></a>
+    <form method="post" action="<%= journeyDetailViewModel.selectionAction.href %>">
+      <button class="button button--primary" type="submit"><%= journeyDetailViewModel.selectionAction.label %></button>
+    </form>
   </div>
 </article>

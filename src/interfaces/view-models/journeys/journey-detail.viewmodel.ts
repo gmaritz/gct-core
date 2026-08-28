@@ -40,4 +40,5 @@ export interface JourneyDetailViewModel {
   readonly experiences: ReadonlyArray<JourneyDetailExperienceViewModel>;
   readonly pricing: JourneyDetailPricingViewModel;
   readonly primaryCTA: CTAViewModel;
+  readonly selectionAction: CTAViewModel;
 }
