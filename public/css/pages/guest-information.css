@@ -1,0 +1,44 @@
+.guest-information {
+  padding: var(--space-3xl) 0;
+}
+
+.guest-information__header {
+  margin-bottom: var(--space-2xl);
+}
+
+.guest-information form {
+  display: grid;
+  gap: var(--space-2xl);
+  max-width: 48rem;
+}
+
+.guest-information fieldset {
+  display: grid;
+  gap: var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+}
+
+.guest-information legend {
+  padding: 0 var(--space-sm);
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+}
+
+.guest-information input {
+  min-height: var(--control-min-height);
+  padding: var(--control-padding-block) var(--control-padding-inline);
+}
+
+.guest-information__traveller {
+  display: grid;
+  gap: var(--space-sm);
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--space-md);
+  padding-top: var(--space-lg);
+}
+
+.guest-information__traveller h2 {
+  font-size: 1.15rem;
+}

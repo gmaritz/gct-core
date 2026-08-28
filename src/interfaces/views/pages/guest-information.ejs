@@ -1,0 +1,39 @@
+<article class="guest-information" aria-labelledby="guest-information-title">
+  <div class="container">
+    <header class="guest-information__header">
+      <p class="journey-detail__eyebrow">Guest information</p>
+      <h1 id="guest-information-title"><%= guestInformationViewModel.journeyTitle %></h1>
+      <p>Provide the contact and traveller information needed for reservation review.</p>
+    </header>
+    <% if (guestInformationViewModel.errors.length > 0) { %><div role="alert"><h2>Please correct the following</h2><ul><% guestInformationViewModel.errors.forEach((error) => { %><li><%= error %></li><% }); %></ul></div><% } %>
+    <form method="post" action="/ui/journeys/<%= guestInformationViewModel.journeyId %>/guest-information">
+      <fieldset>
+        <legend>Booking contact</legend>
+        <label for="contact-email">Email <span aria-hidden="true">*</span></label>
+        <input id="contact-email" name="contact[email]" type="email" autocomplete="email" required value="<%= guestInformationViewModel.contact.email %>">
+        <label for="contact-phone">Phone</label>
+        <input id="contact-phone" name="contact[phone]" type="tel" autocomplete="tel" value="<%= guestInformationViewModel.contact.phone || '' %>">
+      </fieldset>
+      <fieldset>
+        <legend>Travellers</legend>
+        <% guestInformationViewModel.travellers.forEach((traveller, index) => { %>
+          <div class="guest-information__traveller">
+            <h2><%= index === guestInformationViewModel.leadTravellerIndex ? 'Lead traveller' : `Traveller ${index + 1}` %></h2>
+            <input type="hidden" name="travellers[<%= index %>][travellerType]" value="<%= traveller.travellerType %>">
+            <label for="traveller-<%= index %>-first-name">First name <span aria-hidden="true">*</span></label>
+            <input id="traveller-<%= index %>-first-name" name="travellers[<%= index %>][firstName]" autocomplete="given-name" required value="<%= traveller.firstName %>">
+            <label for="traveller-<%= index %>-last-name">Last name <span aria-hidden="true">*</span></label>
+            <input id="traveller-<%= index %>-last-name" name="travellers[<%= index %>][lastName]" autocomplete="family-name" required value="<%= traveller.lastName %>">
+            <label for="traveller-<%= index %>-email">Email <span aria-hidden="true">*</span></label>
+            <input id="traveller-<%= index %>-email" name="travellers[<%= index %>][email]" type="email" autocomplete="email" required value="<%= traveller.email %>">
+            <label for="traveller-<%= index %>-nationality">Nationality</label>
+            <input id="traveller-<%= index %>-nationality" name="travellers[<%= index %>][nationality]" autocomplete="country-name" value="<%= traveller.nationality || '' %>">
+            <% if (traveller.travellerType === 'CHILD') { %><label for="traveller-<%= index %>-dob">Date of birth <span aria-hidden="true">*</span></label><input id="traveller-<%= index %>-dob" name="travellers[<%= index %>][dateOfBirth]" type="date" required value="<%= traveller.dateOfBirth || '' %>"><% } %>
+          </div>
+        <% }); %>
+      </fieldset>
+      <input type="hidden" name="leadTravellerIndex" value="<%= guestInformationViewModel.leadTravellerIndex %>">
+      <button class="button button--primary" type="submit">Continue to reservation review</button>
+    </form>
+  </div>
+</article>

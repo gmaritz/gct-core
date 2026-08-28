@@ -25,5 +25,6 @@
       <section aria-labelledby="quote-status-title"><h2 id="quote-status-title">Quote status</h2><p><%= quoteViewModel.status %></p></section>
     <% } %>
     <a class="button button--primary" href="<%= quoteViewModel.recoveryHref %>">Review accommodation</a>
+    <% if (quoteViewModel.pricing) { %><a class="button button--primary" href="/ui/journeys/<%= quoteViewModel.journeyId %>/guest-information">Continue to guest information</a><% } %>
   </div>
 </article>

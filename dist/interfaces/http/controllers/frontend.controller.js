@@ -10,6 +10,8 @@ exports.selectJourney = selectJourney;
 exports.renderAccommodationSelectionPage = renderAccommodationSelectionPage;
 exports.selectAccommodation = selectAccommodation;
 exports.renderJourneyQuotePage = renderJourneyQuotePage;
+exports.renderGuestInformationPage = renderGuestInformationPage;
+exports.submitGuestInformation = submitGuestInformation;
 const path_1 = __importDefault(require("path"));
 const ejs_1 = __importDefault(require("ejs"));
 const view_models_1 = require("../../view-models");
@@ -169,6 +171,63 @@ async function renderJourneyQuotePage(request, response) {
         pageTitle: "Journey quote",
         currentPath: request.path,
         quoteViewModel,
+    });
+}
+function renderGuestInformation(request, response, viewModel, status = 200) {
+    response.status(status);
+    return renderView(response, "pages/guest-information", {
+        title: "Guest information",
+        pageTitle: "Guest information",
+        currentPath: request.path,
+        guestInformationViewModel: viewModel,
+    });
+}
+async function renderGuestInformationPage(request, response) {
+    const resolution = await new merchandising_1.DefaultDynamicHomepageJourneyResolver().resolve(request.params.journeyId);
+    if (resolution.status !== "RESOLVED" || !resolution.journey) {
+        response.status(resolution.status === "UNAVAILABLE" ? 410 : 404);
+        await renderNotFoundPage(request, response);
+        return;
+    }
+    const viewModel = new view_models_2.GuestInformationViewModelProvider().provide({
+        status: "INVALID",
+        journeyId: request.params.journeyId,
+        journey: resolution.journey,
+        errors: [],
+    });
+    await renderGuestInformation(request, response, viewModel);
+}
+async function submitGuestInformation(request, response) {
+    const body = request.body;
+    const input = {
+        contact: {
+            email: body.contact?.email ?? "",
+            phone: body.contact?.phone,
+        },
+        leadTravellerIndex: Number(body.leadTravellerIndex),
+        travellers: Array.isArray(body.travellers) ? body.travellers : [],
+    };
+    const result = await new merchandising_1.DefaultGuestInformationService(new merchandising_1.DefaultDynamicHomepageJourneyResolver())
+        .captureGuestInformation(request.params.journeyId, input);
+    if (result.status === "INVALID") {
+        await renderGuestInformation(request, response, new view_models_2.GuestInformationViewModelProvider().provide(result), 422);
+        return;
+    }
+    if (result.status === "NOT_FOUND") {
+        response.status(404);
+        await renderNotFoundPage(request, response);
+        return;
+    }
+    if (result.status === "UNAVAILABLE") {
+        response.status(410);
+        await renderView(response, "errors/unavailable", { title: "Journey unavailable", pageTitle: "Journey unavailable", currentPath: request.path });
+        return;
+    }
+    await renderView(response, "pages/guest-information-complete", {
+        title: "Guest information complete",
+        pageTitle: "Guest information complete",
+        currentPath: request.path,
+        guestInformationViewModel: new view_models_2.GuestInformationViewModelProvider().provide(result),
     });
 }
 //# sourceMappingURL=frontend.controller.js.map

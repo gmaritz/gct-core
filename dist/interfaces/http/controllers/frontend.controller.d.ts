@@ -6,4 +6,6 @@ export declare function selectJourney(request: Request, response: Response): Pro
 export declare function renderAccommodationSelectionPage(request: Request, response: Response): Promise<void>;
 export declare function selectAccommodation(request: Request, response: Response): Promise<void>;
 export declare function renderJourneyQuotePage(request: Request, response: Response): Promise<void>;
+export declare function renderGuestInformationPage(request: Request, response: Response): Promise<void>;
+export declare function submitGuestInformation(request: Request, response: Response): Promise<void>;
 //# sourceMappingURL=frontend.controller.d.ts.map

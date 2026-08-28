@@ -11,6 +11,8 @@ function createFrontendRouter() {
     router.get("/journeys/:journeyId/accommodation", frontend_controller_1.renderAccommodationSelectionPage);
     router.post("/journeys/:journeyId/accommodation", frontend_controller_1.selectAccommodation);
     router.get("/journeys/:journeyId/quote", frontend_controller_1.renderJourneyQuotePage);
+    router.get("/journeys/:journeyId/guest-information", frontend_controller_1.renderGuestInformationPage);
+    router.post("/journeys/:journeyId/guest-information", frontend_controller_1.submitGuestInformation);
     router.get("/404", frontend_controller_1.renderNotFoundPage);
     return router;
 }

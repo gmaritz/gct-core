@@ -20,4 +20,5 @@ __exportStar(require("./dynamic-homepage-journey-resolver"), exports);
 __exportStar(require("./dynamic-homepage-journey-selection"), exports);
 __exportStar(require("./accommodation-selection-service"), exports);
 __exportStar(require("./journey-quote-service"), exports);
+__exportStar(require("./guest-information-service"), exports);
 //# sourceMappingURL=index.js.map

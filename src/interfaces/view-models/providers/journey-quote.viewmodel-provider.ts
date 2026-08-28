@@ -29,13 +29,13 @@ export class JourneyQuoteViewModelProvider {
           : "The selected journey or accommodation configuration could not be resolved.";
 
     return Object.freeze({
-      journeyId: result.journeyId,
       journeyTitle: journey ? `${journey.classification.category} ${journey.destinations[0]?.name ?? "Journey"} Journey` : "Journey unavailable",
       status: result.status,
       accommodation: Object.freeze(accommodation),
       pricing,
       message,
       recoveryHref: `/ui/journeys/${result.journeyId}/accommodation`,
+      journeyId: result.journeyId,
     });
   }
 }

@@ -1,1 +1,1 @@
-{"version":3,"file":"frontend.routes.d.ts","sourceRoot":"","sources":["../../../../src/interfaces/http/routes/frontend.routes.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,MAAM,EAAE,MAAM,SAAS,CAAC;AAYjC,wBAAgB,oBAAoB,IAAI,MAAM,CAY7C"}
+{"version":3,"file":"frontend.routes.d.ts","sourceRoot":"","sources":["../../../../src/interfaces/http/routes/frontend.routes.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,MAAM,EAAE,MAAM,SAAS,CAAC;AAcjC,wBAAgB,oBAAoB,IAAI,MAAM,CAc7C"}
