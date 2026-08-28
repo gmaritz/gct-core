@@ -3,6 +3,7 @@ import { Router } from "express";
 import {
 	renderAccommodationSelectionPage,
 	renderJourneyDetailPage,
+	renderJourneyQuotePage,
 	renderNotFoundPage,
 	renderPlaceholderPage,
 	selectAccommodation,
@@ -17,6 +18,7 @@ export function createFrontendRouter(): Router {
 	router.post("/journeys/:journeyId/select", selectJourney);
 	router.get("/journeys/:journeyId/accommodation", renderAccommodationSelectionPage);
 	router.post("/journeys/:journeyId/accommodation", selectAccommodation);
+	router.get("/journeys/:journeyId/quote", renderJourneyQuotePage);
 	router.get("/404", renderNotFoundPage);
 
 	return router;

@@ -7,10 +7,13 @@ import {
 	DefaultAccommodationSelectionService,
 	DefaultDynamicHomepageJourneyResolver,
 	DefaultDynamicHomepageJourneySelector,
+	DefaultJourneyQuoteService,
+	createDefaultPricingEngine,
 } from "../../../application/merchandising";
 import {
 	AccommodationSelectionViewModelProvider,
 	JourneyDetailViewModelProvider,
+	JourneyQuoteViewModelProvider,
 } from "../../view-models";
 
 async function renderView(response: Response, viewName: string, locals: Record<string, unknown>): Promise<void> {
@@ -160,5 +163,38 @@ export async function selectAccommodation(request: Request, response: Response):
 		pageTitle: "Accommodation selected",
 		currentPath: request.path,
 		selection: result,
+		quoteHref: `/ui/journeys/${result.journeyId}/quote`,
+	});
+}
+
+export async function renderJourneyQuotePage(request: Request, response: Response): Promise<void> {
+	const result = await new DefaultJourneyQuoteService(
+		new DefaultDynamicHomepageJourneyResolver(),
+		createDefaultPricingEngine(),
+	).priceCurrentJourney(request.params.journeyId);
+	const quoteViewModel = new JourneyQuoteViewModelProvider().provide(result);
+
+	if (result.status === "INVALID" || result.status === "NOT_FOUND") {
+		response.status(404);
+		await renderNotFoundPage(request, response);
+		return;
+	}
+
+	if (result.status === "RECHECK_REQUIRED" || result.status === "UNAVAILABLE") {
+		response.status(409);
+		await renderView(response, "pages/journey-quote", {
+			title: "Quote unavailable",
+			pageTitle: "Quote unavailable",
+			currentPath: request.path,
+			quoteViewModel,
+		});
+		return;
+	}
+
+	await renderView(response, "pages/journey-quote", {
+		title: "Journey quote",
+		pageTitle: "Journey quote",
+		currentPath: request.path,
+		quoteViewModel,
 	});
 }

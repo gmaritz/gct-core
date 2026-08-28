@@ -10,6 +10,7 @@ function createFrontendRouter() {
     router.post("/journeys/:journeyId/select", frontend_controller_1.selectJourney);
     router.get("/journeys/:journeyId/accommodation", frontend_controller_1.renderAccommodationSelectionPage);
     router.post("/journeys/:journeyId/accommodation", frontend_controller_1.selectAccommodation);
+    router.get("/journeys/:journeyId/quote", frontend_controller_1.renderJourneyQuotePage);
     router.get("/404", frontend_controller_1.renderNotFoundPage);
     return router;
 }

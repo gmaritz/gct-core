@@ -9,6 +9,7 @@ exports.renderJourneyDetailPage = renderJourneyDetailPage;
 exports.selectJourney = selectJourney;
 exports.renderAccommodationSelectionPage = renderAccommodationSelectionPage;
 exports.selectAccommodation = selectAccommodation;
+exports.renderJourneyQuotePage = renderJourneyQuotePage;
 const path_1 = __importDefault(require("path"));
 const ejs_1 = __importDefault(require("ejs"));
 const view_models_1 = require("../../view-models");
@@ -142,6 +143,32 @@ async function selectAccommodation(request, response) {
         pageTitle: "Accommodation selected",
         currentPath: request.path,
         selection: result,
+        quoteHref: `/ui/journeys/${result.journeyId}/quote`,
+    });
+}
+async function renderJourneyQuotePage(request, response) {
+    const result = await new merchandising_1.DefaultJourneyQuoteService(new merchandising_1.DefaultDynamicHomepageJourneyResolver(), (0, merchandising_1.createDefaultPricingEngine)()).priceCurrentJourney(request.params.journeyId);
+    const quoteViewModel = new view_models_2.JourneyQuoteViewModelProvider().provide(result);
+    if (result.status === "INVALID" || result.status === "NOT_FOUND") {
+        response.status(404);
+        await renderNotFoundPage(request, response);
+        return;
+    }
+    if (result.status === "RECHECK_REQUIRED" || result.status === "UNAVAILABLE") {
+        response.status(409);
+        await renderView(response, "pages/journey-quote", {
+            title: "Quote unavailable",
+            pageTitle: "Quote unavailable",
+            currentPath: request.path,
+            quoteViewModel,
+        });
+        return;
+    }
+    await renderView(response, "pages/journey-quote", {
+        title: "Journey quote",
+        pageTitle: "Journey quote",
+        currentPath: request.path,
+        quoteViewModel,
     });
 }
 //# sourceMappingURL=frontend.controller.js.map

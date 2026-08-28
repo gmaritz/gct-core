@@ -1,0 +1,29 @@
+<article class="journey-quote" aria-labelledby="journey-quote-title">
+  <div class="container">
+    <header class="journey-quote__header">
+      <p class="journey-detail__eyebrow">Journey quote</p>
+      <h1 id="journey-quote-title"><%= quoteViewModel.journeyTitle %></h1>
+      <p role="status"><%= quoteViewModel.message %></p>
+    </header>
+    <% if (quoteViewModel.pricing) { %>
+      <section aria-labelledby="quote-breakdown-title">
+        <h2 id="quote-breakdown-title">Price breakdown</h2>
+        <dl class="journey-quote__breakdown">
+          <dt>Accommodation</dt><dd><%= quoteViewModel.pricing.displayLabels.totalLabel %></dd>
+          <dt>Taxes</dt><dd><%= quoteViewModel.pricing.displayLabels.taxLabel %></dd>
+          <dt>Fees</dt><dd><%= quoteViewModel.pricing.displayLabels.feesLabel %></dd>
+          <dt>Discounts</dt><dd><%= quoteViewModel.pricing.displayLabels.discountsLabel %></dd>
+          <dt class="journey-quote__total">Total</dt><dd class="journey-quote__total"><%= quoteViewModel.pricing.displayLabels.totalLabel %></dd>
+        </dl>
+        <p><%= quoteViewModel.pricing.summary.travellerCount %> traveller(s) · <%= quoteViewModel.pricing.summary.currency %></p>
+      </section>
+      <section aria-labelledby="quote-accommodation-title">
+        <h2 id="quote-accommodation-title">Selected accommodation</h2>
+        <% quoteViewModel.accommodation.forEach((stay) => { %><p><strong><%= stay.property %></strong> · <%= stay.room %> · <%= stay.rate %></p><% }); %>
+      </section>
+    <% } else { %>
+      <section aria-labelledby="quote-status-title"><h2 id="quote-status-title">Quote status</h2><p><%= quoteViewModel.status %></p></section>
+    <% } %>
+    <a class="button button--primary" href="<%= quoteViewModel.recoveryHref %>">Review accommodation</a>
+  </div>
+</article>
