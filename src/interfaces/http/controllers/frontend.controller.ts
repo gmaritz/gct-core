@@ -9,6 +9,8 @@ import {
 	DefaultDynamicHomepageJourneySelector,
 	DefaultJourneyQuoteService,
 	DefaultGuestInformationService,
+	DefaultReservationReviewService,
+	GuestInformationInput,
 	createDefaultPricingEngine,
 } from "../../../application/merchandising";
 import {
@@ -16,6 +18,7 @@ import {
 	JourneyDetailViewModelProvider,
 	JourneyQuoteViewModelProvider,
 	GuestInformationViewModelProvider,
+	ReservationReviewViewModelProvider,
 } from "../../view-models";
 
 async function renderView(response: Response, viewName: string, locals: Record<string, unknown>): Promise<void> {
@@ -234,15 +237,7 @@ export async function renderGuestInformationPage(request: Request, response: Res
 }
 
 export async function submitGuestInformation(request: Request, response: Response): Promise<void> {
-	const body = request.body as { contact?: Record<string, string>; leadTravellerIndex?: string; travellers?: unknown };
-	const input = {
-		contact: {
-			email: body.contact?.email ?? "",
-			phone: body.contact?.phone,
-		},
-		leadTravellerIndex: Number(body.leadTravellerIndex),
-		travellers: Array.isArray(body.travellers) ? body.travellers : [],
-	};
+	const input = toGuestInformationInput(request.body);
 	const result = await new DefaultGuestInformationService(new DefaultDynamicHomepageJourneyResolver())
 		.captureGuestInformation(request.params.journeyId, input);
 
@@ -261,10 +256,78 @@ export async function submitGuestInformation(request: Request, response: Respons
 		return;
 	}
 
-	await renderView(response, "pages/guest-information-complete", {
-		title: "Guest information complete",
-		pageTitle: "Guest information complete",
+	const review = await new DefaultReservationReviewService().review({
+		journeyId: request.params.journeyId,
+		guestInformation: input,
+	});
+	await renderReservationReview(request, response, new ReservationReviewViewModelProvider().provide(review), review.status === "READY" ? 200 : 409);
+}
+
+function toGuestInformationInput(body: unknown): GuestInformationInput {
+	const submitted = body as { contact?: Record<string, string>; leadTravellerIndex?: string; travellers?: unknown };
+	return {
+		contact: {
+			email: submitted.contact?.email ?? "",
+			phone: submitted.contact?.phone,
+		},
+		leadTravellerIndex: Number(submitted.leadTravellerIndex),
+		travellers: Array.isArray(submitted.travellers) ? submitted.travellers as GuestInformationInput["travellers"] : [],
+	};
+}
+
+function renderReservationReview(
+	request: Request,
+	response: Response,
+	viewModel: ReturnType<ReservationReviewViewModelProvider["provide"]>,
+	status = 200,
+): Promise<void> {
+	response.status(status);
+	return renderView(response, "pages/reservation-review", {
+		title: "Reservation review",
+		pageTitle: "Reservation review",
 		currentPath: request.path,
-		guestInformationViewModel: new GuestInformationViewModelProvider().provide(result),
+		reservationReviewViewModel: viewModel,
+	});
+}
+
+export async function renderReservationReviewPage(request: Request, response: Response): Promise<void> {
+	const resolution = await new DefaultDynamicHomepageJourneyResolver().resolve(request.params.journeyId);
+	if (resolution.status !== "RESOLVED" || !resolution.journey) {
+		response.status(resolution.status === "UNAVAILABLE" ? 410 : 404);
+		await renderNotFoundPage(request, response);
+		return;
+	}
+
+	const review = new ReservationReviewViewModelProvider().provide({
+		status: "INVALID",
+		journeyId: request.params.journeyId,
+		journey: resolution.journey,
+		errors: ["Complete guest information before reviewing the reservation."],
+		confirmed: false,
+	});
+	await renderReservationReview(request, response, review, 422);
+}
+
+export async function confirmReservationReview(request: Request, response: Response): Promise<void> {
+	const input = toGuestInformationInput(request.body);
+	const review = await new DefaultReservationReviewService().review({
+		journeyId: request.params.journeyId,
+		guestInformation: input,
+		confirmed: request.body?.confirmed === "on" || request.body?.confirmed === true,
+	});
+
+	if (review.status !== "READY" || !review.confirmed) {
+		const errors = review.status === "READY" && !review.confirmed
+			? ["Confirm the reviewed information before continuing to payment."]
+			: review.errors;
+		await renderReservationReview(request, response, new ReservationReviewViewModelProvider().provide({ ...review, status: review.status, errors }), review.status === "READY" ? 422 : 409);
+		return;
+	}
+
+	await renderView(response, "pages/payment-handoff", {
+		title: "Continue to payment",
+		pageTitle: "Continue to payment",
+		currentPath: request.path,
+		journeyId: review.journeyId,
 	});
 }

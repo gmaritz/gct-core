@@ -12,6 +12,8 @@ exports.selectAccommodation = selectAccommodation;
 exports.renderJourneyQuotePage = renderJourneyQuotePage;
 exports.renderGuestInformationPage = renderGuestInformationPage;
 exports.submitGuestInformation = submitGuestInformation;
+exports.renderReservationReviewPage = renderReservationReviewPage;
+exports.confirmReservationReview = confirmReservationReview;
 const path_1 = __importDefault(require("path"));
 const ejs_1 = __importDefault(require("ejs"));
 const view_models_1 = require("../../view-models");
@@ -198,15 +200,7 @@ async function renderGuestInformationPage(request, response) {
     await renderGuestInformation(request, response, viewModel);
 }
 async function submitGuestInformation(request, response) {
-    const body = request.body;
-    const input = {
-        contact: {
-            email: body.contact?.email ?? "",
-            phone: body.contact?.phone,
-        },
-        leadTravellerIndex: Number(body.leadTravellerIndex),
-        travellers: Array.isArray(body.travellers) ? body.travellers : [],
-    };
+    const input = toGuestInformationInput(request.body);
     const result = await new merchandising_1.DefaultGuestInformationService(new merchandising_1.DefaultDynamicHomepageJourneyResolver())
         .captureGuestInformation(request.params.journeyId, input);
     if (result.status === "INVALID") {
@@ -223,11 +217,67 @@ async function submitGuestInformation(request, response) {
         await renderView(response, "errors/unavailable", { title: "Journey unavailable", pageTitle: "Journey unavailable", currentPath: request.path });
         return;
     }
-    await renderView(response, "pages/guest-information-complete", {
-        title: "Guest information complete",
-        pageTitle: "Guest information complete",
+    const review = await new merchandising_1.DefaultReservationReviewService().review({
+        journeyId: request.params.journeyId,
+        guestInformation: input,
+    });
+    await renderReservationReview(request, response, new view_models_2.ReservationReviewViewModelProvider().provide(review), review.status === "READY" ? 200 : 409);
+}
+function toGuestInformationInput(body) {
+    const submitted = body;
+    return {
+        contact: {
+            email: submitted.contact?.email ?? "",
+            phone: submitted.contact?.phone,
+        },
+        leadTravellerIndex: Number(submitted.leadTravellerIndex),
+        travellers: Array.isArray(submitted.travellers) ? submitted.travellers : [],
+    };
+}
+function renderReservationReview(request, response, viewModel, status = 200) {
+    response.status(status);
+    return renderView(response, "pages/reservation-review", {
+        title: "Reservation review",
+        pageTitle: "Reservation review",
         currentPath: request.path,
-        guestInformationViewModel: new view_models_2.GuestInformationViewModelProvider().provide(result),
+        reservationReviewViewModel: viewModel,
+    });
+}
+async function renderReservationReviewPage(request, response) {
+    const resolution = await new merchandising_1.DefaultDynamicHomepageJourneyResolver().resolve(request.params.journeyId);
+    if (resolution.status !== "RESOLVED" || !resolution.journey) {
+        response.status(resolution.status === "UNAVAILABLE" ? 410 : 404);
+        await renderNotFoundPage(request, response);
+        return;
+    }
+    const review = new view_models_2.ReservationReviewViewModelProvider().provide({
+        status: "INVALID",
+        journeyId: request.params.journeyId,
+        journey: resolution.journey,
+        errors: ["Complete guest information before reviewing the reservation."],
+        confirmed: false,
+    });
+    await renderReservationReview(request, response, review, 422);
+}
+async function confirmReservationReview(request, response) {
+    const input = toGuestInformationInput(request.body);
+    const review = await new merchandising_1.DefaultReservationReviewService().review({
+        journeyId: request.params.journeyId,
+        guestInformation: input,
+        confirmed: request.body?.confirmed === "on" || request.body?.confirmed === true,
+    });
+    if (review.status !== "READY" || !review.confirmed) {
+        const errors = review.status === "READY" && !review.confirmed
+            ? ["Confirm the reviewed information before continuing to payment."]
+            : review.errors;
+        await renderReservationReview(request, response, new view_models_2.ReservationReviewViewModelProvider().provide({ ...review, status: review.status, errors }), review.status === "READY" ? 422 : 409);
+        return;
+    }
+    await renderView(response, "pages/payment-handoff", {
+        title: "Continue to payment",
+        pageTitle: "Continue to payment",
+        currentPath: request.path,
+        journeyId: review.journeyId,
     });
 }
 //# sourceMappingURL=frontend.controller.js.map

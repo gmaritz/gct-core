@@ -8,4 +8,6 @@ export declare function selectAccommodation(request: Request, response: Response
 export declare function renderJourneyQuotePage(request: Request, response: Response): Promise<void>;
 export declare function renderGuestInformationPage(request: Request, response: Response): Promise<void>;
 export declare function submitGuestInformation(request: Request, response: Response): Promise<void>;
+export declare function renderReservationReviewPage(request: Request, response: Response): Promise<void>;
+export declare function confirmReservationReview(request: Request, response: Response): Promise<void>;
 //# sourceMappingURL=frontend.controller.d.ts.map

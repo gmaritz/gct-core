@@ -1,0 +1,25 @@
+.reservation-review {
+  padding: var(--space-3xl) 0;
+}
+
+.reservation-review__header {
+  margin-bottom: var(--space-2xl);
+}
+
+.reservation-review section {
+  border-top: 1px solid var(--color-border);
+  margin-bottom: var(--space-2xl);
+  padding-top: var(--space-lg);
+}
+
+.reservation-review form {
+  display: grid;
+  gap: var(--space-lg);
+  margin-top: var(--space-2xl);
+}
+
+.reservation-review label {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: flex-start;
+}

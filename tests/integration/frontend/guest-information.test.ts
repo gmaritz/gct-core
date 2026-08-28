@@ -60,7 +60,7 @@ describe("Frontend guest information", () => {
       });
 
     expect(response.status).toBe(200);
-    expect(response.text).toContain("Guest information complete");
-    expect(response.text).toContain("Continue to reservation review");
+    expect(response.text).toContain("Reservation review");
+    expect(response.text).toContain("Confirm and continue to payment");
   });
 });

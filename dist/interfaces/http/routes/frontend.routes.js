@@ -13,6 +13,8 @@ function createFrontendRouter() {
     router.get("/journeys/:journeyId/quote", frontend_controller_1.renderJourneyQuotePage);
     router.get("/journeys/:journeyId/guest-information", frontend_controller_1.renderGuestInformationPage);
     router.post("/journeys/:journeyId/guest-information", frontend_controller_1.submitGuestInformation);
+    router.get("/journeys/:journeyId/review", frontend_controller_1.renderReservationReviewPage);
+    router.post("/journeys/:journeyId/review", frontend_controller_1.confirmReservationReview);
     router.get("/404", frontend_controller_1.renderNotFoundPage);
     return router;
 }

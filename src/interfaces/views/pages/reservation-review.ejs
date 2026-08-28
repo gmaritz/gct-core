@@ -1,0 +1,38 @@
+<article class="reservation-review" aria-labelledby="reservation-review-title">
+  <div class="container">
+    <header class="reservation-review__header">
+      <p class="journey-detail__eyebrow">Reservation review</p>
+      <h1 id="reservation-review-title"><%= reservationReviewViewModel.journeyTitle %></h1>
+      <p><%= reservationReviewViewModel.destination %> · <%= reservationReviewViewModel.duration %></p>
+    </header>
+    <% if (reservationReviewViewModel.errors.length > 0) { %><div role="alert"><h2>Please review the following</h2><ul><% reservationReviewViewModel.errors.forEach((error) => { %><li><%= error %></li><% }); %></ul></div><% } %>
+    <section aria-labelledby="review-accommodation-title">
+      <h2 id="review-accommodation-title">Accommodation</h2>
+      <% reservationReviewViewModel.accommodation.forEach((stay) => { %><p><strong><%= stay.destination %></strong> · <%= stay.property %> · <%= stay.room %> · <%= stay.rate %></p><% }); %>
+      <a href="<%= reservationReviewViewModel.accommodationHref %>">Edit accommodation</a>
+    </section>
+    <section aria-labelledby="review-guest-title">
+      <h2 id="review-guest-title">Guest information</h2>
+      <p>Contact: <%= reservationReviewViewModel.contact.email %></p>
+      <% reservationReviewViewModel.travellers.forEach((traveller, index) => { %><p><%= index === 0 ? "Lead traveller" : `Traveller ${index + 1}` %>: <%= traveller.name %> · <%= traveller.travellerType %></p><% }); %>
+      <a href="<%= reservationReviewViewModel.guestInformationHref %>">Edit guest information</a>
+    </section>
+    <% if (reservationReviewViewModel.quote) { %>
+      <section aria-labelledby="review-price-title">
+        <h2 id="review-price-title">Price review</h2>
+        <dl class="journey-quote__breakdown"><% reservationReviewViewModel.quote.breakdown.forEach((item) => { %><dt><%= item.label %></dt><dd><%= item.value %></dd><% }); %><dt class="journey-quote__total">Total</dt><dd class="journey-quote__total"><%= reservationReviewViewModel.quote.total %></dd></dl>
+        <p>Currency: <%= reservationReviewViewModel.quote.currency %></p>
+      </section>
+    <% } %>
+    <% if (reservationReviewViewModel.confirmationAction) { %>
+      <form method="post" action="<%= reservationReviewViewModel.confirmationAction.href %>">
+        <input type="hidden" name="contact[email]" value="<%= reservationReviewViewModel.contact.email %>">
+        <input type="hidden" name="contact[phone]" value="<%= reservationReviewViewModel.contact.phone || '' %>">
+        <% reservationReviewViewModel.travellers.forEach((traveller, index) => { %><input type="hidden" name="travellers[<%= index %>][firstName]" value="<%= traveller.name.split(' ')[0] %>"><input type="hidden" name="travellers[<%= index %>][lastName]" value="<%= traveller.name.split(' ').slice(1).join(' ') %>"><input type="hidden" name="travellers[<%= index %>][email]" value="<%= traveller.email || '' %>"><input type="hidden" name="travellers[<%= index %>][travellerType]" value="<%= traveller.travellerType %>"><% }); %>
+        <input type="hidden" name="leadTravellerIndex" value="0">
+        <label><input type="checkbox" name="confirmed" required> I confirm that the reviewed information is correct.</label>
+        <button class="button button--primary" type="submit">Confirm and continue to payment</button>
+      </form>
+    <% } %>
+  </div>
+</article>
