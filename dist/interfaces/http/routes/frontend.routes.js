@@ -15,6 +15,9 @@ function createFrontendRouter() {
     router.post("/journeys/:journeyId/guest-information", frontend_controller_1.submitGuestInformation);
     router.get("/journeys/:journeyId/review", frontend_controller_1.renderReservationReviewPage);
     router.post("/journeys/:journeyId/review", frontend_controller_1.confirmReservationReview);
+    router.get("/journeys/:journeyId/payment", frontend_controller_1.renderPaymentPage);
+    router.post("/journeys/:journeyId/payment", frontend_controller_1.initiatePayment);
+    router.get("/journeys/:journeyId/payment/return", frontend_controller_1.renderPaymentReturn);
     router.get("/404", frontend_controller_1.renderNotFoundPage);
     return router;
 }

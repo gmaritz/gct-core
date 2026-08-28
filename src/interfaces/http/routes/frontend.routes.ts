@@ -12,6 +12,9 @@ import {
 	selectJourney,
 	submitGuestInformation,
 	confirmReservationReview,
+	renderPaymentPage,
+	initiatePayment,
+	renderPaymentReturn,
 } from "../controllers/frontend.controller";
 
 export function createFrontendRouter(): Router {
@@ -27,6 +30,9 @@ export function createFrontendRouter(): Router {
 	router.post("/journeys/:journeyId/guest-information", submitGuestInformation);
 	router.get("/journeys/:journeyId/review", renderReservationReviewPage);
 	router.post("/journeys/:journeyId/review", confirmReservationReview);
+	router.get("/journeys/:journeyId/payment", renderPaymentPage);
+	router.post("/journeys/:journeyId/payment", initiatePayment);
+	router.get("/journeys/:journeyId/payment/return", renderPaymentReturn);
 	router.get("/404", renderNotFoundPage);
 
 	return router;

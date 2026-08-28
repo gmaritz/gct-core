@@ -47,6 +47,7 @@ function createComposition(context: ReservationBuilderContext): ReservationCompo
     journeySnapshot: context.snapshots.journeySnapshot!,
     travellerSnapshots: context.snapshots.travellerSnapshots ?? Object.freeze([]),
     accommodationSnapshots: context.snapshots.accommodationSnapshots,
+    bookingItems: context.snapshots.bookingItems,
     pricingSnapshot: context.snapshots.pricingSnapshot,
     paymentSnapshot: context.snapshots.paymentSnapshot,
     supplierReferences: context.snapshots.supplierReferences,

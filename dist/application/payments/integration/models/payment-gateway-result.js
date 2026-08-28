@@ -22,6 +22,13 @@ function createPaymentGatewayResult(result) {
         captureStatus: result.captureStatus ?? null,
         settlementStatus: result.settlementStatus ?? null,
         paymentStatus: result.paymentStatus ?? null,
+        hostedPaymentAction: result.hostedPaymentAction
+            ? Object.freeze({
+                method: result.hostedPaymentAction.method,
+                action: result.hostedPaymentAction.action,
+                fields: Object.freeze({ ...result.hostedPaymentAction.fields }),
+            })
+            : undefined,
         warnings: Object.freeze([...(result.warnings ?? [])]),
         metadata: Object.freeze({
             completedAt: new Date(result.metadata.completedAt.getTime()),

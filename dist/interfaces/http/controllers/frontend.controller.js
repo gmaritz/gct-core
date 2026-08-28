@@ -14,10 +14,14 @@ exports.renderGuestInformationPage = renderGuestInformationPage;
 exports.submitGuestInformation = submitGuestInformation;
 exports.renderReservationReviewPage = renderReservationReviewPage;
 exports.confirmReservationReview = confirmReservationReview;
+exports.renderPaymentPage = renderPaymentPage;
+exports.initiatePayment = initiatePayment;
+exports.renderPaymentReturn = renderPaymentReturn;
 const path_1 = __importDefault(require("path"));
 const ejs_1 = __importDefault(require("ejs"));
 const view_models_1 = require("../../view-models");
 const merchandising_1 = require("../../../application/merchandising");
+const payment_experience_factory_1 = require("../../../infrastructure/payments/payment-experience-factory");
 const view_models_2 = require("../../view-models");
 async function renderView(response, viewName, locals) {
     const viewsRoot = path_1.default.join(process.cwd(), "src/interfaces/views");
@@ -278,6 +282,85 @@ async function confirmReservationReview(request, response) {
         pageTitle: "Continue to payment",
         currentPath: request.path,
         journeyId: review.journeyId,
+    });
+}
+function unavailablePaymentResult(journeyId) {
+    return {
+        status: "UNAVAILABLE",
+        reservationId: journeyId,
+        errors: ["Payment context is unavailable until a canonical reservation exists."],
+    };
+}
+function createPaymentContextResolver() {
+    return (0, payment_experience_factory_1.createCanonicalPaymentContextResolver)();
+}
+async function resolvePaymentContext(journeyId) {
+    try {
+        return await createPaymentContextResolver().resolveForJourney(journeyId);
+    }
+    catch {
+        return null;
+    }
+}
+function paymentStateResult(context) {
+    const request = context.engineRequest.paymentRequest;
+    const status = request.status === "COMPLETED"
+        ? "COMPLETED"
+        : request.status === "CANCELLED"
+            ? "CANCELLED"
+            : "PENDING";
+    return {
+        status,
+        reservationId: context.reservationId,
+        amount: request.paymentAmount ?? undefined,
+        currency: request.currency ?? undefined,
+        paymentStatus: request.status ?? undefined,
+        errors: [],
+    };
+}
+async function renderPaymentPage(request, response) {
+    const context = await resolvePaymentContext(request.params.journeyId);
+    const result = context ? paymentStateResult(context) : unavailablePaymentResult(request.params.journeyId);
+    const paymentViewModel = new view_models_2.PaymentExperienceViewModelProvider().provide(result);
+    await renderView(response, "pages/payment-experience", {
+        title: "Payment",
+        pageTitle: "Payment",
+        currentPath: request.path,
+        paymentViewModel,
+    });
+}
+async function initiatePayment(request, response) {
+    const context = await resolvePaymentContext(request.params.journeyId);
+    let result;
+    if (!context) {
+        result = unavailablePaymentResult(request.params.journeyId);
+    }
+    else {
+        try {
+            result = await (0, payment_experience_factory_1.createDefaultPaymentInitiationService)().initiatePayment(context);
+        }
+        catch {
+            result = unavailablePaymentResult(request.params.journeyId);
+        }
+    }
+    const paymentViewModel = new view_models_2.PaymentExperienceViewModelProvider().provide(result);
+    response.status(result.status === "UNAVAILABLE" ? 409 : 200);
+    await renderView(response, "pages/payment-experience", {
+        title: "Payment",
+        pageTitle: "Payment",
+        currentPath: request.path,
+        paymentViewModel,
+    });
+}
+async function renderPaymentReturn(request, response) {
+    const context = await resolvePaymentContext(request.params.journeyId);
+    const result = context ? paymentStateResult(context) : unavailablePaymentResult(request.params.journeyId);
+    const paymentViewModel = new view_models_2.PaymentExperienceViewModelProvider().provide(result);
+    await renderView(response, "pages/payment-experience", {
+        title: "Payment status",
+        pageTitle: "Payment status",
+        currentPath: request.path,
+        paymentViewModel,
     });
 }
 //# sourceMappingURL=frontend.controller.js.map

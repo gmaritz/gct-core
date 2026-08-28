@@ -6,6 +6,7 @@ import {
   ReservationRepository,
 } from "@application/reservations/repository";
 import { getPrismaClient } from "../../../bootstrap/prisma";
+import { BookingItemSnapshot, SupplierBookingSnapshot } from "@application/reservations/models";
 
 const VALID_LIFECYCLE = new Set<string>(Object.values(ReservationStatus));
 
@@ -29,11 +30,106 @@ type PersistedBooking = {
   reservedAt?: Date | null;
   confirmedAt?: Date | null;
   cancelledAt?: Date | null;
+  bookingItems?: ReadonlyArray<{
+    id: string;
+    bookingId: string;
+    reservationId: string | null;
+    productId: string;
+    supplierBookings?: ReadonlyArray<{
+      id: string;
+      supplierId: string;
+      supplierProductId: string | null;
+      supplierReference: string;
+      status: string;
+      requestedAt: Date | null;
+      confirmedAt: Date | null;
+      cancelledAt: Date | null;
+    }>;
+  }>;
 };
 
 type LegacyBooking = Omit<PersistedBooking, "reservationNumber"> & {
   bookingNumber: string;
 };
+
+function toBookingItemData(item: BookingItemSnapshot, reservationId: string): {
+  id: string;
+  reservationId: string;
+  bookingId: string;
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+} {
+  if (!item.bookingId || !item.productId) {
+    throw new Error(`Booking item ${item.bookingItemId} requires booking and product identities.`);
+  }
+
+  return {
+    id: item.bookingItemId,
+    reservationId,
+    bookingId: item.bookingId,
+    productId: item.productId,
+    quantity: 1,
+    unitPrice: 0,
+    totalPrice: 0,
+  };
+}
+
+function toSupplierBookingData(
+  item: BookingItemSnapshot,
+  supplier: NonNullable<BookingItemSnapshot["supplierBookings"]>[number],
+): {
+  id: string;
+  bookingItemId: string;
+  supplierId: string;
+  supplierProductId?: string;
+  supplierReference: string;
+  status: string;
+  requestedAt?: Date;
+  confirmedAt?: Date;
+  cancelledAt?: Date;
+  metadata?: object;
+} {
+  if (!supplier.supplierId) {
+    throw new Error(`Supplier booking ${supplier.snapshotId} requires a supplier identity.`);
+  }
+
+  return {
+    id: supplier.snapshotId,
+    bookingItemId: item.bookingItemId,
+    supplierId: supplier.supplierId,
+    supplierProductId: supplier.supplierProductId,
+    supplierReference: supplier.supplierReference,
+    status: supplier.status,
+    requestedAt: supplier.requestedAt,
+    confirmedAt: supplier.confirmedAt,
+    cancelledAt: supplier.cancelledAt,
+  };
+}
+
+function toBookingItemSnapshots(booking: PersistedBooking): ReadonlyArray<BookingItemSnapshot> {
+  return Object.freeze((booking.bookingItems ?? []).map((item) => Object.freeze({
+    snapshotId: `${item.id}-snapshot`,
+    capturedAt: new Date(),
+    version: "1.0.0",
+    bookingItemId: item.id,
+    bookingId: item.bookingId,
+    productId: item.productId,
+    supplierBookings: Object.freeze((item.supplierBookings ?? []).map((supplier): SupplierBookingSnapshot => Object.freeze({
+      snapshotId: `${supplier.id}-snapshot`,
+      capturedAt: supplier.requestedAt ? new Date(supplier.requestedAt) : new Date(),
+      version: "1.0.0",
+      supplierId: supplier.supplierId,
+      supplierProductId: supplier.supplierProductId ?? undefined,
+      supplierReference: supplier.supplierReference,
+      status: supplier.status,
+      requestedAt: supplier.requestedAt ?? undefined,
+      confirmedAt: supplier.confirmedAt ?? undefined,
+      cancelledAt: supplier.cancelledAt ?? undefined,
+    }))),
+  })));
+}
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -261,6 +357,7 @@ function toDomain(booking: PersistedBooking | LegacyBooking): Reservation {
           }
         : undefined,
     })),
+    bookingItems: toBookingItemSnapshots(booking),
     pricingSnapshot: pricingSnapshot
       ? {
           snapshotId: String(pricingSnapshot.snapshotId ?? ""),
@@ -353,7 +450,6 @@ export class CanonicalReservationPrismaRepository implements ReservationReposito
     }
 
     const prisma = this.prisma;
-    const reservationModel = getCanonicalReservationModel(prisma);
     const lifecycleCode = reservation.status;
 
     if (!VALID_LIFECYCLE.has(lifecycleCode)) {
@@ -372,7 +468,7 @@ export class CanonicalReservationPrismaRepository implements ReservationReposito
         throw new Error(`Customer ${context.customerId} does not exist.`);
       }
 
-      await reservationModel.upsert({
+      await tx.reservation.upsert({
         where: { id: reservation.identity.id },
         update: {
           customerId: context.customerId,
@@ -406,6 +502,26 @@ export class CanonicalReservationPrismaRepository implements ReservationReposito
           reservationMetadata: snapshotJson.reservationMetadata,
         },
       });
+
+      const bookingItemModel = tx.bookingItem;
+      const supplierBookingModel = tx.supplierBooking;
+      if (reservation.bookingItems.length > 0 && (!bookingItemModel || !supplierBookingModel)) {
+        throw new Error("Canonical Reservation fulfilment persistence is unavailable.");
+      }
+
+      if (bookingItemModel && supplierBookingModel) {
+        if (typeof supplierBookingModel.deleteMany === "function") {
+          await supplierBookingModel.deleteMany({ where: { bookingItem: { reservationId: reservation.identity.id } } });
+        }
+        await bookingItemModel.deleteMany({ where: { reservationId: reservation.identity.id } });
+        for (const item of reservation.bookingItems) {
+          const itemData = toBookingItemData(item, reservation.identity.id);
+          await bookingItemModel.create({ data: itemData });
+          for (const supplier of item.supplierBookings ?? []) {
+            await supplierBookingModel.create({ data: toSupplierBookingData(item, supplier) });
+          }
+        }
+      }
     });
   }
 
@@ -433,6 +549,7 @@ export class CanonicalReservationPrismaRepository implements ReservationReposito
         supplierReferences: true,
         reservationTimeline: true,
         reservationMetadata: true,
+        bookingItems: { include: { supplierBookings: true } },
       },
     });
 
@@ -459,6 +576,7 @@ export class CanonicalReservationPrismaRepository implements ReservationReposito
         supplierReferences: true,
         reservationTimeline: true,
         reservationMetadata: true,
+        bookingItems: { include: { supplierBookings: true } },
       },
     });
 
@@ -489,6 +607,7 @@ export class CanonicalReservationPrismaRepository implements ReservationReposito
         supplierReferences: true,
         reservationTimeline: true,
         reservationMetadata: true,
+        bookingItems: { include: { supplierBookings: true } },
       },
     });
 
@@ -515,6 +634,7 @@ export class CanonicalReservationPrismaRepository implements ReservationReposito
         supplierReferences: true,
         reservationTimeline: true,
         reservationMetadata: true,
+        bookingItems: { include: { supplierBookings: true } },
       },
     });
 

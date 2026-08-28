@@ -1,4 +1,4 @@
-import { AccommodationSnapshot, JourneySnapshot, PaymentSnapshot, PricingSnapshot, ReservationMetadata, ReservationTimeline, SupplierReference, TravellerSnapshot } from "../models";
+import { AccommodationSnapshot, BookingItemSnapshot, JourneySnapshot, PaymentSnapshot, PricingSnapshot, ReservationMetadata, ReservationTimeline, SupplierReference, TravellerSnapshot } from "../models";
 export declare enum ReservationStatus {
     CREATED = "CREATED",
     QUOTED = "QUOTED",
@@ -17,6 +17,7 @@ export interface ReservationComposition {
     readonly journeySnapshot: JourneySnapshot;
     readonly travellerSnapshots: ReadonlyArray<TravellerSnapshot>;
     readonly accommodationSnapshots?: ReadonlyArray<AccommodationSnapshot>;
+    readonly bookingItems?: ReadonlyArray<BookingItemSnapshot>;
     readonly pricingSnapshot?: PricingSnapshot;
     readonly paymentSnapshot?: PaymentSnapshot;
     readonly supplierReferences?: ReadonlyArray<SupplierReference>;
@@ -30,6 +31,7 @@ export declare class Reservation {
     readonly journeySnapshot: JourneySnapshot;
     readonly travellerSnapshots: ReadonlyArray<TravellerSnapshot>;
     readonly accommodationSnapshots: ReadonlyArray<AccommodationSnapshot>;
+    readonly bookingItems: ReadonlyArray<BookingItemSnapshot>;
     readonly pricingSnapshot?: PricingSnapshot;
     readonly paymentSnapshot?: PaymentSnapshot;
     readonly supplierReferences: ReadonlyArray<SupplierReference>;

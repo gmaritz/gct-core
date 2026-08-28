@@ -160,6 +160,12 @@ describe("PayFast gateway integration", () => {
     expect(result.paymentStatus).toBe(PaymentStatus.AUTHORIZED);
     expect(result.providerReference?.providerIdentifier).toBe("payfast");
     expect(result.metadata.operation).toBe(PaymentProviderOperation.AUTHORIZE);
+    expect(result.hostedPaymentAction?.method).toBe("POST");
+    expect(result.hostedPaymentAction?.action).toBe("https://sandbox.payfast.co.za/eng/process");
+    expect(result.hostedPaymentAction?.fields.amount).toBe("272.00");
+    expect(result.hostedPaymentAction?.fields.currency).toBeUndefined();
+    expect(result.hostedPaymentAction?.fields.signature).toBeDefined();
+    expect(result.hostedPaymentAction?.fields.passphrase).toBeUndefined();
   });
 
   it("creates PayFast API signatures for transaction queries and refund operations", () => {

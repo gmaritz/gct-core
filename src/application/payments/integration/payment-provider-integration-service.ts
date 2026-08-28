@@ -140,6 +140,7 @@ export class PaymentProviderIntegrationService {
       captureStatus: gatewayResult.captureStatus,
       settlementStatus: gatewayResult.settlementStatus,
       paymentStatus: gatewayResult.paymentStatus ?? payment.status ?? PaymentStatus.CREATED,
+      hostedPaymentAction: gatewayResult.hostedPaymentAction,
       warnings: [...engineResult.validationResult.warnings, ...(engineResult.policyEvaluation?.warnings ?? []), ...(engineResult.processingResult?.warnings ?? []), ...gatewayResult.warnings],
       metadata: {
         completedAt: new Date(),

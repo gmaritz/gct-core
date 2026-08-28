@@ -34,6 +34,12 @@ class ReservationSnapshotValidator {
         else if (snapshotSet.travellerSnapshots.some((traveller) => isBlank(traveller.snapshotId) || isBlank(traveller.travellerId))) {
             errors.push(createError(models_1.ReservationValidationErrorCode.INVALID_SNAPSHOT, "Traveller snapshots are invalid."));
         }
+        if (snapshotSet.bookingItems?.some((item) => isBlank(item.bookingItemId))) {
+            errors.push(createError(models_1.ReservationValidationErrorCode.INVALID_SNAPSHOT, "Booking item snapshots are invalid."));
+        }
+        if (snapshotSet.bookingItems?.some((item) => item.supplierBookings?.some((supplier) => isBlank(supplier.snapshotId) || isBlank(supplier.supplierReference)))) {
+            errors.push(createError(models_1.ReservationValidationErrorCode.INVALID_SNAPSHOT, "Supplier booking snapshots are invalid."));
+        }
         if (snapshotSet.pricingSnapshot && (isBlank(snapshotSet.pricingSnapshot.snapshotId) || isBlank(snapshotSet.pricingSnapshot.currency))) {
             errors.push(createError(models_1.ReservationValidationErrorCode.INVALID_PRICING_SNAPSHOT, "Pricing snapshot is invalid."));
         }

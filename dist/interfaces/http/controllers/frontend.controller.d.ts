@@ -10,4 +10,7 @@ export declare function renderGuestInformationPage(request: Request, response: R
 export declare function submitGuestInformation(request: Request, response: Response): Promise<void>;
 export declare function renderReservationReviewPage(request: Request, response: Response): Promise<void>;
 export declare function confirmReservationReview(request: Request, response: Response): Promise<void>;
+export declare function renderPaymentPage(request: Request, response: Response): Promise<void>;
+export declare function initiatePayment(request: Request, response: Response): Promise<void>;
+export declare function renderPaymentReturn(request: Request, response: Response): Promise<void>;
 //# sourceMappingURL=frontend.controller.d.ts.map

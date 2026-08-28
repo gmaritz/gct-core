@@ -6,3 +6,4 @@ export * from "./processing";
 export * from "./engine";
 export * from "./presentation";
 export * from "./integration";
+export * from "./payment-initiation-service";

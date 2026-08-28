@@ -6,6 +6,7 @@ import {
   ReservationMetadata,
   SupplierReference,
   TravellerSnapshot,
+  BookingItemSnapshot,
 } from "../models";
 import { ReservationValidationErrorCode, createReservationValidationResult, ReservationValidationResult } from "./models";
 
@@ -13,6 +14,7 @@ export interface ReservationSnapshotSet {
   readonly journeySnapshot?: JourneySnapshot;
   readonly travellerSnapshots?: ReadonlyArray<TravellerSnapshot>;
   readonly accommodationSnapshots?: ReadonlyArray<AccommodationSnapshot>;
+  readonly bookingItems?: ReadonlyArray<BookingItemSnapshot>;
   readonly pricingSnapshot?: PricingSnapshot;
   readonly paymentSnapshot?: PaymentSnapshot;
   readonly supplierReferences?: ReadonlyArray<SupplierReference>;
@@ -58,6 +60,13 @@ export class ReservationSnapshotValidator {
       errors.push(createError(ReservationValidationErrorCode.MISSING_TRAVELLER_SNAPSHOT, "At least one traveller snapshot is required."));
     } else if (snapshotSet.travellerSnapshots.some((traveller) => isBlank(traveller.snapshotId) || isBlank(traveller.travellerId))) {
       errors.push(createError(ReservationValidationErrorCode.INVALID_SNAPSHOT, "Traveller snapshots are invalid."));
+    }
+
+    if (snapshotSet.bookingItems?.some((item) => isBlank(item.bookingItemId))) {
+      errors.push(createError(ReservationValidationErrorCode.INVALID_SNAPSHOT, "Booking item snapshots are invalid."));
+    }
+    if (snapshotSet.bookingItems?.some((item) => item.supplierBookings?.some((supplier) => isBlank(supplier.snapshotId) || isBlank(supplier.supplierReference)))) {
+      errors.push(createError(ReservationValidationErrorCode.INVALID_SNAPSHOT, "Supplier booking snapshots are invalid."));
     }
 
     if (snapshotSet.pricingSnapshot && (isBlank(snapshotSet.pricingSnapshot.snapshotId) || isBlank(snapshotSet.pricingSnapshot.currency))) {

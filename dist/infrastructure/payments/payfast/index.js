@@ -327,7 +327,6 @@ class DefaultPayFastGateway {
             ...customPaymentRequest,
             signature,
         };
-        void request;
         return (0, integration_1.createPaymentGatewayResult)({
             success: true,
             providerReference,
@@ -340,6 +339,13 @@ class DefaultPayFastGateway {
             captureStatus: context.operation === integration_1.PaymentProviderOperation.CAPTURE ? payments_1.CaptureStatus.CAPTURED : null,
             settlementStatus: context.operation === integration_1.PaymentProviderOperation.SETTLE ? payments_1.SettlementStatus.SETTLED : null,
             paymentStatus: mapPaymentStatus(context.operation),
+            hostedPaymentAction: context.operation === integration_1.PaymentProviderOperation.AUTHORIZE
+                ? {
+                    method: "POST",
+                    action: this.config.paymentProcessUrl,
+                    fields: Object.freeze(Object.fromEntries(Object.entries(request).map(([key, value]) => [key, String(value)]))),
+                }
+                : undefined,
             warnings: [],
             metadata: {
                 completedAt: new Date(),

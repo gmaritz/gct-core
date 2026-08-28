@@ -23,4 +23,5 @@ __exportStar(require("./payment-snapshot"), exports);
 __exportStar(require("./supplier-reference"), exports);
 __exportStar(require("./reservation-timeline"), exports);
 __exportStar(require("./reservation-metadata"), exports);
+__exportStar(require("./booking-item-snapshot"), exports);
 //# sourceMappingURL=index.js.map

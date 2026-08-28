@@ -7,3 +7,4 @@ export * from "./payment-snapshot";
 export * from "./supplier-reference";
 export * from "./reservation-timeline";
 export * from "./reservation-metadata";
+export * from "./booking-item-snapshot";

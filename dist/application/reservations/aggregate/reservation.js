@@ -161,6 +161,17 @@ class Reservation {
         this.journeySnapshot = freezeJourneySnapshot(composition.journeySnapshot);
         this.travellerSnapshots = Object.freeze(composition.travellerSnapshots.map(freezeTravellerSnapshot));
         this.accommodationSnapshots = Object.freeze((composition.accommodationSnapshots ?? []).map(freezeAccommodationSnapshot));
+        this.bookingItems = Object.freeze((composition.bookingItems ?? []).map((item) => Object.freeze({
+            ...item,
+            capturedAt: cloneDate(item.capturedAt),
+            supplierBookings: Object.freeze((item.supplierBookings ?? []).map((supplier) => Object.freeze({
+                ...supplier,
+                capturedAt: cloneDate(supplier.capturedAt),
+                requestedAt: supplier.requestedAt ? cloneDate(supplier.requestedAt) : undefined,
+                confirmedAt: supplier.confirmedAt ? cloneDate(supplier.confirmedAt) : undefined,
+                cancelledAt: supplier.cancelledAt ? cloneDate(supplier.cancelledAt) : undefined,
+            }))),
+        })));
         this.pricingSnapshot =
             typeof composition.pricingSnapshot === "undefined"
                 ? undefined

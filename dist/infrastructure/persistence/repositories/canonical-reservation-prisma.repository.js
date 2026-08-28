@@ -5,6 +5,58 @@ const client_1 = require("@prisma/client");
 const aggregate_1 = require("@application/reservations/aggregate");
 const prisma_1 = require("../../../bootstrap/prisma");
 const VALID_LIFECYCLE = new Set(Object.values(aggregate_1.ReservationStatus));
+function toBookingItemData(item, reservationId) {
+    if (!item.bookingId || !item.productId) {
+        throw new Error(`Booking item ${item.bookingItemId} requires booking and product identities.`);
+    }
+    return {
+        id: item.bookingItemId,
+        reservationId,
+        bookingId: item.bookingId,
+        productId: item.productId,
+        quantity: 1,
+        unitPrice: 0,
+        totalPrice: 0,
+    };
+}
+function toSupplierBookingData(item, supplier) {
+    if (!supplier.supplierId) {
+        throw new Error(`Supplier booking ${supplier.snapshotId} requires a supplier identity.`);
+    }
+    return {
+        id: supplier.snapshotId,
+        bookingItemId: item.bookingItemId,
+        supplierId: supplier.supplierId,
+        supplierProductId: supplier.supplierProductId,
+        supplierReference: supplier.supplierReference,
+        status: supplier.status,
+        requestedAt: supplier.requestedAt,
+        confirmedAt: supplier.confirmedAt,
+        cancelledAt: supplier.cancelledAt,
+    };
+}
+function toBookingItemSnapshots(booking) {
+    return Object.freeze((booking.bookingItems ?? []).map((item) => Object.freeze({
+        snapshotId: `${item.id}-snapshot`,
+        capturedAt: new Date(),
+        version: "1.0.0",
+        bookingItemId: item.id,
+        bookingId: item.bookingId,
+        productId: item.productId,
+        supplierBookings: Object.freeze((item.supplierBookings ?? []).map((supplier) => Object.freeze({
+            snapshotId: `${supplier.id}-snapshot`,
+            capturedAt: supplier.requestedAt ? new Date(supplier.requestedAt) : new Date(),
+            version: "1.0.0",
+            supplierId: supplier.supplierId,
+            supplierProductId: supplier.supplierProductId ?? undefined,
+            supplierReference: supplier.supplierReference,
+            status: supplier.status,
+            requestedAt: supplier.requestedAt ?? undefined,
+            confirmedAt: supplier.confirmedAt ?? undefined,
+            cancelledAt: supplier.cancelledAt ?? undefined,
+        }))),
+    })));
+}
 function isObject(value) {
     return typeof value === "object" && value !== null;
 }
@@ -192,6 +244,7 @@ function toDomain(booking) {
                 }
                 : undefined,
         })),
+        bookingItems: toBookingItemSnapshots(booking),
         pricingSnapshot: pricingSnapshot
             ? {
                 snapshotId: String(pricingSnapshot.snapshotId ?? ""),
@@ -279,7 +332,6 @@ class CanonicalReservationPrismaRepository {
             throw new Error("Reservation pricing snapshot is required for persistence.");
         }
         const prisma = this.prisma;
-        const reservationModel = getCanonicalReservationModel(prisma);
         const lifecycleCode = reservation.status;
         if (!VALID_LIFECYCLE.has(lifecycleCode)) {
             throw new Error("Unsupported reservation lifecycle value.");
@@ -293,7 +345,7 @@ class CanonicalReservationPrismaRepository {
             if (!customer) {
                 throw new Error(`Customer ${context.customerId} does not exist.`);
             }
-            await reservationModel.upsert({
+            await tx.reservation.upsert({
                 where: { id: reservation.identity.id },
                 update: {
                     customerId: context.customerId,
@@ -327,6 +379,24 @@ class CanonicalReservationPrismaRepository {
                     reservationMetadata: snapshotJson.reservationMetadata,
                 },
             });
+            const bookingItemModel = tx.bookingItem;
+            const supplierBookingModel = tx.supplierBooking;
+            if (reservation.bookingItems.length > 0 && (!bookingItemModel || !supplierBookingModel)) {
+                throw new Error("Canonical Reservation fulfilment persistence is unavailable.");
+            }
+            if (bookingItemModel && supplierBookingModel) {
+                if (typeof supplierBookingModel.deleteMany === "function") {
+                    await supplierBookingModel.deleteMany({ where: { bookingItem: { reservationId: reservation.identity.id } } });
+                }
+                await bookingItemModel.deleteMany({ where: { reservationId: reservation.identity.id } });
+                for (const item of reservation.bookingItems) {
+                    const itemData = toBookingItemData(item, reservation.identity.id);
+                    await bookingItemModel.create({ data: itemData });
+                    for (const supplier of item.supplierBookings ?? []) {
+                        await supplierBookingModel.create({ data: toSupplierBookingData(item, supplier) });
+                    }
+                }
+            }
         });
     }
     async findById(id) {
@@ -353,6 +423,7 @@ class CanonicalReservationPrismaRepository {
                 supplierReferences: true,
                 reservationTimeline: true,
                 reservationMetadata: true,
+                bookingItems: { include: { supplierBookings: true } },
             },
         });
         if (record) {
@@ -376,6 +447,7 @@ class CanonicalReservationPrismaRepository {
                 supplierReferences: true,
                 reservationTimeline: true,
                 reservationMetadata: true,
+                bookingItems: { include: { supplierBookings: true } },
             },
         });
         return legacyRecord ? toDomain(legacyRecord) : null;
@@ -404,6 +476,7 @@ class CanonicalReservationPrismaRepository {
                 supplierReferences: true,
                 reservationTimeline: true,
                 reservationMetadata: true,
+                bookingItems: { include: { supplierBookings: true } },
             },
         });
         if (record) {
@@ -427,6 +500,7 @@ class CanonicalReservationPrismaRepository {
                 supplierReferences: true,
                 reservationTimeline: true,
                 reservationMetadata: true,
+                bookingItems: { include: { supplierBookings: true } },
             },
         });
         return legacyRecord ? toDomain(legacyRecord) : null;

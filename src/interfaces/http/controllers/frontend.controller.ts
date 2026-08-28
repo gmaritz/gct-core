@@ -14,11 +14,20 @@ import {
 	createDefaultPricingEngine,
 } from "../../../application/merchandising";
 import {
+	CanonicalReservationPaymentContextResolver,
+	PaymentInitiationResult,
+} from "../../../application/payments";
+import {
+	createCanonicalPaymentContextResolver,
+	createDefaultPaymentInitiationService,
+} from "../../../infrastructure/payments/payment-experience-factory";
+import {
 	AccommodationSelectionViewModelProvider,
 	JourneyDetailViewModelProvider,
 	JourneyQuoteViewModelProvider,
 	GuestInformationViewModelProvider,
 	ReservationReviewViewModelProvider,
+	PaymentExperienceViewModelProvider,
 } from "../../view-models";
 
 async function renderView(response: Response, viewName: string, locals: Record<string, unknown>): Promise<void> {
@@ -329,5 +338,92 @@ export async function confirmReservationReview(request: Request, response: Respo
 		pageTitle: "Continue to payment",
 		currentPath: request.path,
 		journeyId: review.journeyId,
+	});
+}
+
+function unavailablePaymentResult(journeyId: string): import("../../../application/payments").PaymentInitiationResult {
+	return {
+		status: "UNAVAILABLE",
+		reservationId: journeyId,
+		errors: ["Payment context is unavailable until a canonical reservation exists."],
+	};
+}
+
+function createPaymentContextResolver(): CanonicalReservationPaymentContextResolver {
+	return createCanonicalPaymentContextResolver();
+}
+
+async function resolvePaymentContext(journeyId: string): Promise<import("../../../application/payments").PaymentInitiationRequest | null> {
+	try {
+		return await createPaymentContextResolver().resolveForJourney(journeyId);
+	} catch {
+		return null;
+	}
+}
+
+function paymentStateResult(
+	context: import("../../../application/payments").PaymentInitiationRequest,
+): PaymentInitiationResult {
+	const request = context.engineRequest.paymentRequest;
+	const status = request.status === "COMPLETED"
+		? "COMPLETED"
+		: request.status === "CANCELLED"
+			? "CANCELLED"
+			: "PENDING";
+	return {
+		status,
+		reservationId: context.reservationId,
+		amount: request.paymentAmount ?? undefined,
+		currency: request.currency ?? undefined,
+		paymentStatus: request.status ?? undefined,
+		errors: [],
+	};
+}
+
+export async function renderPaymentPage(request: Request, response: Response): Promise<void> {
+	const context = await resolvePaymentContext(request.params.journeyId);
+	const result = context ? paymentStateResult(context) : unavailablePaymentResult(request.params.journeyId);
+	const paymentViewModel = new PaymentExperienceViewModelProvider().provide(result);
+
+	await renderView(response, "pages/payment-experience", {
+		title: "Payment",
+		pageTitle: "Payment",
+		currentPath: request.path,
+		paymentViewModel,
+	});
+}
+
+export async function initiatePayment(request: Request, response: Response): Promise<void> {
+	const context = await resolvePaymentContext(request.params.journeyId);
+	let result: PaymentInitiationResult;
+	if (!context) {
+		result = unavailablePaymentResult(request.params.journeyId);
+	} else {
+		try {
+			result = await createDefaultPaymentInitiationService().initiatePayment(context);
+		} catch {
+			result = unavailablePaymentResult(request.params.journeyId);
+		}
+	}
+	const paymentViewModel = new PaymentExperienceViewModelProvider().provide(result);
+
+	response.status(result.status === "UNAVAILABLE" ? 409 : 200);
+	await renderView(response, "pages/payment-experience", {
+		title: "Payment",
+		pageTitle: "Payment",
+		currentPath: request.path,
+		paymentViewModel,
+	});
+}
+
+export async function renderPaymentReturn(request: Request, response: Response): Promise<void> {
+	const context = await resolvePaymentContext(request.params.journeyId);
+	const result = context ? paymentStateResult(context) : unavailablePaymentResult(request.params.journeyId);
+	const paymentViewModel = new PaymentExperienceViewModelProvider().provide(result);
+	await renderView(response, "pages/payment-experience", {
+		title: "Payment status",
+		pageTitle: "Payment status",
+		currentPath: request.path,
+		paymentViewModel,
 	});
 }

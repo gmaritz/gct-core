@@ -1,9 +1,10 @@
-import { AccommodationSnapshot, JourneySnapshot, PaymentSnapshot, PricingSnapshot, ReservationMetadata, SupplierReference, TravellerSnapshot } from "../models";
+import { AccommodationSnapshot, JourneySnapshot, PaymentSnapshot, PricingSnapshot, ReservationMetadata, SupplierReference, TravellerSnapshot, BookingItemSnapshot } from "../models";
 import { ReservationValidationResult } from "./models";
 export interface ReservationSnapshotSet {
     readonly journeySnapshot?: JourneySnapshot;
     readonly travellerSnapshots?: ReadonlyArray<TravellerSnapshot>;
     readonly accommodationSnapshots?: ReadonlyArray<AccommodationSnapshot>;
+    readonly bookingItems?: ReadonlyArray<BookingItemSnapshot>;
     readonly pricingSnapshot?: PricingSnapshot;
     readonly paymentSnapshot?: PaymentSnapshot;
     readonly supplierReferences?: ReadonlyArray<SupplierReference>;

@@ -1,5 +1,6 @@
 import {
   AccommodationSnapshot,
+  BookingItemSnapshot,
   JourneySnapshot,
   PaymentSnapshot,
   PricingSnapshot,
@@ -30,6 +31,7 @@ export interface ReservationComposition {
   readonly journeySnapshot: JourneySnapshot;
   readonly travellerSnapshots: ReadonlyArray<TravellerSnapshot>;
   readonly accommodationSnapshots?: ReadonlyArray<AccommodationSnapshot>;
+  readonly bookingItems?: ReadonlyArray<BookingItemSnapshot>;
   readonly pricingSnapshot?: PricingSnapshot;
   readonly paymentSnapshot?: PaymentSnapshot;
   readonly supplierReferences?: ReadonlyArray<SupplierReference>;
@@ -208,6 +210,7 @@ export class Reservation {
   public readonly journeySnapshot: JourneySnapshot;
   public readonly travellerSnapshots: ReadonlyArray<TravellerSnapshot>;
   public readonly accommodationSnapshots: ReadonlyArray<AccommodationSnapshot>;
+  public readonly bookingItems: ReadonlyArray<BookingItemSnapshot>;
   public readonly pricingSnapshot?: PricingSnapshot;
   public readonly paymentSnapshot?: PaymentSnapshot;
   public readonly supplierReferences: ReadonlyArray<SupplierReference>;
@@ -223,6 +226,17 @@ export class Reservation {
     this.journeySnapshot = freezeJourneySnapshot(composition.journeySnapshot);
     this.travellerSnapshots = Object.freeze(composition.travellerSnapshots.map(freezeTravellerSnapshot));
     this.accommodationSnapshots = Object.freeze((composition.accommodationSnapshots ?? []).map(freezeAccommodationSnapshot));
+    this.bookingItems = Object.freeze((composition.bookingItems ?? []).map((item) => Object.freeze({
+      ...item,
+      capturedAt: cloneDate(item.capturedAt),
+      supplierBookings: Object.freeze((item.supplierBookings ?? []).map((supplier) => Object.freeze({
+        ...supplier,
+        capturedAt: cloneDate(supplier.capturedAt),
+        requestedAt: supplier.requestedAt ? cloneDate(supplier.requestedAt) : undefined,
+        confirmedAt: supplier.confirmedAt ? cloneDate(supplier.confirmedAt) : undefined,
+        cancelledAt: supplier.cancelledAt ? cloneDate(supplier.cancelledAt) : undefined,
+      }))),
+    })));
     this.pricingSnapshot =
       typeof composition.pricingSnapshot === "undefined"
         ? undefined

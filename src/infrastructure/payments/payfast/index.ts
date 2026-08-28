@@ -446,8 +446,6 @@ export class DefaultPayFastGateway implements PaymentGateway {
       signature,
     };
 
-    void request;
-
     return createPaymentGatewayResult({
       success: true,
       providerReference,
@@ -463,6 +461,15 @@ export class DefaultPayFastGateway implements PaymentGateway {
       settlementStatus:
         context.operation === PaymentProviderOperation.SETTLE ? SettlementStatus.SETTLED : null,
       paymentStatus: mapPaymentStatus(context.operation),
+      hostedPaymentAction: context.operation === PaymentProviderOperation.AUTHORIZE
+        ? {
+            method: "POST",
+            action: this.config.paymentProcessUrl,
+            fields: Object.freeze(Object.fromEntries(
+              Object.entries(request).map(([key, value]) => [key, String(value)]),
+            )),
+          }
+        : undefined,
       warnings: [],
       metadata: {
         completedAt: new Date(),

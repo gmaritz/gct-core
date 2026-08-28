@@ -733,6 +733,7 @@ model Booking {
 model BookingItem {
   id         String        @id @default(uuid())
   bookingId  String
+  reservationId String?
   productId  String
   quantity   Int
   unitPrice  Decimal       @db.Decimal(19,4)
@@ -746,11 +747,14 @@ model BookingItem {
   deletedBy  String?
 
   booking    Booking       @relation(fields: [bookingId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  reservation Reservation?  @relation("ReservationBookingItems", fields: [reservationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   product    Product       @relation(fields: [productId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   reservations Reservation[]
+  supplierBookings SupplierBooking[]
 
   @@index([bookingId])
+  @@index([reservationId])
   @@index([productId])
   @@map("booking_item")
 }
@@ -834,6 +838,7 @@ model Reservation {
   bookingItem          BookingItem? @relation(fields: [bookingItemId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   supplier             Supplier?   @relation(fields: [supplierId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   reservationStatus    ReservationStatus? @relation(fields: [reservationStatusId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  bookingItems         BookingItem[] @relation("ReservationBookingItems")
 
   @@index([bookingId])
   @@index([bookingItemId])
@@ -842,6 +847,30 @@ model Reservation {
   @@index([customerId])
   @@index([reservationLifecycleCode])
   @@map("reservation")
+}
+
+model SupplierBooking {
+  id                    String   @id @default(uuid())
+  bookingItemId         String
+  supplierId            String
+  supplierProductId     String?
+  supplierReference     String
+  status                String
+  requestedAt           DateTime?
+  confirmedAt           DateTime?
+  cancelledAt           DateTime?
+  metadata              Json?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  bookingItem           BookingItem @relation(fields: [bookingItemId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  supplier              Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  supplierProduct       SupplierProduct? @relation(fields: [supplierProductId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([bookingItemId])
+  @@index([supplierId])
+  @@index([supplierProductId])
+  @@map("supplier_booking")
 }
 
 // =========================================================
@@ -1189,6 +1218,7 @@ model Supplier {
   importBatches       ImportBatch[]
   mappingRules        MappingRule[]
   reservations        Reservation[]
+  supplierBookings     SupplierBooking[]
 
   @@index([supplierCode])
   @@index([supplierTypeId])
@@ -1244,6 +1274,7 @@ model SupplierProduct {
   rates               Rate[]
   offers              Offer[]
   seasons             Season[]
+  supplierBookings     SupplierBooking[]
 
   @@unique([supplierId, supplierProductCode])
   @@index([supplierId])

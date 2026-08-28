@@ -1,0 +1,25 @@
+<article class="payment-experience" aria-labelledby="payment-title">
+  <div class="container">
+    <header class="payment-experience__header">
+      <p class="journey-detail__eyebrow">Payment</p>
+      <h1 id="payment-title">Secure payment</h1>
+      <p role="status"><%= paymentViewModel.message %></p>
+    </header>
+    <section aria-labelledby="payment-status-title">
+      <h2 id="payment-status-title">Payment status</h2>
+      <p><%= paymentViewModel.status %></p>
+      <% if (paymentViewModel.amount !== undefined && paymentViewModel.currency) { %><p class="payment-experience__amount"><%= paymentViewModel.currency %> <%= paymentViewModel.amount.toFixed(2) %></p><% } %>
+    </section>
+    <% if (paymentViewModel.providerAction) { %>
+      <% if (paymentViewModel.hostedPaymentAction) { %>
+        <form id="secure-payment" method="<%= paymentViewModel.hostedPaymentAction.method.toLowerCase() %>" action="<%= paymentViewModel.hostedPaymentAction.action %>">
+          <% Object.entries(paymentViewModel.hostedPaymentAction.fields).forEach(([name, value]) => { %><input type="hidden" name="<%= name %>" value="<%= value %>"><% }); %>
+          <button class="button button--primary" type="submit"><%= paymentViewModel.providerAction.label %></button>
+        </form>
+      <% } else { %>
+        <a class="button button--primary" href="<%= paymentViewModel.providerAction.href %>"><%= paymentViewModel.providerAction.label %></a>
+      <% } %>
+    <% } %>
+    <a class="button button--secondary" href="<%= paymentViewModel.recoveryAction.href %>"><%= paymentViewModel.recoveryAction.label %></a>
+  </div>
+</article>
