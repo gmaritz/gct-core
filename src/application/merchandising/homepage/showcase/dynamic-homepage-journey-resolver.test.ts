@@ -36,7 +36,7 @@ describe("DefaultDynamicHomepageJourneyResolver", () => {
 
   it("reports an unavailable offer when reconstruction fails", async () => {
     const resolver = new DefaultDynamicHomepageJourneyResolver({
-      execute: async () => unavailableComposition(),
+      execute: async (): Promise<JourneyCompositionResult> => unavailableComposition(),
     });
 
     await expect(resolver.resolve("journey-homepage-journey-001")).resolves.toEqual({ status: "UNAVAILABLE" });

@@ -18,4 +18,5 @@ __exportStar(require("./homepage-journey-showcase-result"), exports);
 __exportStar(require("./homepage-journey-showcase-service"), exports);
 __exportStar(require("./dynamic-homepage-journey-resolver"), exports);
 __exportStar(require("./dynamic-homepage-journey-selection"), exports);
+__exportStar(require("./accommodation-selection-service"), exports);
 //# sourceMappingURL=index.js.map

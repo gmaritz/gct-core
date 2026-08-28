@@ -114,10 +114,30 @@ function createContentResult(destination) {
     };
 }
 function createAvailabilityResult(destination) {
+    const accommodation = createAccommodation(destination);
+    const occupancy = Object.freeze({ rooms: Object.freeze([{ adults: 2, children: 0, childAges: Object.freeze([]) }]) });
+    const rate = Object.freeze({
+        reference: Object.freeze({ provider: "curated", opaqueReference: `${accommodation.identity.id}-rate-1` }),
+        status: "BOOKABLE",
+        pricing: Object.freeze({ amount: 18950, currency: "ZAR", basis: "PER_STAY" }),
+        occupancy,
+        board: Object.freeze({ code: "BB", name: "Breakfast Included" }),
+        cancellationPolicies: Object.freeze([]),
+        taxes: Object.freeze([]),
+    });
+    const availabilityOptions = Object.freeze({
+        roomOptions: Object.freeze([Object.freeze({
+                reference: Object.freeze({ provider: "curated", opaqueReference: `${accommodation.identity.id}-room-1` }),
+                name: "Signature Room",
+                rateOptions: Object.freeze([rate]),
+            })]),
+    });
     return {
         kind: "ACCOMMODATION",
-        accommodation: createAccommodation(destination),
+        accommodation,
         available: true,
+        requestedOccupancy: occupancy,
+        availabilityOptions,
         metadata: Object.freeze({
             generatedAt: new Date(),
             version: "1.0.0",

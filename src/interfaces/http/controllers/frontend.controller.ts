@@ -3,9 +3,15 @@ import path from "path";
 import ejs from "ejs";
 import { Request, Response } from "express";
 import { getHomepageShowcaseViewModel } from "../../view-models";
-import { DefaultDynamicHomepageJourneyResolver } from "../../../application/merchandising";
-import { DefaultDynamicHomepageJourneySelector } from "../../../application/merchandising";
-import { JourneyDetailViewModelProvider } from "../../view-models";
+import {
+	DefaultAccommodationSelectionService,
+	DefaultDynamicHomepageJourneyResolver,
+	DefaultDynamicHomepageJourneySelector,
+} from "../../../application/merchandising";
+import {
+	AccommodationSelectionViewModelProvider,
+	JourneyDetailViewModelProvider,
+} from "../../view-models";
 
 async function renderView(response: Response, viewName: string, locals: Record<string, unknown>): Promise<void> {
 	const viewsRoot = path.join(process.cwd(), "src/interfaces/views");
@@ -85,6 +91,73 @@ export async function selectJourney(request: Request, response: Response): Promi
 	await renderView(response, "pages/journey-selected", {
 		title: "Journey selected",
 		pageTitle: "Journey selected",
+		currentPath: request.path,
+		selection: result,
+		selectionHref: `/ui/journeys/${result.journeyId}/accommodation`,
+	});
+}
+
+export async function renderAccommodationSelectionPage(request: Request, response: Response): Promise<void> {
+	const resolution = await new DefaultDynamicHomepageJourneyResolver().resolve(request.params.journeyId);
+
+	if (resolution.status !== "RESOLVED" || !resolution.journey) {
+		response.status(resolution.status === "UNAVAILABLE" ? 410 : 404);
+		await renderNotFoundPage(request, response);
+		return;
+	}
+
+	const accommodationSelectionViewModel = new AccommodationSelectionViewModelProvider().provide(resolution.journey);
+	await renderView(response, "pages/accommodation-selection", {
+		title: "Select accommodation",
+		pageTitle: "Select accommodation",
+		currentPath: request.path,
+		accommodationSelectionViewModel,
+	});
+}
+
+export async function selectAccommodation(request: Request, response: Response): Promise<void> {
+	const body = request.body as { selections?: unknown };
+	const selections = Array.isArray(body?.selections) ? body.selections : [];
+	const result = await new DefaultAccommodationSelectionService(new DefaultDynamicHomepageJourneyResolver())
+		.selectAccommodation(request.params.journeyId, selections as never);
+
+	if (result.status === "INVALID" || result.status === "NOT_FOUND") {
+		response.status(404);
+		await renderNotFoundPage(request, response);
+		return;
+	}
+
+	if (result.status === "UNAVAILABLE" || result.status === "STALE") {
+		response.status(409);
+		await renderView(response, "errors/unavailable", {
+			title: "Accommodation unavailable",
+			pageTitle: "Accommodation unavailable",
+			currentPath: request.path,
+		});
+		return;
+	}
+
+	if (result.status !== "COMPLETE") {
+		const resolution = await new DefaultDynamicHomepageJourneyResolver().resolve(request.params.journeyId);
+		if (resolution.status !== "RESOLVED" || !resolution.journey) {
+			response.status(404);
+			await renderNotFoundPage(request, response);
+			return;
+		}
+		const accommodationSelectionViewModel = new AccommodationSelectionViewModelProvider().provide(resolution.journey, "Select accommodation for every stop.");
+		response.status(422);
+		await renderView(response, "pages/accommodation-selection", {
+			title: "Select accommodation",
+			pageTitle: "Select accommodation",
+			currentPath: request.path,
+			accommodationSelectionViewModel,
+		});
+		return;
+	}
+
+	await renderView(response, "pages/accommodation-selected", {
+		title: "Accommodation selected",
+		pageTitle: "Accommodation selected",
 		currentPath: request.path,
 		selection: result,
 	});

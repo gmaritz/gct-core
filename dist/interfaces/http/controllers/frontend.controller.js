@@ -7,11 +7,12 @@ exports.renderPlaceholderPage = renderPlaceholderPage;
 exports.renderNotFoundPage = renderNotFoundPage;
 exports.renderJourneyDetailPage = renderJourneyDetailPage;
 exports.selectJourney = selectJourney;
+exports.renderAccommodationSelectionPage = renderAccommodationSelectionPage;
+exports.selectAccommodation = selectAccommodation;
 const path_1 = __importDefault(require("path"));
 const ejs_1 = __importDefault(require("ejs"));
 const view_models_1 = require("../../view-models");
 const merchandising_1 = require("../../../application/merchandising");
-const merchandising_2 = require("../../../application/merchandising");
 const view_models_2 = require("../../view-models");
 async function renderView(response, viewName, locals) {
     const viewsRoot = path_1.default.join(process.cwd(), "src/interfaces/views");
@@ -62,7 +63,7 @@ async function renderJourneyDetailPage(request, response) {
     });
 }
 async function selectJourney(request, response) {
-    const result = await new merchandising_2.DefaultDynamicHomepageJourneySelector().selectJourney(request.params.journeyId);
+    const result = await new merchandising_1.DefaultDynamicHomepageJourneySelector().selectJourney(request.params.journeyId);
     if (result.status === "INVALID" || result.status === "NOT_FOUND") {
         response.status(404);
         await renderNotFoundPage(request, response);
@@ -80,6 +81,65 @@ async function selectJourney(request, response) {
     await renderView(response, "pages/journey-selected", {
         title: "Journey selected",
         pageTitle: "Journey selected",
+        currentPath: request.path,
+        selection: result,
+        selectionHref: `/ui/journeys/${result.journeyId}/accommodation`,
+    });
+}
+async function renderAccommodationSelectionPage(request, response) {
+    const resolution = await new merchandising_1.DefaultDynamicHomepageJourneyResolver().resolve(request.params.journeyId);
+    if (resolution.status !== "RESOLVED" || !resolution.journey) {
+        response.status(resolution.status === "UNAVAILABLE" ? 410 : 404);
+        await renderNotFoundPage(request, response);
+        return;
+    }
+    const accommodationSelectionViewModel = new view_models_2.AccommodationSelectionViewModelProvider().provide(resolution.journey);
+    await renderView(response, "pages/accommodation-selection", {
+        title: "Select accommodation",
+        pageTitle: "Select accommodation",
+        currentPath: request.path,
+        accommodationSelectionViewModel,
+    });
+}
+async function selectAccommodation(request, response) {
+    const body = request.body;
+    const selections = Array.isArray(body?.selections) ? body.selections : [];
+    const result = await new merchandising_1.DefaultAccommodationSelectionService(new merchandising_1.DefaultDynamicHomepageJourneyResolver())
+        .selectAccommodation(request.params.journeyId, selections);
+    if (result.status === "INVALID" || result.status === "NOT_FOUND") {
+        response.status(404);
+        await renderNotFoundPage(request, response);
+        return;
+    }
+    if (result.status === "UNAVAILABLE" || result.status === "STALE") {
+        response.status(409);
+        await renderView(response, "errors/unavailable", {
+            title: "Accommodation unavailable",
+            pageTitle: "Accommodation unavailable",
+            currentPath: request.path,
+        });
+        return;
+    }
+    if (result.status !== "COMPLETE") {
+        const resolution = await new merchandising_1.DefaultDynamicHomepageJourneyResolver().resolve(request.params.journeyId);
+        if (resolution.status !== "RESOLVED" || !resolution.journey) {
+            response.status(404);
+            await renderNotFoundPage(request, response);
+            return;
+        }
+        const accommodationSelectionViewModel = new view_models_2.AccommodationSelectionViewModelProvider().provide(resolution.journey, "Select accommodation for every stop.");
+        response.status(422);
+        await renderView(response, "pages/accommodation-selection", {
+            title: "Select accommodation",
+            pageTitle: "Select accommodation",
+            currentPath: request.path,
+            accommodationSelectionViewModel,
+        });
+        return;
+    }
+    await renderView(response, "pages/accommodation-selected", {
+        title: "Accommodation selected",
+        pageTitle: "Accommodation selected",
         currentPath: request.path,
         selection: result,
     });

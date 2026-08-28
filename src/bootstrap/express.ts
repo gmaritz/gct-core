@@ -95,6 +95,7 @@ export function createExpressApplication(
 	app.use(compression());
 	app.use(cors(corsOptions));
 	app.use(express.json());
+	app.use(express.urlencoded({ extended: true }));
 
 	if (configure) {
 		configure(app);

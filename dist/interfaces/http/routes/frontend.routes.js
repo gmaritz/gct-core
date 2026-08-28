@@ -8,6 +8,8 @@ function createFrontendRouter() {
     router.get("/placeholder", frontend_controller_1.renderPlaceholderPage);
     router.get("/journeys/:journeyId", frontend_controller_1.renderJourneyDetailPage);
     router.post("/journeys/:journeyId/select", frontend_controller_1.selectJourney);
+    router.get("/journeys/:journeyId/accommodation", frontend_controller_1.renderAccommodationSelectionPage);
+    router.post("/journeys/:journeyId/accommodation", frontend_controller_1.selectAccommodation);
     router.get("/404", frontend_controller_1.renderNotFoundPage);
     return router;
 }

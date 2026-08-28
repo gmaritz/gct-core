@@ -19,14 +19,14 @@ describe("DefaultDynamicHomepageJourneySelector", () => {
 
   it("maps invalid, unknown and unavailable resolution outcomes", async () => {
     const unavailableResolver: DynamicHomepageJourneyResolver = {
-      resolve: async () => ({ status: "UNAVAILABLE" }),
+      resolve: async (): Promise<{ status: "UNAVAILABLE" }> => ({ status: "UNAVAILABLE" }),
     };
     const selector = new DefaultDynamicHomepageJourneySelector(unavailableResolver);
 
     await expect(selector.selectJourney("bad-id")).resolves.toEqual({ status: "UNAVAILABLE", journeyId: "bad-id" });
-    await expect(new DefaultDynamicHomepageJourneySelector({ resolve: async () => ({ status: "INVALID" }) }).selectJourney("bad-id"))
+    await expect(new DefaultDynamicHomepageJourneySelector({ resolve: async (): Promise<{ status: "INVALID" }> => ({ status: "INVALID" }) }).selectJourney("bad-id"))
       .resolves.toEqual({ status: "INVALID", journeyId: "bad-id" });
-    await expect(new DefaultDynamicHomepageJourneySelector({ resolve: async () => ({ status: "NOT_FOUND" }) }).selectJourney("unknown"))
+    await expect(new DefaultDynamicHomepageJourneySelector({ resolve: async (): Promise<{ status: "NOT_FOUND" }> => ({ status: "NOT_FOUND" }) }).selectJourney("unknown"))
       .resolves.toEqual({ status: "NOT_FOUND", journeyId: "unknown" });
   });
 });
