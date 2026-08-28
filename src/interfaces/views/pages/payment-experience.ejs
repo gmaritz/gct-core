@@ -20,6 +20,7 @@
         <a class="button button--primary" href="<%= paymentViewModel.providerAction.href %>"><%= paymentViewModel.providerAction.label %></a>
       <% } %>
     <% } %>
+    <% if (paymentViewModel.confirmationAction) { %><a class="button button--primary" href="<%= paymentViewModel.confirmationAction.href %>"><%= paymentViewModel.confirmationAction.label %></a><% } %>
     <a class="button button--secondary" href="<%= paymentViewModel.recoveryAction.href %>"><%= paymentViewModel.recoveryAction.label %></a>
   </div>
 </article>

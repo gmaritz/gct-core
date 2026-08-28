@@ -18,6 +18,7 @@ function createFrontendRouter() {
     router.get("/journeys/:journeyId/payment", frontend_controller_1.renderPaymentPage);
     router.post("/journeys/:journeyId/payment", frontend_controller_1.initiatePayment);
     router.get("/journeys/:journeyId/payment/return", frontend_controller_1.renderPaymentReturn);
+    router.get("/journeys/:journeyId/confirmation", frontend_controller_1.renderBookingConfirmationPage);
     router.get("/404", frontend_controller_1.renderNotFoundPage);
     return router;
 }

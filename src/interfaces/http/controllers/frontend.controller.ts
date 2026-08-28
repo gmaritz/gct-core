@@ -28,7 +28,9 @@ import {
 	GuestInformationViewModelProvider,
 	ReservationReviewViewModelProvider,
 	PaymentExperienceViewModelProvider,
+	BookingConfirmationViewModelProvider,
 } from "../../view-models";
+import { createReservationConfirmationService } from "../../../infrastructure/persistence/reservation-confirmation-factory";
 
 async function renderView(response: Response, viewName: string, locals: Record<string, unknown>): Promise<void> {
 	const viewsRoot = path.join(process.cwd(), "src/interfaces/views");
@@ -425,5 +427,34 @@ export async function renderPaymentReturn(request: Request, response: Response):
 		pageTitle: "Payment status",
 		currentPath: request.path,
 		paymentViewModel,
+	});
+}
+
+export async function renderBookingConfirmationPage(request: Request, response: Response): Promise<void> {
+	let result: Awaited<ReturnType<ReturnType<typeof createReservationConfirmationService>["resolve"]>>;
+	try {
+		result = await createReservationConfirmationService().resolve(request.params.journeyId);
+	} catch {
+		result = {
+			status: "UNAVAILABLE",
+			journeyId: request.params.journeyId,
+			errors: ["Booking confirmation is currently unavailable."],
+		};
+	}
+	const bookingConfirmationViewModel = new BookingConfirmationViewModelProvider().provide(result);
+
+	if (result.status === "INVALID" || result.status === "NOT_FOUND") {
+		response.status(404);
+	} else if (result.status === "UNAVAILABLE") {
+		response.status(410);
+	} else if (result.status === "PENDING" || result.status === "FAILED" || result.status === "CANCELLED") {
+		response.status(409);
+	}
+
+	await renderView(response, "pages/booking-confirmation", {
+		title: result.status === "CONFIRMED" ? "Booking confirmed" : "Booking confirmation",
+		pageTitle: result.status === "CONFIRMED" ? "Booking confirmed" : "Booking confirmation",
+		currentPath: request.path,
+		bookingConfirmationViewModel,
 	});
 }

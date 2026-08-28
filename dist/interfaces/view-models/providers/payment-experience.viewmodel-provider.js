@@ -44,6 +44,9 @@ class PaymentExperienceViewModelProvider {
                 })
                 : undefined,
             recoveryAction: Object.freeze({ label: "Return to reservation review", href: "/ui/placeholder#journey-planning", style: "neutral" }),
+            confirmationAction: status === "COMPLETED"
+                ? Object.freeze({ label: "View booking confirmation", href: `/ui/journeys/${result.reservationId}/confirmation`, style: "primary" })
+                : undefined,
         });
     }
 }

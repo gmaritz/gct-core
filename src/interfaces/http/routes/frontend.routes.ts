@@ -15,6 +15,7 @@ import {
 	renderPaymentPage,
 	initiatePayment,
 	renderPaymentReturn,
+	renderBookingConfirmationPage,
 } from "../controllers/frontend.controller";
 
 export function createFrontendRouter(): Router {
@@ -33,6 +34,7 @@ export function createFrontendRouter(): Router {
 	router.get("/journeys/:journeyId/payment", renderPaymentPage);
 	router.post("/journeys/:journeyId/payment", initiatePayment);
 	router.get("/journeys/:journeyId/payment/return", renderPaymentReturn);
+	router.get("/journeys/:journeyId/confirmation", renderBookingConfirmationPage);
 	router.get("/404", renderNotFoundPage);
 
 	return router;

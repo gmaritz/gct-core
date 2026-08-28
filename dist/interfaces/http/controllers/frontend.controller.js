@@ -17,12 +17,14 @@ exports.confirmReservationReview = confirmReservationReview;
 exports.renderPaymentPage = renderPaymentPage;
 exports.initiatePayment = initiatePayment;
 exports.renderPaymentReturn = renderPaymentReturn;
+exports.renderBookingConfirmationPage = renderBookingConfirmationPage;
 const path_1 = __importDefault(require("path"));
 const ejs_1 = __importDefault(require("ejs"));
 const view_models_1 = require("../../view-models");
 const merchandising_1 = require("../../../application/merchandising");
 const payment_experience_factory_1 = require("../../../infrastructure/payments/payment-experience-factory");
 const view_models_2 = require("../../view-models");
+const reservation_confirmation_factory_1 = require("../../../infrastructure/persistence/reservation-confirmation-factory");
 async function renderView(response, viewName, locals) {
     const viewsRoot = path_1.default.join(process.cwd(), "src/interfaces/views");
     const viewPath = path_1.default.join(viewsRoot, `${viewName}.ejs`);
@@ -361,6 +363,35 @@ async function renderPaymentReturn(request, response) {
         pageTitle: "Payment status",
         currentPath: request.path,
         paymentViewModel,
+    });
+}
+async function renderBookingConfirmationPage(request, response) {
+    let result;
+    try {
+        result = await (0, reservation_confirmation_factory_1.createReservationConfirmationService)().resolve(request.params.journeyId);
+    }
+    catch {
+        result = {
+            status: "UNAVAILABLE",
+            journeyId: request.params.journeyId,
+            errors: ["Booking confirmation is currently unavailable."],
+        };
+    }
+    const bookingConfirmationViewModel = new view_models_2.BookingConfirmationViewModelProvider().provide(result);
+    if (result.status === "INVALID" || result.status === "NOT_FOUND") {
+        response.status(404);
+    }
+    else if (result.status === "UNAVAILABLE") {
+        response.status(410);
+    }
+    else if (result.status === "PENDING" || result.status === "FAILED" || result.status === "CANCELLED") {
+        response.status(409);
+    }
+    await renderView(response, "pages/booking-confirmation", {
+        title: result.status === "CONFIRMED" ? "Booking confirmed" : "Booking confirmation",
+        pageTitle: result.status === "CONFIRMED" ? "Booking confirmed" : "Booking confirmation",
+        currentPath: request.path,
+        bookingConfirmationViewModel,
     });
 }
 //# sourceMappingURL=frontend.controller.js.map

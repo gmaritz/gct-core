@@ -16,4 +16,5 @@ export interface PaymentExperienceViewModel {
     readonly fields: Readonly<Record<string, string>>;
   };
   readonly recoveryAction: CTAViewModel;
+  readonly confirmationAction?: CTAViewModel;
 }

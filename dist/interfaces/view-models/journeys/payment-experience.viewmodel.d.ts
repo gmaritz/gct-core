@@ -14,5 +14,6 @@ export interface PaymentExperienceViewModel {
         readonly fields: Readonly<Record<string, string>>;
     };
     readonly recoveryAction: CTAViewModel;
+    readonly confirmationAction?: CTAViewModel;
 }
 //# sourceMappingURL=payment-experience.viewmodel.d.ts.map

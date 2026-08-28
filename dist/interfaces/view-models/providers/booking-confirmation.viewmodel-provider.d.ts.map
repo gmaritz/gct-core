@@ -1,0 +1,1 @@
+{"version":3,"file":"booking-confirmation.viewmodel-provider.d.ts","sourceRoot":"","sources":["../../../../src/interfaces/view-models/providers/booking-confirmation.viewmodel-provider.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,6BAA6B,EAAE,MAAM,mCAAmC,CAAC;AAClF,OAAO,EAAE,4BAA4B,EAAE,MAAM,4CAA4C,CAAC;AAc1F,qBAAa,oCAAoC;IACxC,OAAO,CAAC,MAAM,EAAE,6BAA6B,GAAG,4BAA4B;CAmCpF"}

@@ -1,4 +1,5 @@
 export * from "./aggregate";
+export * from "./confirmation/reservation-confirmation-service";
 export * from "./models";
 export * from "./validation";
 export * from "./policies";
