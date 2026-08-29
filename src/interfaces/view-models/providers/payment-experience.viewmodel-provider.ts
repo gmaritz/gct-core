@@ -27,10 +27,10 @@ function messageFor(status: PaymentExperienceStatus): string {
 }
 
 export class PaymentExperienceViewModelProvider {
-  public provide(result: PaymentInitiationResult): PaymentExperienceViewModel {
+  public provide(result: PaymentInitiationResult, journeyId = result.reservationId): PaymentExperienceViewModel {
     const status = mapStatus(result);
     return Object.freeze({
-      journeyId: result.reservationId,
+      journeyId,
       amount: result.amount,
       currency: result.currency,
       status,
@@ -45,9 +45,9 @@ export class PaymentExperienceViewModelProvider {
             fields: Object.freeze({ ...result.hostedPaymentAction.fields }),
           })
         : undefined,
-      recoveryAction: Object.freeze({ label: "Return to reservation review", href: "/ui/placeholder#journey-planning", style: "neutral" }),
+      recoveryAction: Object.freeze({ label: "Return to reservation review", href: `/ui/journeys/${journeyId}/review`, style: "neutral" }),
       confirmationAction: status === "COMPLETED"
-        ? Object.freeze({ label: "View booking confirmation", href: `/ui/journeys/${result.reservationId}/confirmation`, style: "primary" })
+        ? Object.freeze({ label: "View booking confirmation", href: `/ui/journeys/${journeyId}/confirmation`, style: "primary" })
         : undefined,
     });
   }

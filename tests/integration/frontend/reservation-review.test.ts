@@ -1,6 +1,7 @@
 import { Express } from "express";
 import { createTestApplication } from "../../helpers/application.helper";
 import { createRequest } from "../../helpers/request.helper";
+import { getPrismaClient } from "../../../src/bootstrap/prisma";
 
 describe("Frontend reservation review", () => {
   let app: Express;
@@ -11,6 +12,26 @@ describe("Frontend reservation review", () => {
     app = await createTestApplication();
     getRequest = createRequest(app, "get");
     postRequest = createRequest(app, "post");
+    await postRequest("/ui/journeys/journey-homepage-journey-001/accommodation")
+      .type("form")
+      .send({
+        "selections[0][accommodationId]": "cape-winelands",
+        "selections[0][roomReference][provider]": "curated",
+        "selections[0][roomReference][opaqueReference]": "cape-winelands-room-1",
+        "selections[0][rateReference][provider]": "curated",
+        "selections[0][rateReference][opaqueReference]": "cape-winelands-rate-1",
+      });
+    await getPrismaClient().customerType.upsert({
+      where: { code: "ANONYMOUS_BOOKING" },
+      update: { name: "Anonymous Booking Customer", active: true },
+      create: { code: "ANONYMOUS_BOOKING", name: "Anonymous Booking Customer", active: true },
+    });
+  });
+
+  afterAll(async (): Promise<void> => {
+    const prisma = getPrismaClient();
+    await prisma.reservation.deleteMany({ where: { id: "reservation-journey-homepage-journey-001" } });
+    await prisma.customer.deleteMany({ where: { email: "contact@example.com" } });
   });
 
   it("renders controlled prerequisites for a direct GET", async (): Promise<void> => {
@@ -85,5 +106,14 @@ describe("Frontend reservation review", () => {
     expect(response.status).toBe(200);
     expect(response.text).toContain("Ready for payment");
     expect(response.text).toContain("Payment has not been initiated.");
+
+    const payment = await getRequest("/ui/journeys/journey-homepage-journey-001/payment");
+    expect(payment.status).toBe(200);
+    expect(payment.text).toContain("ZAR 18950.00");
+    expect(payment.text).not.toContain("Payment is not available");
+
+    const confirmation = await getRequest("/ui/journeys/journey-homepage-journey-001/confirmation");
+    expect(confirmation.status).toBe(409);
+    expect(confirmation.text).toContain("still being processed");
   });
 });

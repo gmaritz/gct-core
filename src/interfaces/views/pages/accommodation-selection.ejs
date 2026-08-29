@@ -19,6 +19,7 @@
                 <h2><%= property.name %></h2>
                 <p><%= property.destination %><% if (property.category) { %> · <%= property.category %><% } %><% if (property.rating) { %> · <%= property.rating %> stars<% } %></p>
                 <input type="hidden" name="selections[<%= stopIndex %>][accommodationId]" value="<%= property.id %>">
+                <input type="hidden" name="selections[<%= stopIndex %>][stopId]" value="<%= stop.id || '' %>">
                 <% if (property.rooms.length === 0) { %><p role="status">No rooms are currently available.</p><% } else { %>
                   <label>Room
                     <select name="selections[<%= stopIndex %>][roomReference][opaqueReference]" required>

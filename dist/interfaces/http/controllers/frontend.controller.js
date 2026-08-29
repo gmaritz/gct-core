@@ -25,6 +25,7 @@ const merchandising_1 = require("../../../application/merchandising");
 const payment_experience_factory_1 = require("../../../infrastructure/payments/payment-experience-factory");
 const view_models_2 = require("../../view-models");
 const reservation_confirmation_factory_1 = require("../../../infrastructure/persistence/reservation-confirmation-factory");
+const customer_journey_reservation_factory_1 = require("../../../infrastructure/persistence/customer-journey-reservation-factory");
 async function renderView(response, viewName, locals) {
     const viewsRoot = path_1.default.join(process.cwd(), "src/interfaces/views");
     const viewPath = path_1.default.join(viewsRoot, `${viewName}.ejs`);
@@ -279,6 +280,20 @@ async function confirmReservationReview(request, response) {
         await renderReservationReview(request, response, new view_models_2.ReservationReviewViewModelProvider().provide({ ...review, status: review.status, errors }), review.status === "READY" ? 422 : 409);
         return;
     }
+    try {
+        const reservation = await (0, customer_journey_reservation_factory_1.createCustomerJourneyReservationService)().create(review);
+        if (!reservation.successful) {
+            await renderReservationReview(request, response, new view_models_2.ReservationReviewViewModelProvider().provide({ ...review, errors: reservation.errors }), 409);
+            return;
+        }
+    }
+    catch {
+        await renderReservationReview(request, response, new view_models_2.ReservationReviewViewModelProvider().provide({
+            ...review,
+            errors: ["The reservation could not be established. Please review your journey and try again."],
+        }), 503);
+        return;
+    }
     await renderView(response, "pages/payment-handoff", {
         title: "Continue to payment",
         pageTitle: "Continue to payment",
@@ -323,7 +338,7 @@ function paymentStateResult(context) {
 async function renderPaymentPage(request, response) {
     const context = await resolvePaymentContext(request.params.journeyId);
     const result = context ? paymentStateResult(context) : unavailablePaymentResult(request.params.journeyId);
-    const paymentViewModel = new view_models_2.PaymentExperienceViewModelProvider().provide(result);
+    const paymentViewModel = new view_models_2.PaymentExperienceViewModelProvider().provide(result, request.params.journeyId);
     await renderView(response, "pages/payment-experience", {
         title: "Payment",
         pageTitle: "Payment",
@@ -345,7 +360,7 @@ async function initiatePayment(request, response) {
             result = unavailablePaymentResult(request.params.journeyId);
         }
     }
-    const paymentViewModel = new view_models_2.PaymentExperienceViewModelProvider().provide(result);
+    const paymentViewModel = new view_models_2.PaymentExperienceViewModelProvider().provide(result, request.params.journeyId);
     response.status(result.status === "UNAVAILABLE" ? 409 : 200);
     await renderView(response, "pages/payment-experience", {
         title: "Payment",
@@ -357,7 +372,7 @@ async function initiatePayment(request, response) {
 async function renderPaymentReturn(request, response) {
     const context = await resolvePaymentContext(request.params.journeyId);
     const result = context ? paymentStateResult(context) : unavailablePaymentResult(request.params.journeyId);
-    const paymentViewModel = new view_models_2.PaymentExperienceViewModelProvider().provide(result);
+    const paymentViewModel = new view_models_2.PaymentExperienceViewModelProvider().provide(result, request.params.journeyId);
     await renderView(response, "pages/payment-experience", {
         title: "Payment status",
         pageTitle: "Payment status",

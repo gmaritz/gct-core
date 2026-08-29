@@ -62,20 +62,30 @@ export function createJourneyCompositionContext(
 
   const travellerRequirements = query.travellerRequirements;
   const duration = query.stayRequirements?.duration;
+  const checkInDate = new Date(createdAt);
+  const checkOutDate = new Date(createdAt);
+  checkOutDate.setUTCDate(checkOutDate.getUTCDate() + (duration?.nights ?? 1));
 
   const accommodationContext: AccommodationCompositionContext = Object.freeze({
     requestId: query.context?.requestId ?? "",
     source,
     timestamp: createdAt,
     destination,
-    checkInDate: new Date(createdAt),
-    checkOutDate: new Date(createdAt),
+    checkInDate,
+    checkOutDate,
     adults: travellerRequirements?.minimumTravellers ?? 1,
     children: 0,
     rooms: 1,
     channel: "WEB",
     locale: "EN",
     market: "ZA",
+    packageStop: {
+      packageId: query.context?.requestId ?? "",
+      stopId: `${query.context?.requestId ?? ""}-stop-1`,
+      stopOrder: 1,
+      checkInDate,
+      checkOutDate,
+    },
   });
 
   const experienceContext = createExperienceCompositionContext({

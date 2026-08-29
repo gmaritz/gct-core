@@ -1,6 +1,7 @@
 import { DefaultDynamicHomepageJourneyResolver } from "./dynamic-homepage-journey-resolver";
 import { DefaultReservationReviewService } from "./reservation-review-service";
 import { GuestInformationInput } from "./guest-information-service";
+import { DefaultAccommodationSelectionService } from "./accommodation-selection-service";
 
 const guestInformation: GuestInformationInput = {
   contact: { email: "contact@example.com" },
@@ -13,7 +14,13 @@ const guestInformation: GuestInformationInput = {
 
 describe("DefaultReservationReviewService", () => {
   it("revalidates the journey, quote and guest information", async (): Promise<void> => {
-    const result = await new DefaultReservationReviewService().review({
+    const resolver = new DefaultDynamicHomepageJourneyResolver();
+    await new DefaultAccommodationSelectionService(resolver).selectAccommodation("journey-homepage-journey-001", [{
+      accommodationId: "cape-winelands",
+      roomReference: { provider: "curated", opaqueReference: "cape-winelands-room-1" },
+      rateReference: { provider: "curated", opaqueReference: "cape-winelands-rate-1" },
+    }]);
+    const result = await new DefaultReservationReviewService(resolver).review({
       journeyId: "journey-homepage-journey-001",
       guestInformation,
     });

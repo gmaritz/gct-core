@@ -11,6 +11,15 @@ describe("Frontend guest information", () => {
     app = await createTestApplication();
     getRequest = createRequest(app, "get");
     postRequest = createRequest(app, "post");
+    await postRequest("/ui/journeys/journey-homepage-journey-001/accommodation")
+      .type("form")
+      .send({
+        "selections[0][accommodationId]": "cape-winelands",
+        "selections[0][roomReference][provider]": "curated",
+        "selections[0][roomReference][opaqueReference]": "cape-winelands-room-1",
+        "selections[0][rateReference][provider]": "curated",
+        "selections[0][rateReference][opaqueReference]": "cape-winelands-rate-1",
+      });
   });
 
   it("renders contact and occupancy-aligned traveller forms", async (): Promise<void> => {

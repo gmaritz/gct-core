@@ -16,6 +16,7 @@ import {
 } from "../../../pricing";
 import { AccommodationSelectionInput } from "./accommodation-selection-service";
 import { DynamicHomepageJourneyResolver } from "./dynamic-homepage-journey-resolver";
+import { JourneySelectionStore, journeySelectionStore } from "./journey-selection-store";
 
 export type JourneyQuoteStatus = "PRICED" | "RECHECK_REQUIRED" | "UNAVAILABLE" | "INVALID" | "NOT_FOUND";
 
@@ -53,7 +54,7 @@ export function createDefaultPricingEngine(): PricingEngine {
     new PricingCalculatorPipeline(),
   );
 }
-function createPricingRequest(journey: Journey, amounts: ReadonlyArray<number>): PricingEngineRequest {
+function createPricingRequest(journey: Journey, amounts: ReadonlyArray<number>, travellerCount: number): PricingEngineRequest {
   const total = amounts.reduce((sum, amount) => sum + amount, 0);
   const currency = Currency.ZAR;
   const lineItems = amounts.map((amount, index) => createPricingLineItem({
@@ -66,7 +67,7 @@ function createPricingRequest(journey: Journey, amounts: ReadonlyArray<number>):
 
   return {
     requestId: `quote-${journey.identity.id}`,
-    travellerCount: 2,
+    travellerCount,
     destination: journey.destinations[0]?.name,
     market: "ZA",
     salesChannel: "DIRECT",
@@ -112,6 +113,7 @@ export class DefaultJourneyQuoteService implements JourneyQuoteService {
   public constructor(
     private readonly resolver: DynamicHomepageJourneyResolver,
     private readonly pricingEngine: PricingEngine,
+    private readonly selectionStore: JourneySelectionStore = journeySelectionStore,
   ) {}
 
   public async priceJourney(
@@ -128,6 +130,7 @@ export class DefaultJourneyQuoteService implements JourneyQuoteService {
     }
 
     const amounts: number[] = [];
+    let travellerCount = 0;
     for (const selection of selections) {
       const option = resolution.journey.accommodation.find((candidate) =>
         candidate.accommodationId === selection.accommodationId
@@ -155,9 +158,11 @@ export class DefaultJourneyQuoteService implements JourneyQuoteService {
         rateReference: selection.rateReference,
       });
       amounts.push(rate.pricing.amount);
+      travellerCount += (rate.occupancy ?? option.requestedOccupancy)?.rooms
+        .reduce((total, room) => total + room.adults + room.children, 0) ?? 0;
     }
 
-    const pricing = await this.pricingEngine.execute(createPricingRequest(resolution.journey, amounts));
+    const pricing = await this.pricingEngine.execute(createPricingRequest(resolution.journey, amounts, travellerCount));
     return {
       status: pricing.successful && pricing.pricing ? "PRICED" : "UNAVAILABLE",
       journeyId,
@@ -168,20 +173,6 @@ export class DefaultJourneyQuoteService implements JourneyQuoteService {
   }
 
   public async priceCurrentJourney(journeyId: string): Promise<JourneyQuoteResult> {
-    const resolution = await this.resolver.resolve(journeyId);
-    if (resolution.status !== "RESOLVED" || !resolution.journey) {
-      return { status: resolution.status === "RESOLVED" ? "UNAVAILABLE" : resolution.status, journeyId, selections: [] };
-    }
-
-    const selections = resolution.journey.accommodation.flatMap((option) => {
-      const room = option.roomOptions?.[0];
-      const rate = room?.rateOptions[0];
-      return room && rate ? [{
-        accommodationId: option.accommodationId,
-        roomReference: room.reference,
-        rateReference: rate.reference,
-      }] : [];
-    });
-    return this.priceJourney(journeyId, selections);
+    return this.priceJourney(journeyId, this.selectionStore.find(journeyId));
   }
 }

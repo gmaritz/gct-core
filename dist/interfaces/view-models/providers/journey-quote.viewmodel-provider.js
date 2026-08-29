@@ -9,11 +9,12 @@ class JourneyQuoteViewModelProvider {
     provide(result) {
         const journey = result.journey;
         const pricing = result.pricing?.successful ? this.pricingProvider.mapPricingResultToViewModel(result.pricing) ?? undefined : undefined;
-        const accommodation = journey?.accommodation.map((option) => {
-            const room = option.roomOptions?.[0];
-            const rate = room?.rateOptions[0];
+        const accommodation = result.selections.map((selection) => {
+            const option = journey?.accommodation.find((candidate) => candidate.accommodationId === selection.accommodationId);
+            const room = option?.roomOptions?.find((candidate) => candidate.reference.opaqueReference === selection.roomReference.opaqueReference);
+            const rate = room?.rateOptions.find((candidate) => candidate.reference.opaqueReference === selection.rateReference.opaqueReference);
             return Object.freeze({
-                property: option.name,
+                property: option?.name ?? "Accommodation unavailable",
                 room: room?.name ?? "Room unavailable",
                 rate: rate?.board?.name ?? "Rate unavailable",
                 amount: rate?.pricing.amount ?? 0,

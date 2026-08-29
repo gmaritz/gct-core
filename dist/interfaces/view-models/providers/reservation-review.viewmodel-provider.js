@@ -17,12 +17,17 @@ class ReservationReviewViewModelProvider {
             journeyTitle: journey ? `${journey.classification.category} ${journey.destinations[0]?.name ?? "Journey"} Journey` : "Journey unavailable",
             destination: journey?.destinations.map((destination) => destination.name).join(" + ") ?? "Destination unavailable",
             duration: journey?.duration.description ?? "Duration unavailable",
-            accommodation: Object.freeze((result.quote?.journey?.accommodation ?? journey?.accommodation ?? []).map((option, index) => Object.freeze({
-                destination: journey?.destinations[index]?.name ?? journey?.destinations[0]?.name ?? "Destination unavailable",
-                property: option.name,
-                room: option.roomOptions?.[0]?.name ?? "Room selected",
-                rate: option.roomOptions?.[0]?.rateOptions[0]?.board?.name ?? "Rate selected",
-            }))),
+            accommodation: Object.freeze((result.quote?.selections ?? []).map((selection, index) => {
+                const option = journey?.accommodation.find((candidate) => candidate.accommodationId === selection.accommodationId);
+                const room = option?.roomOptions?.find((candidate) => candidate.reference.opaqueReference === selection.roomReference.opaqueReference);
+                const rate = room?.rateOptions.find((candidate) => candidate.reference.opaqueReference === selection.rateReference.opaqueReference);
+                return Object.freeze({
+                    destination: journey?.destinations[index]?.name ?? journey?.destinations[0]?.name ?? "Destination unavailable",
+                    property: option?.name ?? "Accommodation unavailable",
+                    room: room?.name ?? "Room unavailable",
+                    rate: rate?.board?.name ?? "Rate unavailable",
+                });
+            })),
             contact: Object.freeze({
                 email: result.guestInformation?.contact.email ?? "",
                 phone: result.guestInformation?.contact.phone,

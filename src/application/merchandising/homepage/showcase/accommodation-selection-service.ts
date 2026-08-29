@@ -1,5 +1,6 @@
 import { Journey, JourneyAccommodation, selectJourneyAccommodation } from "../../../journeys";
 import { DynamicHomepageJourneyResolver } from "./dynamic-homepage-journey-resolver";
+import { JourneySelectionStore, journeySelectionStore } from "./journey-selection-store";
 
 export type AccommodationSelectionStatus = "COMPLETE" | "INVALID" | "NOT_FOUND" | "UNAVAILABLE" | "INCOMPLETE" | "STALE";
 
@@ -34,7 +35,10 @@ function findOption(journey: Journey, input: AccommodationSelectionInput): Journ
 }
 
 export class DefaultAccommodationSelectionService implements AccommodationSelectionService {
-  public constructor(private readonly resolver: DynamicHomepageJourneyResolver) {}
+  public constructor(
+    private readonly resolver: DynamicHomepageJourneyResolver,
+    private readonly selectionStore: JourneySelectionStore = journeySelectionStore,
+  ) {}
 
   public async selectAccommodation(
     journeyId: string,
@@ -76,6 +80,7 @@ export class DefaultAccommodationSelectionService implements AccommodationSelect
       }
     }
 
+    this.selectionStore.save(journeyId, selections);
     return { status: "COMPLETE", journeyId, selectedStops };
   }
 }

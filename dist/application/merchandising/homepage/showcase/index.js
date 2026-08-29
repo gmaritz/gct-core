@@ -22,4 +22,6 @@ __exportStar(require("./accommodation-selection-service"), exports);
 __exportStar(require("./journey-quote-service"), exports);
 __exportStar(require("./guest-information-service"), exports);
 __exportStar(require("./reservation-review-service"), exports);
+__exportStar(require("./journey-selection-store"), exports);
+__exportStar(require("./customer-journey-reservation-service"), exports);
 //# sourceMappingURL=index.js.map

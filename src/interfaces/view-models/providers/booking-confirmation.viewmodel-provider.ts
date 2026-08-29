@@ -44,7 +44,7 @@ export class BookingConfirmationViewModelProvider {
       message: messageFor(result.status),
       recoveryAction: Object.freeze({
         label: result.status === "CONFIRMED" ? "Return to journeys" : "Review payment",
-        href: result.status === "CONFIRMED" ? "/ui/placeholder" : "/ui/placeholder#journey-planning",
+        href: result.status === "CONFIRMED" ? "/ui/placeholder" : `/ui/journeys/${result.journeyId}/payment`,
         style: result.status === "CONFIRMED" ? "neutral" : "primary",
       }),
     });

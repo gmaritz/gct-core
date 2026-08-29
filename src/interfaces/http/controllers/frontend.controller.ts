@@ -31,6 +31,7 @@ import {
 	BookingConfirmationViewModelProvider,
 } from "../../view-models";
 import { createReservationConfirmationService } from "../../../infrastructure/persistence/reservation-confirmation-factory";
+import { createCustomerJourneyReservationService } from "../../../infrastructure/persistence/customer-journey-reservation-factory";
 
 async function renderView(response: Response, viewName: string, locals: Record<string, unknown>): Promise<void> {
 	const viewsRoot = path.join(process.cwd(), "src/interfaces/views");
@@ -335,6 +336,20 @@ export async function confirmReservationReview(request: Request, response: Respo
 		return;
 	}
 
+	try {
+		const reservation = await createCustomerJourneyReservationService().create(review);
+		if (!reservation.successful) {
+			await renderReservationReview(request, response, new ReservationReviewViewModelProvider().provide({ ...review, errors: reservation.errors }), 409);
+			return;
+		}
+	} catch {
+		await renderReservationReview(request, response, new ReservationReviewViewModelProvider().provide({
+			...review,
+			errors: ["The reservation could not be established. Please review your journey and try again."],
+		}), 503);
+		return;
+	}
+
 	await renderView(response, "pages/payment-handoff", {
 		title: "Continue to payment",
 		pageTitle: "Continue to payment",
@@ -385,7 +400,7 @@ function paymentStateResult(
 export async function renderPaymentPage(request: Request, response: Response): Promise<void> {
 	const context = await resolvePaymentContext(request.params.journeyId);
 	const result = context ? paymentStateResult(context) : unavailablePaymentResult(request.params.journeyId);
-	const paymentViewModel = new PaymentExperienceViewModelProvider().provide(result);
+	const paymentViewModel = new PaymentExperienceViewModelProvider().provide(result, request.params.journeyId);
 
 	await renderView(response, "pages/payment-experience", {
 		title: "Payment",
@@ -407,7 +422,7 @@ export async function initiatePayment(request: Request, response: Response): Pro
 			result = unavailablePaymentResult(request.params.journeyId);
 		}
 	}
-	const paymentViewModel = new PaymentExperienceViewModelProvider().provide(result);
+	const paymentViewModel = new PaymentExperienceViewModelProvider().provide(result, request.params.journeyId);
 
 	response.status(result.status === "UNAVAILABLE" ? 409 : 200);
 	await renderView(response, "pages/payment-experience", {
@@ -421,7 +436,7 @@ export async function initiatePayment(request: Request, response: Response): Pro
 export async function renderPaymentReturn(request: Request, response: Response): Promise<void> {
 	const context = await resolvePaymentContext(request.params.journeyId);
 	const result = context ? paymentStateResult(context) : unavailablePaymentResult(request.params.journeyId);
-	const paymentViewModel = new PaymentExperienceViewModelProvider().provide(result);
+	const paymentViewModel = new PaymentExperienceViewModelProvider().provide(result, request.params.journeyId);
 	await renderView(response, "pages/payment-experience", {
 		title: "Payment status",
 		pageTitle: "Payment status",

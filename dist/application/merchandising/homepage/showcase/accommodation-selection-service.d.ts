@@ -1,4 +1,5 @@
 import { DynamicHomepageJourneyResolver } from "./dynamic-homepage-journey-resolver";
+import { JourneySelectionStore } from "./journey-selection-store";
 export type AccommodationSelectionStatus = "COMPLETE" | "INVALID" | "NOT_FOUND" | "UNAVAILABLE" | "INCOMPLETE" | "STALE";
 export interface AccommodationSelectionInput {
     readonly stopId?: string;
@@ -27,7 +28,8 @@ export interface AccommodationSelectionService {
 }
 export declare class DefaultAccommodationSelectionService implements AccommodationSelectionService {
     private readonly resolver;
-    constructor(resolver: DynamicHomepageJourneyResolver);
+    private readonly selectionStore;
+    constructor(resolver: DynamicHomepageJourneyResolver, selectionStore?: JourneySelectionStore);
     selectAccommodation(journeyId: string, selections: ReadonlyArray<AccommodationSelectionInput>): Promise<AccommodationSelectionResult>;
 }
 //# sourceMappingURL=accommodation-selection-service.d.ts.map

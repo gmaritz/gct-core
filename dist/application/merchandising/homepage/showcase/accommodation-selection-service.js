@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DefaultAccommodationSelectionService = void 0;
 const journeys_1 = require("../../../journeys");
+const journey_selection_store_1 = require("./journey-selection-store");
 function isValidReference(reference) {
     return typeof reference === "object" && reference !== null
         && typeof reference.provider === "string"
@@ -12,8 +13,9 @@ function findOption(journey, input) {
         && (!input.stopId || option.packageStop?.stopId === input.stopId));
 }
 class DefaultAccommodationSelectionService {
-    constructor(resolver) {
+    constructor(resolver, selectionStore = journey_selection_store_1.journeySelectionStore) {
         this.resolver = resolver;
+        this.selectionStore = selectionStore;
     }
     async selectAccommodation(journeyId, selections) {
         const resolution = await this.resolver.resolve(journeyId);
@@ -50,6 +52,7 @@ class DefaultAccommodationSelectionService {
                 return { status: "STALE", journeyId, selectedStops: [] };
             }
         }
+        this.selectionStore.save(journeyId, selections);
         return { status: "COMPLETE", journeyId, selectedStops };
     }
 }

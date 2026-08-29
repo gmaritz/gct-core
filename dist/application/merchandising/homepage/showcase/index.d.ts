@@ -6,4 +6,6 @@ export * from "./accommodation-selection-service";
 export * from "./journey-quote-service";
 export * from "./guest-information-service";
 export * from "./reservation-review-service";
+export * from "./journey-selection-store";
+export * from "./customer-journey-reservation-service";
 //# sourceMappingURL=index.d.ts.map

@@ -1,6 +1,6 @@
 import { createPricingEngineResult, PricingEngineRequest } from "../../../pricing";
 import { DefaultDynamicHomepageJourneyResolver } from "./dynamic-homepage-journey-resolver";
-import { AccommodationSelectionInput } from "./accommodation-selection-service";
+import { AccommodationSelectionInput, DefaultAccommodationSelectionService } from "./accommodation-selection-service";
 import { DefaultJourneyQuoteService } from "./journey-quote-service";
 
 const selection: AccommodationSelectionInput = {
@@ -40,8 +40,10 @@ describe("DefaultJourneyQuoteService", () => {
   });
 
   it("returns the current deterministic quote from the application journey", async (): Promise<void> => {
+    const resolver = new DefaultDynamicHomepageJourneyResolver();
+    await new DefaultAccommodationSelectionService(resolver).selectAccommodation("journey-homepage-journey-001", [selection]);
     const result = await new DefaultJourneyQuoteService(
-      new DefaultDynamicHomepageJourneyResolver(),
+      resolver,
       (await import("./journey-quote-service")).createDefaultPricingEngine(),
     ).priceCurrentJourney("journey-homepage-journey-001");
 

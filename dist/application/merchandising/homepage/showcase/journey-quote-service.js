@@ -4,6 +4,7 @@ exports.DefaultJourneyQuoteService = void 0;
 exports.createDefaultPricingEngine = createDefaultPricingEngine;
 const journeys_1 = require("../../../journeys");
 const pricing_1 = require("../../../pricing");
+const journey_selection_store_1 = require("./journey-selection-store");
 const pricing_2 = require("../../../pricing");
 function createDefaultPricingEngine() {
     return new pricing_1.PricingEngine(new pricing_2.PricingValidationPipeline({
@@ -13,7 +14,7 @@ function createDefaultPricingEngine() {
         quoteReadinessValidator: new pricing_2.QuoteReadinessValidator(),
     }), new pricing_2.PricingPolicyPipeline(), new pricing_2.PricingCalculatorPipeline());
 }
-function createPricingRequest(journey, amounts) {
+function createPricingRequest(journey, amounts, travellerCount) {
     const total = amounts.reduce((sum, amount) => sum + amount, 0);
     const currency = pricing_1.Currency.ZAR;
     const lineItems = amounts.map((amount, index) => (0, pricing_1.createPricingLineItem)({
@@ -25,7 +26,7 @@ function createPricingRequest(journey, amounts) {
     }));
     return {
         requestId: `quote-${journey.identity.id}`,
-        travellerCount: 2,
+        travellerCount,
         destination: journey.destinations[0]?.name,
         market: "ZA",
         salesChannel: "DIRECT",
@@ -67,9 +68,10 @@ function createPricingRequest(journey, amounts) {
     };
 }
 class DefaultJourneyQuoteService {
-    constructor(resolver, pricingEngine) {
+    constructor(resolver, pricingEngine, selectionStore = journey_selection_store_1.journeySelectionStore) {
         this.resolver = resolver;
         this.pricingEngine = pricingEngine;
+        this.selectionStore = selectionStore;
     }
     async priceJourney(journeyId, selections) {
         const resolution = await this.resolver.resolve(journeyId);
@@ -80,6 +82,7 @@ class DefaultJourneyQuoteService {
             return { status: "INVALID", journeyId, journey: resolution.journey, selections };
         }
         const amounts = [];
+        let travellerCount = 0;
         for (const selection of selections) {
             const option = resolution.journey.accommodation.find((candidate) => candidate.accommodationId === selection.accommodationId
                 && (!selection.stopId || candidate.packageStop?.stopId === selection.stopId));
@@ -100,8 +103,10 @@ class DefaultJourneyQuoteService {
                 rateReference: selection.rateReference,
             });
             amounts.push(rate.pricing.amount);
+            travellerCount += (rate.occupancy ?? option.requestedOccupancy)?.rooms
+                .reduce((total, room) => total + room.adults + room.children, 0) ?? 0;
         }
-        const pricing = await this.pricingEngine.execute(createPricingRequest(resolution.journey, amounts));
+        const pricing = await this.pricingEngine.execute(createPricingRequest(resolution.journey, amounts, travellerCount));
         return {
             status: pricing.successful && pricing.pricing ? "PRICED" : "UNAVAILABLE",
             journeyId,
@@ -111,20 +116,7 @@ class DefaultJourneyQuoteService {
         };
     }
     async priceCurrentJourney(journeyId) {
-        const resolution = await this.resolver.resolve(journeyId);
-        if (resolution.status !== "RESOLVED" || !resolution.journey) {
-            return { status: resolution.status === "RESOLVED" ? "UNAVAILABLE" : resolution.status, journeyId, selections: [] };
-        }
-        const selections = resolution.journey.accommodation.flatMap((option) => {
-            const room = option.roomOptions?.[0];
-            const rate = room?.rateOptions[0];
-            return room && rate ? [{
-                    accommodationId: option.accommodationId,
-                    roomReference: room.reference,
-                    rateReference: rate.reference,
-                }] : [];
-        });
-        return this.priceJourney(journeyId, selections);
+        return this.priceJourney(journeyId, this.selectionStore.find(journeyId));
     }
 }
 exports.DefaultJourneyQuoteService = DefaultJourneyQuoteService;
