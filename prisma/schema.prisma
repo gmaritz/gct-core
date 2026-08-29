@@ -592,7 +592,7 @@ model Customer {
   firstName         String?
   lastName          String?
   companyName       String?
-  email             String
+  email             String      @unique
   mobileNumber      String?
   preferredLanguageId String?
   preferredCurrencyId String?

@@ -17,6 +17,10 @@ const itineraryStatuses: LookupSeed[] = [
   { code: "CANCELLED", name: "Cancelled", active: true },
 ];
 
+const customerTypes: LookupSeed[] = [
+  { code: "ANONYMOUS_BOOKING", name: "Anonymous Booking Customer", active: true },
+];
+
 async function main(): Promise<void> {
   for (const row of itineraryStatuses) {
     await prisma.itineraryStatus.upsert({
@@ -30,6 +34,14 @@ async function main(): Promise<void> {
         name: row.name,
         active: row.active ?? true,
       },
+    });
+  }
+
+  for (const row of customerTypes) {
+    await prisma.customerType.upsert({
+      where: { code: row.code },
+      update: { name: row.name, active: row.active ?? true },
+      create: { code: row.code, name: row.name, active: row.active ?? true },
     });
   }
 
