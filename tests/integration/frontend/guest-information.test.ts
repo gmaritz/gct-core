@@ -68,8 +68,12 @@ describe("Frontend guest information", () => {
         "travellers[1][travellerType]": "ADULT",
       });
 
-    expect(response.status).toBe(200);
-    expect(response.text).toContain("Reservation review");
-    expect(response.text).toContain("Confirm and continue to payment");
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe("/ui/journeys/journey-homepage-journey-001/review");
+
+    const review = await getRequest(response.headers.location);
+    expect(review.status).toBe(200);
+    expect(review.text).toContain("Reservation review");
+    expect(review.text).toContain("Confirm and continue to payment");
   });
 });

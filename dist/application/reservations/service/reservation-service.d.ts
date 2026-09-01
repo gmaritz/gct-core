@@ -24,6 +24,8 @@ export declare class ReservationService implements ApplicationService<Reservatio
     private readonly repository;
     constructor(validationPipeline: ReservationValidationPipeline, policyPipeline: ReservationPolicyPipeline, builder: ReservationBuilder, repository: ReservationRepository);
     execute(request: ReservationServiceRequest): Promise<ReservationResult>;
+    executeIfAbsent(request: ReservationServiceRequest): Promise<ReservationResult>;
+    private executeInternal;
 }
 export type { ReservationBuildResult };
 //# sourceMappingURL=reservation-service.d.ts.map

@@ -443,6 +443,14 @@ export class CanonicalReservationPrismaRepository implements ReservationReposito
   public constructor(private readonly prisma: PrismaClient = getPrismaClient()) {}
 
   public async save(reservation: Reservation, context: ReservationPersistenceContext): Promise<void> {
+    await this.persist(reservation, context, true);
+  }
+
+  public async saveIfAbsent(reservation: Reservation, context: ReservationPersistenceContext): Promise<void> {
+    await this.persist(reservation, context, false);
+  }
+
+  private async persist(reservation: Reservation, context: ReservationPersistenceContext, overwrite: boolean): Promise<void> {
     assertPersistenceContext(context);
 
     if (!reservation.pricingSnapshot) {
@@ -470,7 +478,7 @@ export class CanonicalReservationPrismaRepository implements ReservationReposito
 
       await tx.reservation.upsert({
         where: { id: reservation.identity.id },
-        update: {
+        update: overwrite ? {
           customerId: context.customerId,
           reservationNumber: reservation.reservationNumber,
           bookingStartDate: context.bookingStartDate,
@@ -484,7 +492,7 @@ export class CanonicalReservationPrismaRepository implements ReservationReposito
           supplierReferences: snapshotJson.supplierReferences,
           reservationTimeline: snapshotJson.reservationTimeline,
           reservationMetadata: snapshotJson.reservationMetadata,
-        },
+        } : {},
         create: {
           id: reservation.identity.id,
           customerId: context.customerId,

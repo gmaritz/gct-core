@@ -7,4 +7,5 @@ export * from "./journey-quote-service";
 export * from "./guest-information-service";
 export * from "./reservation-review-service";
 export * from "./journey-selection-store";
+export * from "./guest-information-store";
 export * from "./customer-journey-reservation-service";

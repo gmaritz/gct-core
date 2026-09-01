@@ -6,6 +6,7 @@ export interface ReservationPersistenceContext {
 }
 export interface ReservationRepository {
     save(reservation: Reservation, context: ReservationPersistenceContext): Promise<void>;
+    saveIfAbsent?(reservation: Reservation, context: ReservationPersistenceContext): Promise<void>;
     findById(id: string): Promise<Reservation | null>;
     findByReservationNumber(reservationNumber: string): Promise<Reservation | null>;
     findByTravellerId(travellerId: string): Promise<ReadonlyArray<Reservation>>;

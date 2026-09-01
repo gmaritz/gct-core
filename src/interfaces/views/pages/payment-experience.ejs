@@ -12,7 +12,7 @@
     </section>
     <% if (paymentViewModel.providerAction) { %>
       <% if (paymentViewModel.hostedPaymentAction) { %>
-        <form id="secure-payment" method="<%= paymentViewModel.hostedPaymentAction.method.toLowerCase() %>" action="<%= paymentViewModel.hostedPaymentAction.action %>">
+        <form id="secure-payment" method="<%= paymentViewModel.hostedPaymentAction.method.toLowerCase() %>" action="<%= paymentViewModel.hostedPaymentAction.action %>" data-protect-submit>
           <% Object.entries(paymentViewModel.hostedPaymentAction.fields).forEach(([name, value]) => { %><input type="hidden" name="<%= name %>" value="<%= value %>"><% }); %>
           <button class="button button--primary" type="submit"><%= paymentViewModel.providerAction.label %></button>
         </form>

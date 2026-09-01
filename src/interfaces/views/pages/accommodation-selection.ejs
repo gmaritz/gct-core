@@ -21,17 +21,15 @@
                 <input type="hidden" name="selections[<%= stopIndex %>][accommodationId]" value="<%= property.id %>">
                 <input type="hidden" name="selections[<%= stopIndex %>][stopId]" value="<%= stop.id || '' %>">
                 <% if (property.rooms.length === 0) { %><p role="status">No rooms are currently available.</p><% } else { %>
-                  <label>Room
-                    <select name="selections[<%= stopIndex %>][roomReference][opaqueReference]" required>
+                  <label for="room-<%= stopIndex %>">Room</label>
+                    <select id="room-<%= stopIndex %>" name="selections[<%= stopIndex %>][roomReference][opaqueReference]" required>
                       <% property.rooms.forEach((room) => { %><option value="<%= room.id %>"><%= room.name %></option><% }); %>
                     </select>
-                  </label>
                   <input type="hidden" name="selections[<%= stopIndex %>][roomReference][provider]" value="curated">
-                  <label>Rate
-                    <select name="selections[<%= stopIndex %>][rateReference][opaqueReference]" required>
+                  <label for="rate-<%= stopIndex %>">Rate</label>
+                    <select id="rate-<%= stopIndex %>" name="selections[<%= stopIndex %>][rateReference][opaqueReference]" required>
                       <% property.rooms[0].rates.forEach((rate) => { %><option value="<%= rate.id %>"><%= rate.name || "Available rate" %> · <%= rate.currency %> <%= rate.amount %></option><% }); %>
                     </select>
-                  </label>
                   <input type="hidden" name="selections[<%= stopIndex %>][rateReference][provider]" value="curated">
                 <% } %>
               </article>

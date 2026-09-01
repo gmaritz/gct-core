@@ -39,4 +39,14 @@ describe("Frontend payment experience", () => {
     expect(response.text).toContain("Payment is not available");
     expect(response.text).not.toContain("Payment Complete");
   });
+
+  it("rejects malformed payment journey references consistently", async (): Promise<void> => {
+    const payment = await getRequest("/ui/journeys/not-valid/payment");
+    const paymentReturn = await getRequest("/ui/journeys/not-valid/payment/return");
+
+    expect(payment.status).toBe(404);
+    expect(payment.text).toContain("Page unavailable");
+    expect(paymentReturn.status).toBe(404);
+    expect(paymentReturn.text).toContain("Page unavailable");
+  });
 });

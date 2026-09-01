@@ -134,7 +134,7 @@ export class CustomerJourneyReservationService {
         occurredAt: now,
       }],
     };
-    const result = await this.reservationService.execute(request);
+    const result = await this.reservationService.executeIfAbsent(request);
     return { successful: result.successful, errors: result.errors };
   }
 }

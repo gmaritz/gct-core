@@ -36,6 +36,12 @@ class ReservationService {
         this.repository = repository;
     }
     async execute(request) {
+        return this.executeInternal(request, false);
+    }
+    async executeIfAbsent(request) {
+        return this.executeInternal(request, true);
+    }
+    async executeInternal(request, ifAbsent) {
         const serviceContext = (0, models_1.createReservationServiceContext)(request);
         const validationResult = this.validationPipeline.execute({
             query: serviceContext.reservationRequest.query,
@@ -72,7 +78,10 @@ class ReservationService {
         });
         const builtContext = (0, models_1.withBuilderResult)(policyContext, builderResult);
         if (builderResult.successful && builderResult.reservation) {
-            await this.repository.save(builderResult.reservation, {
+            const save = ifAbsent && this.repository.saveIfAbsent
+                ? this.repository.saveIfAbsent.bind(this.repository)
+                : this.repository.save.bind(this.repository);
+            await save(builderResult.reservation, {
                 customerId: policyContext.reservationRequest.query.customerId,
                 bookingStartDate: policyContext.reservationRequest.query.checkInDate,
                 bookingEndDate: policyContext.reservationRequest.query.checkOutDate,

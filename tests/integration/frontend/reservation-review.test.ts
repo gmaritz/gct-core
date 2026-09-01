@@ -57,13 +57,15 @@ describe("Frontend reservation review", () => {
         "travellers[1][travellerType]": "ADULT",
       });
 
-    expect(response.status).toBe(200);
-    expect(response.text).toContain("Reservation review");
-    expect(response.text).toContain("Cape Winelands Retreat");
-    expect(response.text).toContain("contact@example.com");
-    expect(response.text).toContain("ZAR 18950.00");
-    expect(response.text).toContain("Confirm and continue to payment");
-    expect(response.text).not.toContain("Booking confirmed");
+    expect(response.status).toBe(302);
+    const review = await getRequest(response.headers.location);
+    expect(review.status).toBe(200);
+    expect(review.text).toContain("Reservation review");
+    expect(review.text).toContain("Cape Winelands Retreat");
+    expect(review.text).toContain("contact@example.com");
+    expect(review.text).toContain("ZAR 18950.00");
+    expect(review.text).toContain("Confirm and continue to payment");
+    expect(review.text).not.toContain("Booking confirmed");
   });
 
   it("requires explicit confirmation before payment handoff", async (): Promise<void> => {
@@ -91,21 +93,20 @@ describe("Frontend reservation review", () => {
       .type("form")
       .send({
         confirmed: "on",
-        "contact[email]": "contact@example.com",
-        leadTravellerIndex: "0",
-        "travellers[0][firstName]": "Ava",
-        "travellers[0][lastName]": "Cape",
-        "travellers[0][email]": "ava@example.com",
+        "contact[email]": "attacker@example.com",
+        leadTravellerIndex: "1",
+        "travellers[0][firstName]": "Tampered",
+        "travellers[0][lastName]": "Guest",
+        "travellers[0][email]": "attacker@example.com",
         "travellers[0][travellerType]": "ADULT",
-        "travellers[1][firstName]": "Ben",
-        "travellers[1][lastName]": "Cape",
-        "travellers[1][email]": "ben@example.com",
+        "travellers[1][firstName]": "Injected",
+        "travellers[1][lastName]": "Guest",
+        "travellers[1][email]": "attacker@example.com",
         "travellers[1][travellerType]": "ADULT",
       });
 
-    expect(response.status).toBe(200);
-    expect(response.text).toContain("Ready for payment");
-    expect(response.text).toContain("Payment has not been initiated.");
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe("/ui/journeys/journey-homepage-journey-001/payment");
 
     const payment = await getRequest("/ui/journeys/journey-homepage-journey-001/payment");
     expect(payment.status).toBe(200);

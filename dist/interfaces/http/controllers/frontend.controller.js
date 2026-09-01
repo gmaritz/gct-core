@@ -26,6 +26,15 @@ const payment_experience_factory_1 = require("../../../infrastructure/payments/p
 const view_models_2 = require("../../view-models");
 const reservation_confirmation_factory_1 = require("../../../infrastructure/persistence/reservation-confirmation-factory");
 const customer_journey_reservation_factory_1 = require("../../../infrastructure/persistence/customer-journey-reservation-factory");
+const logging_1 = require("../../../bootstrap/logging");
+function diagnostic(request, operation, outcome) {
+    return {
+        requestId: request.requestId ?? "unknown",
+        journeyId: request.params.journeyId ?? "unknown",
+        operation,
+        outcome,
+    };
+}
 async function renderView(response, viewName, locals) {
     const viewsRoot = path_1.default.join(process.cwd(), "src/interfaces/views");
     const viewPath = path_1.default.join(viewsRoot, `${viewName}.ejs`);
@@ -101,8 +110,14 @@ async function selectJourney(request, response) {
 async function renderAccommodationSelectionPage(request, response) {
     const resolution = await new merchandising_1.DefaultDynamicHomepageJourneyResolver().resolve(request.params.journeyId);
     if (resolution.status !== "RESOLVED" || !resolution.journey) {
-        response.status(resolution.status === "UNAVAILABLE" ? 410 : 404);
-        await renderNotFoundPage(request, response);
+        if (resolution.status === "UNAVAILABLE") {
+            response.status(410);
+            await renderView(response, "errors/unavailable", { title: "Journey unavailable", pageTitle: "Journey unavailable", currentPath: request.path });
+        }
+        else {
+            response.status(404);
+            await renderNotFoundPage(request, response);
+        }
         return;
     }
     const accommodationSelectionViewModel = new view_models_2.AccommodationSelectionViewModelProvider().provide(resolution.journey);
@@ -194,8 +209,14 @@ function renderGuestInformation(request, response, viewModel, status = 200) {
 async function renderGuestInformationPage(request, response) {
     const resolution = await new merchandising_1.DefaultDynamicHomepageJourneyResolver().resolve(request.params.journeyId);
     if (resolution.status !== "RESOLVED" || !resolution.journey) {
-        response.status(resolution.status === "UNAVAILABLE" ? 410 : 404);
-        await renderNotFoundPage(request, response);
+        if (resolution.status === "UNAVAILABLE") {
+            response.status(410);
+            await renderView(response, "errors/unavailable", { title: "Journey unavailable", pageTitle: "Journey unavailable", currentPath: request.path });
+        }
+        else {
+            response.status(404);
+            await renderNotFoundPage(request, response);
+        }
         return;
     }
     const viewModel = new view_models_2.GuestInformationViewModelProvider().provide({
@@ -224,11 +245,9 @@ async function submitGuestInformation(request, response) {
         await renderView(response, "errors/unavailable", { title: "Journey unavailable", pageTitle: "Journey unavailable", currentPath: request.path });
         return;
     }
-    const review = await new merchandising_1.DefaultReservationReviewService().review({
-        journeyId: request.params.journeyId,
-        guestInformation: input,
-    });
-    await renderReservationReview(request, response, new view_models_2.ReservationReviewViewModelProvider().provide(review), review.status === "READY" ? 200 : 409);
+    merchandising_1.guestInformationStore.save(request.params.journeyId, input);
+    response.redirect(`/ui/journeys/${request.params.journeyId}/review`);
+    return;
 }
 function toGuestInformationInput(body) {
     const submitted = body;
@@ -253,21 +272,32 @@ function renderReservationReview(request, response, viewModel, status = 200) {
 async function renderReservationReviewPage(request, response) {
     const resolution = await new merchandising_1.DefaultDynamicHomepageJourneyResolver().resolve(request.params.journeyId);
     if (resolution.status !== "RESOLVED" || !resolution.journey) {
-        response.status(resolution.status === "UNAVAILABLE" ? 410 : 404);
-        await renderNotFoundPage(request, response);
+        if (resolution.status === "UNAVAILABLE") {
+            response.status(410);
+            await renderView(response, "errors/unavailable", { title: "Journey unavailable", pageTitle: "Journey unavailable", currentPath: request.path });
+        }
+        else {
+            response.status(404);
+            await renderNotFoundPage(request, response);
+        }
         return;
     }
-    const review = new view_models_2.ReservationReviewViewModelProvider().provide({
-        status: "INVALID",
-        journeyId: request.params.journeyId,
-        journey: resolution.journey,
-        errors: ["Complete guest information before reviewing the reservation."],
-        confirmed: false,
-    });
-    await renderReservationReview(request, response, review, 422);
+    const guestInformation = merchandising_1.guestInformationStore.find(request.params.journeyId);
+    if (!guestInformation) {
+        const review = new view_models_2.ReservationReviewViewModelProvider().provide({ status: "INVALID", journeyId: request.params.journeyId, journey: resolution.journey, errors: ["Complete guest information before reviewing the reservation."], confirmed: false });
+        await renderReservationReview(request, response, review, 422);
+        return;
+    }
+    const reviewed = await new merchandising_1.DefaultReservationReviewService().review({ journeyId: request.params.journeyId, guestInformation });
+    await renderReservationReview(request, response, new view_models_2.ReservationReviewViewModelProvider().provide(reviewed), reviewed.status === "READY" ? 200 : 409);
 }
 async function confirmReservationReview(request, response) {
-    const input = toGuestInformationInput(request.body);
+    const input = merchandising_1.guestInformationStore.find(request.params.journeyId);
+    if (!input) {
+        response.status(422);
+        await renderReservationReview(request, response, new view_models_2.ReservationReviewViewModelProvider().provide({ status: "INVALID", journeyId: request.params.journeyId, errors: ["Complete guest information before reviewing the reservation."], confirmed: false }), 422);
+        return;
+    }
     const review = await new merchandising_1.DefaultReservationReviewService().review({
         journeyId: request.params.journeyId,
         guestInformation: input,
@@ -283,23 +313,20 @@ async function confirmReservationReview(request, response) {
     try {
         const reservation = await (0, customer_journey_reservation_factory_1.createCustomerJourneyReservationService)().create(review);
         if (!reservation.successful) {
+            (0, logging_1.getLogger)().error("reservation_creation_failed", diagnostic(request, "reservation_creation", "rejected"));
             await renderReservationReview(request, response, new view_models_2.ReservationReviewViewModelProvider().provide({ ...review, errors: reservation.errors }), 409);
             return;
         }
     }
-    catch {
+    catch (error) {
+        (0, logging_1.getLogger)().error("reservation_creation_failed", diagnostic(request, "reservation_creation", error instanceof Error ? "exception" : "unknown"));
         await renderReservationReview(request, response, new view_models_2.ReservationReviewViewModelProvider().provide({
             ...review,
             errors: ["The reservation could not be established. Please review your journey and try again."],
         }), 503);
         return;
     }
-    await renderView(response, "pages/payment-handoff", {
-        title: "Continue to payment",
-        pageTitle: "Continue to payment",
-        currentPath: request.path,
-        journeyId: review.journeyId,
-    });
+    response.redirect(`/ui/journeys/${review.journeyId}/payment`);
 }
 function unavailablePaymentResult(journeyId) {
     return {
@@ -319,6 +346,20 @@ async function resolvePaymentContext(journeyId) {
         return null;
     }
 }
+async function resolvePaymentJourney(request, response) {
+    const resolution = await new merchandising_1.DefaultDynamicHomepageJourneyResolver().resolve(request.params.journeyId);
+    if (resolution.status === "INVALID" || resolution.status === "NOT_FOUND") {
+        response.status(404);
+        await renderNotFoundPage(request, response);
+        return false;
+    }
+    if (resolution.status === "UNAVAILABLE") {
+        response.status(410);
+        await renderView(response, "errors/unavailable", { title: "Journey unavailable", pageTitle: "Journey unavailable", currentPath: request.path });
+        return false;
+    }
+    return true;
+}
 function paymentStateResult(context) {
     const request = context.engineRequest.paymentRequest;
     const status = request.status === "COMPLETED"
@@ -336,6 +377,8 @@ function paymentStateResult(context) {
     };
 }
 async function renderPaymentPage(request, response) {
+    if (!await resolvePaymentJourney(request, response))
+        return;
     const context = await resolvePaymentContext(request.params.journeyId);
     const result = context ? paymentStateResult(context) : unavailablePaymentResult(request.params.journeyId);
     const paymentViewModel = new view_models_2.PaymentExperienceViewModelProvider().provide(result, request.params.journeyId);
@@ -347,18 +390,25 @@ async function renderPaymentPage(request, response) {
     });
 }
 async function initiatePayment(request, response) {
+    if (!await resolvePaymentJourney(request, response))
+        return;
     const context = await resolvePaymentContext(request.params.journeyId);
     let result;
     if (!context) {
+        (0, logging_1.getLogger)().warn("payment_initiation_unavailable", diagnostic(request, "payment_initiation", "context_unavailable"));
         result = unavailablePaymentResult(request.params.journeyId);
     }
     else {
         try {
             result = await (0, payment_experience_factory_1.createDefaultPaymentInitiationService)().initiatePayment(context);
         }
-        catch {
+        catch (error) {
+            (0, logging_1.getLogger)().error("payment_initiation_failed", diagnostic(request, "payment_initiation", error instanceof Error ? "exception" : "unknown"));
             result = unavailablePaymentResult(request.params.journeyId);
         }
+    }
+    if (result.status === "FAILED") {
+        (0, logging_1.getLogger)().error("payment_initiation_failed", diagnostic(request, "payment_initiation", "failed"));
     }
     const paymentViewModel = new view_models_2.PaymentExperienceViewModelProvider().provide(result, request.params.journeyId);
     response.status(result.status === "UNAVAILABLE" ? 409 : 200);
@@ -370,6 +420,8 @@ async function initiatePayment(request, response) {
     });
 }
 async function renderPaymentReturn(request, response) {
+    if (!await resolvePaymentJourney(request, response))
+        return;
     const context = await resolvePaymentContext(request.params.journeyId);
     const result = context ? paymentStateResult(context) : unavailablePaymentResult(request.params.journeyId);
     const paymentViewModel = new view_models_2.PaymentExperienceViewModelProvider().provide(result, request.params.journeyId);
@@ -385,7 +437,8 @@ async function renderBookingConfirmationPage(request, response) {
     try {
         result = await (0, reservation_confirmation_factory_1.createReservationConfirmationService)().resolve(request.params.journeyId);
     }
-    catch {
+    catch (error) {
+        (0, logging_1.getLogger)().error("confirmation_resolution_failed", diagnostic(request, "confirmation_resolution", error instanceof Error ? "exception" : "unknown"));
         result = {
             status: "UNAVAILABLE",
             journeyId: request.params.journeyId,

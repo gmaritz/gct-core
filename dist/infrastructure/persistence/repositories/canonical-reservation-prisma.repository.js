@@ -327,6 +327,12 @@ class CanonicalReservationPrismaRepository {
         this.prisma = prisma;
     }
     async save(reservation, context) {
+        await this.persist(reservation, context, true);
+    }
+    async saveIfAbsent(reservation, context) {
+        await this.persist(reservation, context, false);
+    }
+    async persist(reservation, context, overwrite) {
         assertPersistenceContext(context);
         if (!reservation.pricingSnapshot) {
             throw new Error("Reservation pricing snapshot is required for persistence.");
@@ -347,7 +353,7 @@ class CanonicalReservationPrismaRepository {
             }
             await tx.reservation.upsert({
                 where: { id: reservation.identity.id },
-                update: {
+                update: overwrite ? {
                     customerId: context.customerId,
                     reservationNumber: reservation.reservationNumber,
                     bookingStartDate: context.bookingStartDate,
@@ -361,7 +367,7 @@ class CanonicalReservationPrismaRepository {
                     supplierReferences: snapshotJson.supplierReferences,
                     reservationTimeline: snapshotJson.reservationTimeline,
                     reservationMetadata: snapshotJson.reservationMetadata,
-                },
+                } : {},
                 create: {
                     id: reservation.identity.id,
                     customerId: context.customerId,

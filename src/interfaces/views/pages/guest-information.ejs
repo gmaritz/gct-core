@@ -5,8 +5,8 @@
       <h1 id="guest-information-title"><%= guestInformationViewModel.journeyTitle %></h1>
       <p>Provide the contact and traveller information needed for reservation review.</p>
     </header>
-    <% if (guestInformationViewModel.errors.length > 0) { %><div role="alert"><h2>Please correct the following</h2><ul><% guestInformationViewModel.errors.forEach((error) => { %><li><%= error %></li><% }); %></ul></div><% } %>
-    <form method="post" action="/ui/journeys/<%= guestInformationViewModel.journeyId %>/guest-information">
+    <% if (guestInformationViewModel.errors.length > 0) { %><div id="guest-information-errors" role="alert" tabindex="-1"><h2>Please correct the following</h2><ul><% guestInformationViewModel.errors.forEach((error) => { %><li><%= error %></li><% }); %></ul></div><% } %>
+    <form method="post" action="/ui/journeys/<%= guestInformationViewModel.journeyId %>/guest-information"<% if (guestInformationViewModel.errors.length > 0) { %> aria-describedby="guest-information-errors"<% } %> data-protect-submit>
       <fieldset>
         <legend>Booking contact</legend>
         <label for="contact-email">Email <span aria-hidden="true">*</span></label>

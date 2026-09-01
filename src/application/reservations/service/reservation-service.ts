@@ -76,6 +76,14 @@ export class ReservationService
   ) {}
 
   public async execute(request: ReservationServiceRequest): Promise<ReservationResult> {
+    return this.executeInternal(request, false);
+  }
+
+  public async executeIfAbsent(request: ReservationServiceRequest): Promise<ReservationResult> {
+    return this.executeInternal(request, true);
+  }
+
+  private async executeInternal(request: ReservationServiceRequest, ifAbsent: boolean): Promise<ReservationResult> {
     const serviceContext = createReservationServiceContext(request);
 
     const validationResult = this.validationPipeline.execute({
@@ -120,7 +128,10 @@ export class ReservationService
     const builtContext = withBuilderResult(policyContext, builderResult);
 
     if (builderResult.successful && builderResult.reservation) {
-      await this.repository.save(builderResult.reservation, {
+      const save = ifAbsent && this.repository.saveIfAbsent
+        ? this.repository.saveIfAbsent.bind(this.repository)
+        : this.repository.save.bind(this.repository);
+      await save(builderResult.reservation, {
         customerId: policyContext.reservationRequest.query.customerId,
         bookingStartDate: policyContext.reservationRequest.query.checkInDate,
         bookingEndDate: policyContext.reservationRequest.query.checkOutDate,
