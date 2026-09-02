@@ -1,5 +1,6 @@
 body {
   font-family: var(--font-body);
+  font-size: var(--font-size-body);
   line-height: var(--line-height-body);
   color: var(--color-text-primary);
   background: var(--color-background-primary);
@@ -16,7 +17,7 @@ h5,
 h6 {
   margin: 0;
   font-family: var(--font-heading);
-  line-height: 1.1;
+  line-height: var(--line-height-tight);
   color: var(--color-text-primary);
   font-weight: 600;
 }
@@ -58,7 +59,22 @@ textarea {
 }
 
 small {
-  font-size: 0.875rem;
+  font-size: var(--font-size-small);
+}
+
+.eyebrow,
+[class*="__eyebrow"],
+[class*="__kicker"] {
+  color: var(--color-brand);
+  font-size: var(--font-size-small);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.supporting-text {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-small);
 }
 
 @media (max-width: 767px) {

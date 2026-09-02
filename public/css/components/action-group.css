@@ -1,0 +1,22 @@
+.action-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.action-group--end {
+  justify-content: flex-end;
+}
+
+@media (max-width: 767px) {
+  .action-group {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .action-group > .button,
+  .action-group > a {
+    width: 100%;
+  }
+}

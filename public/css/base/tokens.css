@@ -6,6 +6,7 @@
 
   --color-text-primary: #111827;
   --color-text-secondary: #4b5563;
+  --color-text-muted: #6b7280;
   --color-text-inverse: #f8fafc;
 
   --color-brand: #b8731a;
@@ -13,6 +14,7 @@
   --color-brand-light: #d69a3c;
 
   --color-border: rgba(107, 114, 128, 0.2);
+  --color-border-strong: rgba(107, 114, 128, 0.45);
   --color-shadow: rgba(55, 65, 81, 0.16);
 
   --color-success: #2f855a;
@@ -54,8 +56,12 @@
 
   --font-heading: "Cormorant Garamond", Georgia, serif;
   --font-body: Inter, system-ui, sans-serif;
+  --font-size-body: 1rem;
+  --font-size-small: 0.875rem;
   --line-height-body: 1.7;
+  --line-height-tight: 1.1;
   --container-max-width: 1280px;
+  --container-padding: var(--space-lg);
 
   --color-background: var(--color-background-primary);
   --color-surface: #ffffff;
@@ -63,6 +69,7 @@
   --color-text: var(--color-text-primary);
   --color-muted: var(--color-text-secondary);
   --color-accent: var(--color-brand);
+  --color-focus: var(--focus-ring-color);
   --spacing-1: var(--space-xs);
   --spacing-2: var(--space-sm);
   --spacing-3: var(--space-md);

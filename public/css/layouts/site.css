@@ -20,7 +20,7 @@
 .page-content {
   max-width: var(--container-max-width);
   margin: 0 auto;
-  padding-inline: 24px;
+  padding-inline: var(--container-padding);
   padding-block: 24px;
   width: 100%;
 }
@@ -35,13 +35,6 @@
 .site-header__brand {
   font-weight: 700;
   color: var(--color-accent);
-}
-
-.container {
-  max-width: var(--container-max-width);
-  margin: 0 auto;
-  padding-inline: 24px;
-  width: 100%;
 }
 
 body.is-navigation-open {

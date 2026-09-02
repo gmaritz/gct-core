@@ -1,0 +1,18 @@
+.price-display {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.price-display__amount {
+  color: var(--color-text-primary);
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: var(--line-height-tight);
+}
+
+.price-display__qualifier,
+.price-display__label {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-small);
+}
