@@ -3,6 +3,8 @@
 @import url('./base/typography.css');
 @import url('./layouts/container.css');
 @import url('./layouts/site.css');
+@import url('./layouts/header.css');
+@import url('./layouts/footer.css');
 @import url('./components/navigation.css');
 @import url('./components/journey-card.css');
 @import url('./components/homepage-showcase.css');

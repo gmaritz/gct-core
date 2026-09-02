@@ -4,10 +4,11 @@
   <%- include('../partials/head.ejs') %>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
   <div class="app-shell">
     <%- include('../partials/header.ejs') %>
 
-    <main class="page-content">
+    <main id="main-content" class="page-content" tabindex="-1">
       <%- body %>
     </main>
 

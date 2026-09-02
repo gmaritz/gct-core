@@ -1,6 +1,7 @@
 <nav class="global-navigation" aria-label="Primary Navigation" data-global-navigation>
-  <div class="global-navigation__bar">
-    <a class="global-navigation__logo" href="/ui/placeholder">Go Cape Tours</a>
+  <% const navigationPath = typeof currentPath === 'string' ? currentPath : ''; %>
+  <div class="global-navigation__bar container">
+    <a class="global-navigation__logo" href="/ui/placeholder"<% if (navigationPath === '/ui/placeholder') { %> aria-current="page"<% } %>>Go Cape Tours</a>
 
     <button
       class="global-navigation__toggle"

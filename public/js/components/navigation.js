@@ -16,6 +16,8 @@
       return;
     }
 
+    navigation.classList.add('is-enhanced');
+
     let lastFocused = null;
 
     const setMenuState = (expanded) => {

@@ -1,0 +1,20 @@
+.site-header {
+	background: transparent;
+}
+
+.skip-link {
+	position: fixed;
+	top: var(--space-md);
+	left: var(--space-md);
+	z-index: 1100;
+	padding: var(--control-padding-block) var(--control-padding-inline);
+	border-radius: var(--radius-sm);
+	background: var(--color-text-primary);
+	color: var(--color-text-inverse);
+	transform: translateY(-200%);
+	transition: transform var(--transition-fast);
+}
+
+.skip-link:focus-visible {
+	transform: translateY(0);
+}
