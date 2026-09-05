@@ -1,30 +1,110 @@
-<article class="journey-quote" aria-labelledby="journey-quote-title">
+<article class="journey-quote">
   <div class="container">
+    <nav class="journey-quote__nav" aria-label="Breadcrumb navigation">
+      <a class="journey-quote__back-link" href="<%= quoteViewModel.recoveryHref %>">← Back to Accommodation Selection</a>
+    </nav>
+
     <header class="journey-quote__header">
-      <p class="journey-detail__eyebrow">Journey quote</p>
-      <h1 id="journey-quote-title"><%= quoteViewModel.journeyTitle %></h1>
-      <p role="status"><%= quoteViewModel.message %></p>
+      <p class="journey-detail__eyebrow">Commercial quote</p>
+      <h1 class="journey-quote__title"><%= quoteViewModel.journeyTitle %></h1>
+      <p class="journey-quote__subtitle" role="status"><%= quoteViewModel.message %></p>
     </header>
-    <% if (quoteViewModel.pricing) { %>
-      <section aria-labelledby="quote-breakdown-title">
-        <h2 id="quote-breakdown-title">Price breakdown</h2>
-        <dl class="journey-quote__breakdown">
-          <dt>Accommodation</dt><dd><%= quoteViewModel.pricing.displayLabels.totalLabel %></dd>
-          <dt>Taxes</dt><dd><%= quoteViewModel.pricing.displayLabels.taxLabel %></dd>
-          <dt>Fees</dt><dd><%= quoteViewModel.pricing.displayLabels.feesLabel %></dd>
-          <dt>Discounts</dt><dd><%= quoteViewModel.pricing.displayLabels.discountsLabel %></dd>
-          <dt class="journey-quote__total">Total</dt><dd class="journey-quote__total"><%= quoteViewModel.pricing.displayLabels.totalLabel %></dd>
-        </dl>
-        <p><%= quoteViewModel.pricing.summary.travellerCount %> traveller(s) · <%= quoteViewModel.pricing.summary.currency %></p>
-      </section>
-      <section aria-labelledby="quote-accommodation-title">
-        <h2 id="quote-accommodation-title">Selected accommodation</h2>
-        <% quoteViewModel.accommodation.forEach((stay) => { %><p><strong><%= stay.property %></strong> · <%= stay.room %> · <%= stay.rate %></p><% }); %>
-      </section>
-    <% } else { %>
-      <section aria-labelledby="quote-status-title"><h2 id="quote-status-title">Quote status</h2><p><%= quoteViewModel.status %></p></section>
+
+    <% if (!quoteViewModel.pricing || quoteViewModel.status !== "PRICED") { %>
+      <div class="feedback feedback--warning" role="alert">
+        <p><%= quoteViewModel.message %></p>
+      </div>
     <% } %>
-    <a class="button button--primary" href="<%= quoteViewModel.recoveryHref %>">Review accommodation</a>
-    <% if (quoteViewModel.pricing) { %><a class="button button--primary" href="/ui/journeys/<%= quoteViewModel.journeyId %>/guest-information">Continue to guest information</a><% } %>
+
+    <div class="journey-quote__layout">
+      <div class="journey-quote__main">
+        <% if (quoteViewModel.pricing) { %>
+          <section class="journey-quote__section" aria-labelledby="quote-breakdown-title">
+            <h2 id="quote-breakdown-title" class="journey-quote__section-title">Price breakdown</h2>
+            <div class="card journey-quote__breakdown-card">
+              <dl class="journey-quote__breakdown">
+                <dt>Accommodation</dt>
+                <dd><%= quoteViewModel.pricing.displayLabels.totalLabel %></dd>
+                <dt>Taxes</dt>
+                <dd><%= quoteViewModel.pricing.displayLabels.taxLabel %></dd>
+                <dt>Fees</dt>
+                <dd><%= quoteViewModel.pricing.displayLabels.feesLabel %></dd>
+                <dt>Discounts</dt>
+                <dd><%= quoteViewModel.pricing.displayLabels.discountsLabel %></dd>
+                <dt class="journey-quote__total">Total</dt>
+                <dd class="journey-quote__total"><%= quoteViewModel.pricing.displayLabels.totalLabel %></dd>
+              </dl>
+
+              <div class="journey-quote__commercial-meta">
+                <span class="journey-quote__meta-badge">👥 <%= quoteViewModel.pricing.summary.travellerCount %> traveller(s)</span>
+                <span class="journey-quote__meta-badge">💱 <%= quoteViewModel.pricing.summary.currency %></span>
+                <% if (quoteViewModel.pricing.quote.quotationReference) { %>
+                  <span class="journey-quote__meta-badge">📋 Ref: <%= quoteViewModel.pricing.quote.quotationReference %></span>
+                <% } %>
+              </div>
+
+              <% if (quoteViewModel.pricing.quote.commercialNotes && quoteViewModel.pricing.quote.commercialNotes.length > 0) { %>
+                <div class="journey-quote__notes">
+                  <p class="journey-quote__notes-title">Commercial Notes</p>
+                  <ul>
+                    <% quoteViewModel.pricing.quote.commercialNotes.forEach((note) => { %>
+                      <li><%= note %></li>
+                    <% }); %>
+                  </ul>
+                </div>
+              <% } %>
+            </div>
+          </section>
+
+          <section class="journey-quote__section" aria-labelledby="quote-accommodation-title">
+            <h2 id="quote-accommodation-title" class="journey-quote__section-title">Selected accommodation</h2>
+            <div class="journey-quote__accommodation-list">
+              <% quoteViewModel.accommodation.forEach((stay) => { %>
+                <article class="card journey-quote__accommodation-card">
+                  <h3 class="journey-quote__accommodation-name"><%= stay.property %></h3>
+                  <p class="journey-quote__accommodation-meta">
+                    <span><strong>Room:</strong> <%= stay.room %></span> ·
+                    <span><strong>Board / Rate:</strong> <%= stay.rate %></span>
+                  </p>
+                </article>
+              <% }); %>
+            </div>
+          </section>
+        <% } else { %>
+          <section class="journey-quote__section" aria-labelledby="quote-status-title">
+            <h2 id="quote-status-title" class="journey-quote__section-title">Quote status</h2>
+            <div class="card journey-quote__status-card">
+              <p class="journey-quote__status-tag">Status: <strong><%= quoteViewModel.status %></strong></p>
+              <p><%= quoteViewModel.message %></p>
+            </div>
+          </section>
+        <% } %>
+      </div>
+
+      <aside class="journey-quote__sidebar">
+        <div class="card journey-quote__action-card">
+          <div class="journey-quote__pricing" aria-label="Authoritative quote total">
+            <p class="journey-quote__pricing-label">Total Payable Quote</p>
+            <div class="price-display">
+              <span class="price-display__amount"><%= quoteViewModel.pricing ? quoteViewModel.pricing.displayLabels.totalLabel : "Price on request" %></span>
+            </div>
+            <p class="journey-quote__pricing-subtext">
+              <% if (quoteViewModel.pricing) { %>
+                Includes luxury accommodation, taxes, and service fees for <%= quoteViewModel.pricing.summary.travellerCount %> traveller(s).
+              <% } else { %>
+                Review your accommodation selection to generate an authoritative quote.
+              <% } %>
+            </p>
+          </div>
+
+          <div class="journey-quote__actions">
+            <% if (quoteViewModel.pricing) { %>
+              <a class="button button--primary button--full" href="/ui/journeys/<%= quoteViewModel.journeyId %>/guest-information">Continue to guest information</a>
+            <% } %>
+            <a class="button button--<%= quoteViewModel.pricing ? 'secondary' : 'primary' %> button--full" href="<%= quoteViewModel.recoveryHref %>">Review accommodation</a>
+          </div>
+        </div>
+      </aside>
+    </div>
   </div>
 </article>
