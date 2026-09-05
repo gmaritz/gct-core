@@ -1,5 +1,25 @@
 import { Journey } from "../../../application/journeys";
 import { AccommodationSelectionViewModel, AccommodationStopSelectionState } from "../journeys/accommodation-selection.viewmodel";
+import { ImageViewModel } from "../shared/image.viewmodel";
+
+function createAccommodationImage(name: string, destination: string): ImageViewModel {
+  const destLower = (destination || name).toLowerCase();
+  let src = "/images/hero/hero-cape-town-1600x900.webp";
+  if (destLower.includes("winelands")) {
+    src = "/images/journeys/cape-winelands-1600x900.webp";
+  } else if (destLower.includes("atlantic") || destLower.includes("seaboard")) {
+    src = "/images/journeys/atlantic-seaboard-1600x900.webp";
+  } else if (destLower.includes("franschhoek") || destLower.includes("valley")) {
+    src = "/images/journeys/franschhoek-valley-1600x900.webp";
+  }
+
+  return Object.freeze({
+    src,
+    alt: `${name} - ${destination} Accommodation`,
+    width: 1600,
+    height: 900,
+  });
+}
 
 export class AccommodationSelectionViewModelProvider {
   public provide(journey: Journey, status?: string): AccommodationSelectionViewModel {
@@ -35,6 +55,8 @@ export class AccommodationSelectionViewModelProvider {
           destination: destinations[index] ?? destinations[0] ?? "",
           category: option.accommodation?.category,
           rating: option.accommodation?.rating.stars,
+          image: createAccommodationImage(option.name, destinations[index] ?? destinations[0] ?? ""),
+          images: Object.freeze([createAccommodationImage(option.name, destinations[index] ?? destinations[0] ?? "")]),
           rooms: Object.freeze(rooms.map((room) => Object.freeze({ ...room, rates: Object.freeze(room.rates.map((rate) => Object.freeze(rate))) }))),
         })]),
         state,

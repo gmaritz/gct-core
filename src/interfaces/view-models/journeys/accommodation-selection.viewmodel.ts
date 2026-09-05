@@ -1,4 +1,5 @@
 import { CTAViewModel } from "../shared/cta.viewmodel";
+import { ImageViewModel } from "../shared/image.viewmodel";
 
 export type AccommodationStopSelectionState = "NOT_SELECTED" | "PROPERTY_SELECTED" | "ROOM_SELECTED" | "COMPLETE";
 
@@ -22,6 +23,8 @@ export interface AccommodationPropertyOptionViewModel {
   readonly destination: string;
   readonly category?: string;
   readonly rating?: number;
+  readonly image?: ImageViewModel;
+  readonly images?: ReadonlyArray<ImageViewModel>;
   readonly rooms: ReadonlyArray<AccommodationRoomOptionViewModel>;
 }
 

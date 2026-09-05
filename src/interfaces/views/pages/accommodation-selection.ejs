@@ -1,43 +1,103 @@
 <article class="accommodation-selection">
   <div class="container">
+    <nav class="accommodation-selection__nav" aria-label="Breadcrumb navigation">
+      <a class="accommodation-selection__back-link" href="/ui/journeys/<%= accommodationSelectionViewModel.journeyId %>">← Back to Journey Detail</a>
+    </nav>
+
     <header class="accommodation-selection__header">
       <p class="journey-detail__eyebrow">Accommodation selection</p>
-      <h1><%= accommodationSelectionViewModel.journeyTitle %></h1>
-      <p>Select the available property, room and rate for each journey stop.</p>
-      <% if (accommodationSelectionViewModel.status) { %><p role="alert"><%= accommodationSelectionViewModel.status %></p><% } %>
+      <h1 class="accommodation-selection__title"><%= accommodationSelectionViewModel.journeyTitle %></h1>
+      <p class="accommodation-selection__subtitle">Review available luxury accommodation options for each stop and choose your preferred room and rate.</p>
+      <% if (accommodationSelectionViewModel.status) { %>
+        <div class="feedback feedback--warning" role="alert">
+          <p><%= accommodationSelectionViewModel.status %></p>
+        </div>
+      <% } %>
     </header>
+
     <form method="post" action="/ui/journeys/<%= accommodationSelectionViewModel.journeyId %>/accommodation">
-      <% accommodationSelectionViewModel.stops.forEach((stop, stopIndex) => { %>
-        <fieldset class="accommodation-selection__stop">
-          <legend>Accommodation <%= stop.order %> of <%= accommodationSelectionViewModel.stops.length %> · <%= stop.destination %></legend>
-          <% if (stop.checkIn && stop.checkOut) { %><p><%= stop.checkIn.slice(0, 10) %> to <%= stop.checkOut.slice(0, 10) %><% if (stop.nights) { %> · <%= stop.nights %> nights<% } %></p><% } %>
-          <% if (stop.properties.length === 0) { %>
-            <p role="status">No accommodation is currently available for this stop.</p>
-          <% } else { %>
-            <% stop.properties.forEach((property) => { %>
-              <article class="accommodation-selection__property">
-                <h2><%= property.name %></h2>
-                <p><%= property.destination %><% if (property.category) { %> · <%= property.category %><% } %><% if (property.rating) { %> · <%= property.rating %> stars<% } %></p>
-                <input type="hidden" name="selections[<%= stopIndex %>][accommodationId]" value="<%= property.id %>">
-                <input type="hidden" name="selections[<%= stopIndex %>][stopId]" value="<%= stop.id || '' %>">
-                <% if (property.rooms.length === 0) { %><p role="status">No rooms are currently available.</p><% } else { %>
-                  <label for="room-<%= stopIndex %>">Room</label>
-                    <select id="room-<%= stopIndex %>" name="selections[<%= stopIndex %>][roomReference][opaqueReference]" required>
-                      <% property.rooms.forEach((room) => { %><option value="<%= room.id %>"><%= room.name %></option><% }); %>
-                    </select>
-                  <input type="hidden" name="selections[<%= stopIndex %>][roomReference][provider]" value="curated">
-                  <label for="rate-<%= stopIndex %>">Rate</label>
-                    <select id="rate-<%= stopIndex %>" name="selections[<%= stopIndex %>][rateReference][opaqueReference]" required>
-                      <% property.rooms[0].rates.forEach((rate) => { %><option value="<%= rate.id %>"><%= rate.name || "Available rate" %> · <%= rate.currency %> <%= rate.amount %></option><% }); %>
-                    </select>
-                  <input type="hidden" name="selections[<%= stopIndex %>][rateReference][provider]" value="curated">
-                <% } %>
-              </article>
-            <% }); %>
-          <% } %>
-        </fieldset>
-      <% }); %>
-      <button class="button button--primary" type="submit"<% if (accommodationSelectionViewModel.stops.some((stop) => stop.properties.length === 0 || stop.properties[0].rooms.length === 0)) { %> disabled<% } %>>Continue to pricing</button>
+      <div class="accommodation-selection__layout">
+        <div class="accommodation-selection__main">
+          <% accommodationSelectionViewModel.stops.forEach((stop, stopIndex) => { %>
+            <fieldset class="accommodation-selection__stop">
+              <legend class="accommodation-selection__stop-legend">
+                Stop <%= stop.order %> of <%= accommodationSelectionViewModel.stops.length %> · <%= stop.destination %>
+              </legend>
+
+              <% if (stop.checkIn && stop.checkOut) { %>
+                <div class="accommodation-selection__stop-meta">
+                  <span class="accommodation-selection__stop-badge">📅 <%= stop.checkIn.slice(0, 10) %> to <%= stop.checkOut.slice(0, 10) %></span>
+                  <% if (stop.nights) { %><span class="accommodation-selection__stop-badge">🌙 <%= stop.nights %> night<%= stop.nights === 1 ? '' : 's' %></span><% } %>
+                </div>
+              <% } %>
+
+              <% if (stop.properties.length === 0) { %>
+                <p class="accommodation-selection__empty" role="status">No accommodation is currently available for this stop.</p>
+              <% } else { %>
+                <% stop.properties.forEach((property) => { %>
+                  <article class="card accommodation-selection__property">
+                    <% if (property.image) { %>
+                      <div class="accommodation-selection__property-image-container">
+                        <img class="accommodation-selection__property-image" src="<%= property.image.src %>" alt="<%= property.image.alt %>" width="<%= property.image.width %>" height="<%= property.image.height %>">
+                      </div>
+                    <% } %>
+
+                    <div class="accommodation-selection__property-content">
+                      <div class="accommodation-selection__property-header">
+                        <h2 class="accommodation-selection__property-name"><%= property.name %></h2>
+                        <div class="accommodation-selection__property-badges">
+                          <span class="accommodation-selection__property-badge">📍 <%= property.destination %></span>
+                          <% if (property.category) { %><span class="accommodation-selection__property-badge"><%= property.category %></span><% } %>
+                          <% if (property.rating) { %><span class="accommodation-selection__property-badge">★ <%= property.rating %> Stars</span><% } %>
+                        </div>
+                      </div>
+
+                      <input type="hidden" name="selections[<%= stopIndex %>][accommodationId]" value="<%= property.id %>">
+                      <input type="hidden" name="selections[<%= stopIndex %>][stopId]" value="<%= stop.id || '' %>">
+
+                      <% if (property.rooms.length === 0) { %>
+                        <p class="accommodation-selection__empty" role="status">No rooms are currently available.</p>
+                      <% } else { %>
+                        <div class="accommodation-selection__options-grid">
+                          <div class="form-group">
+                            <label class="form-label" for="room-<%= stopIndex %>">Select Room</label>
+                            <select class="form-select" id="room-<%= stopIndex %>" name="selections[<%= stopIndex %>][roomReference][opaqueReference]" required>
+                              <% property.rooms.forEach((room) => { %>
+                                <option value="<%= room.id %>"><%= room.name %></option>
+                              <% }); %>
+                            </select>
+                            <input type="hidden" name="selections[<%= stopIndex %>][roomReference][provider]" value="curated">
+                          </div>
+
+                          <div class="form-group">
+                            <label class="form-label" for="rate-<%= stopIndex %>">Select Rate & Board</label>
+                            <select class="form-select" id="rate-<%= stopIndex %>" name="selections[<%= stopIndex %>][rateReference][opaqueReference]" required>
+                              <% property.rooms[0].rates.forEach((rate) => { %>
+                                <option value="<%= rate.id %>"><%= rate.name || "Available rate" %> · <%= rate.currency %> <%= rate.amount %></option>
+                              <% }); %>
+                            </select>
+                            <input type="hidden" name="selections[<%= stopIndex %>][rateReference][provider]" value="curated">
+                          </div>
+                        </div>
+                      <% } %>
+                    </div>
+                  </article>
+                <% }); %>
+              <% } %>
+            </fieldset>
+          <% }); %>
+        </div>
+
+        <aside class="accommodation-selection__sidebar">
+          <div class="card accommodation-selection__action-card">
+            <div class="accommodation-selection__pricing" aria-label="Selected accommodation pricing preview">
+              <p class="accommodation-selection__pricing-label">Selection Summary</p>
+              <p class="accommodation-selection__pricing-subtext">Confirm accommodation choices for each stop to view calculated pricing.</p>
+            </div>
+            <button class="button button--primary button--full" type="submit"<% if (accommodationSelectionViewModel.stops.some((stop) => stop.properties.length === 0 || stop.properties[0].rooms.length === 0)) { %> disabled<% } %>>Continue to pricing</button>
+          </div>
+        </aside>
+      </div>
     </form>
   </div>
 </article>
