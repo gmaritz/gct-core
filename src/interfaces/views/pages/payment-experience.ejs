@@ -1,26 +1,92 @@
 <article class="payment-experience" aria-labelledby="payment-title">
   <div class="container">
+    <nav class="payment-experience__nav" aria-label="Breadcrumb navigation">
+      <a class="payment-experience__back-link" href="<%= paymentViewModel.recoveryAction.href %>">← <%= paymentViewModel.recoveryAction.label %></a>
+    </nav>
+
     <header class="payment-experience__header">
       <p class="journey-detail__eyebrow">Payment</p>
-      <h1 id="payment-title">Secure payment</h1>
-      <p role="status"><%= paymentViewModel.message %></p>
+      <h1 id="payment-title" class="payment-experience__title">Secure payment</h1>
+      <p class="payment-experience__subtitle" role="status"><%= paymentViewModel.message %></p>
     </header>
-    <section aria-labelledby="payment-status-title">
-      <h2 id="payment-status-title">Payment status</h2>
-      <p><%= paymentViewModel.status %></p>
-      <% if (paymentViewModel.amount !== undefined && paymentViewModel.currency) { %><p class="payment-experience__amount"><%= paymentViewModel.currency %> <%= paymentViewModel.amount.toFixed(2) %></p><% } %>
-    </section>
-    <% if (paymentViewModel.providerAction) { %>
-      <% if (paymentViewModel.hostedPaymentAction) { %>
-        <form id="secure-payment" method="<%= paymentViewModel.hostedPaymentAction.method.toLowerCase() %>" action="<%= paymentViewModel.hostedPaymentAction.action %>" data-protect-submit>
-          <% Object.entries(paymentViewModel.hostedPaymentAction.fields).forEach(([name, value]) => { %><input type="hidden" name="<%= name %>" value="<%= value %>"><% }); %>
-          <button class="button button--primary" type="submit"><%= paymentViewModel.providerAction.label %></button>
-        </form>
-      <% } else { %>
-        <a class="button button--primary" href="<%= paymentViewModel.providerAction.href %>"><%= paymentViewModel.providerAction.label %></a>
-      <% } %>
+
+    <% if (paymentViewModel.status === "UNAVAILABLE" || paymentViewModel.status === "FAILED" || paymentViewModel.status === "CANCELLED") { %>
+      <div class="feedback feedback--warning" role="alert">
+        <p><%= paymentViewModel.message %></p>
+      </div>
     <% } %>
-    <% if (paymentViewModel.confirmationAction) { %><a class="button button--primary" href="<%= paymentViewModel.confirmationAction.href %>"><%= paymentViewModel.confirmationAction.label %></a><% } %>
-    <a class="button button--secondary" href="<%= paymentViewModel.recoveryAction.href %>"><%= paymentViewModel.recoveryAction.label %></a>
+
+    <div class="payment-experience__layout">
+      <div class="payment-experience__main">
+
+        <section class="payment-experience__section" aria-labelledby="payment-status-title">
+          <h2 id="payment-status-title" class="payment-experience__section-title">Payment status & details</h2>
+          <div class="card payment-experience__card">
+            <div class="payment-experience__status-header">
+              <span class="payment-experience__status-label">Current Status:</span>
+              <span class="payment-experience__status-badge payment-experience__status-badge--<%= paymentViewModel.status.toLowerCase() %>"><%= paymentViewModel.status %></span>
+            </div>
+            <% if (paymentViewModel.reservationReference) { %>
+              <p class="payment-experience__meta"><strong>Reservation Reference:</strong> <%= paymentViewModel.reservationReference %></p>
+            <% } %>
+            <p class="payment-experience__description"><%= paymentViewModel.message %></p>
+          </div>
+        </section>
+
+        <% if (paymentViewModel.status !== "UNAVAILABLE") { %>
+          <section class="payment-experience__section" aria-labelledby="payment-security-title">
+            <h2 id="payment-security-title" class="payment-experience__section-title">Secure payment gateway</h2>
+            <div class="card payment-experience__card">
+              <div class="payment-experience__security-info">
+                <p class="payment-experience__security-text">
+                  Your payment is handled securely through the hosted payment gateway. Upon clicking proceed, you will be redirected to complete your transaction via encrypted SSL security.
+                </p>
+                <ul class="payment-experience__security-list">
+                  <li>🔒 256-Bit SSL Encryption</li>
+                  <li>💳 Credit Card & Instant EFT supported</li>
+                  <li>🛡 Server-authoritative transaction signing</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+        <% } %>
+
+      </div>
+
+      <aside class="payment-experience__sidebar">
+        <div class="card payment-experience__action-card">
+          <% if (paymentViewModel.amount !== undefined && paymentViewModel.currency) { %>
+            <div class="payment-experience__pricing" aria-label="Authoritative payment total">
+              <p class="payment-experience__pricing-label">Total Amount Payable</p>
+              <div class="price-display">
+                <span class="price-display__amount payment-experience__amount"><%= paymentViewModel.currency %> <%= paymentViewModel.amount.toFixed(2) %></span>
+              </div>
+              <p class="payment-experience__pricing-subtext">Authoritative total payable for your confirmed reservation.</p>
+            </div>
+          <% } %>
+
+          <div class="payment-experience__actions">
+            <% if (paymentViewModel.providerAction) { %>
+              <% if (paymentViewModel.hostedPaymentAction) { %>
+                <form id="secure-payment" method="<%= paymentViewModel.hostedPaymentAction.method.toLowerCase() %>" action="<%= paymentViewModel.hostedPaymentAction.action %>" data-protect-submit>
+                  <% Object.entries(paymentViewModel.hostedPaymentAction.fields).forEach(([name, value]) => { %>
+                    <input type="hidden" name="<%= name %>" value="<%= value %>">
+                  <% }); %>
+                  <button class="button button--primary button--full" type="submit"><%= paymentViewModel.providerAction.label %></button>
+                </form>
+              <% } else { %>
+                <a class="button button--primary button--full" href="<%= paymentViewModel.providerAction.href %>"><%= paymentViewModel.providerAction.label %></a>
+              <% } %>
+            <% } %>
+
+            <% if (paymentViewModel.confirmationAction) { %>
+              <a class="button button--primary button--full" href="<%= paymentViewModel.confirmationAction.href %>"><%= paymentViewModel.confirmationAction.label %></a>
+            <% } %>
+
+            <a class="button button--<%= paymentViewModel.providerAction || paymentViewModel.confirmationAction ? 'secondary' : 'primary' %> button--full" href="<%= paymentViewModel.recoveryAction.href %>"><%= paymentViewModel.recoveryAction.label %></a>
+          </div>
+        </div>
+      </aside>
+    </div>
   </div>
 </article>
