@@ -1,18 +1,128 @@
 <article class="booking-confirmation" aria-labelledby="booking-confirmation-title">
   <div class="container">
     <header class="booking-confirmation__header" role="status">
+      <div class="booking-confirmation__badge-container">
+        <span class="booking-confirmation__status-badge booking-confirmation__status-badge--<%= bookingConfirmationViewModel.status.toLowerCase() %>">
+          <% if (bookingConfirmationViewModel.status === 'CONFIRMED') { %>✓ Verified<% } else { %><%= bookingConfirmationViewModel.status %><% } %>
+        </span>
+      </div>
       <p class="journey-detail__eyebrow">Booking confirmation</p>
-      <h1 id="booking-confirmation-title"><%= bookingConfirmationViewModel.message %></h1>
-      <% if (bookingConfirmationViewModel.reservationReference) { %><p>Reference: <strong><%= bookingConfirmationViewModel.reservationReference %></strong></p><% } %>
+      <h1 id="booking-confirmation-title" class="booking-confirmation__title"><%= bookingConfirmationViewModel.message %></h1>
+      <% if (bookingConfirmationViewModel.reservationReference) { %>
+        <div class="booking-confirmation__reference-box">
+          <p class="booking-confirmation__reference-label">Reservation Reference Number</p>
+          <p class="booking-confirmation__reference-number"><%= bookingConfirmationViewModel.reservationReference %></p>
+        </div>
+      <% } %>
     </header>
-    <% if (bookingConfirmationViewModel.journeyTitle) { %>
-      <section aria-labelledby="confirmation-journey-title"><h2 id="confirmation-journey-title">Journey</h2><p><strong><%= bookingConfirmationViewModel.journeyTitle %></strong></p><p><%= bookingConfirmationViewModel.destination || "Destination pending" %> · <%= bookingConfirmationViewModel.duration || "Duration pending" %></p><% if (bookingConfirmationViewModel.startDate || bookingConfirmationViewModel.endDate) { %><p><%= bookingConfirmationViewModel.startDate || "" %> to <%= bookingConfirmationViewModel.endDate || "" %></p><% } %></section>
-  <section aria-labelledby="confirmation-accommodation-title"><h2 id="confirmation-accommodation-title">Accommodation</h2><% if (bookingConfirmationViewModel.accommodation.length > 0) { %><ul><% bookingConfirmationViewModel.accommodation.forEach((stay) => { %><li><%= stay.destination || "Destination" %> · <%= stay.property %><% if (stay.room) { %> · <%= stay.room %><% } %></li><% }); %></ul><% } else { %><p>Accommodation fulfilment is still being resolved.</p><% } %></section>
-  <section aria-labelledby="confirmation-travellers-title"><h2 id="confirmation-travellers-title">Travellers</h2><p>Lead traveller: <%= bookingConfirmationViewModel.leadTraveller || "Traveller pending" %></p><p><%= bookingConfirmationViewModel.travellers.length %> traveller(s)</p><p>Contact: <%= bookingConfirmationViewModel.contactEmail || "Contact pending" %></p></section>
-      <% if (bookingConfirmationViewModel.amount !== undefined) { %><section aria-labelledby="confirmation-price-title"><h2 id="confirmation-price-title">Payment</h2><p class="booking-confirmation__amount"><%= bookingConfirmationViewModel.currency %> <%= bookingConfirmationViewModel.amount.toFixed(2) %></p><p>Payment status: <%= bookingConfirmationViewModel.paymentStatus || "Pending" %></p></section><% } %>
-      <p>Reservation status: <%= bookingConfirmationViewModel.reservationStatus || "Pending" %></p>
-      <p>Fulfilment status: <%= bookingConfirmationViewModel.fulfilmentStatus || "Pending" %></p>
-    <% } else { %><p role="alert">The confirmation details are not currently available.</p><% } %>
-    <a class="button button--<%= bookingConfirmationViewModel.recoveryAction.style %>" href="<%= bookingConfirmationViewModel.recoveryAction.href %>"><%= bookingConfirmationViewModel.recoveryAction.label %></a>
+
+    <% if (bookingConfirmationViewModel.status !== 'CONFIRMED') { %>
+      <div class="feedback feedback--warning" role="alert">
+        <p><%= bookingConfirmationViewModel.message %></p>
+      </div>
+    <% } %>
+
+    <div class="booking-confirmation__layout">
+      <div class="booking-confirmation__main">
+        <% if (bookingConfirmationViewModel.journeyTitle) { %>
+          <!-- Journey & Accommodation Details -->
+          <section class="booking-confirmation__section" aria-labelledby="confirmation-journey-title">
+            <h2 id="confirmation-journey-title" class="booking-confirmation__section-title">Selected Journey & Accommodation</h2>
+            <div class="card booking-confirmation__card">
+              <div class="booking-confirmation__card-header">
+                <h3 class="booking-confirmation__card-title"><%= bookingConfirmationViewModel.journeyTitle %></h3>
+                <p class="booking-confirmation__card-meta">
+                  📍 <%= bookingConfirmationViewModel.destination || "Destination pending" %> · ⏱ <%= bookingConfirmationViewModel.duration || "Duration pending" %>
+                  <% if (bookingConfirmationViewModel.startDate || bookingConfirmationViewModel.endDate) { %>
+                    · 📅 <%= bookingConfirmationViewModel.startDate || "" %> to <%= bookingConfirmationViewModel.endDate || "" %>
+                  <% } %>
+                </p>
+              </div>
+
+              <div class="booking-confirmation__accommodation-list">
+                <p class="booking-confirmation__subheading">Accommodations Booked</p>
+                <% if (bookingConfirmationViewModel.accommodation.length > 0) { %>
+                  <ul class="booking-confirmation__list">
+                    <% bookingConfirmationViewModel.accommodation.forEach((stay) => { %>
+                      <li>
+                        <strong><%= stay.property %></strong>
+                        <% if (stay.room) { %><span> · <%= stay.room %></span><% } %>
+                        <% if (stay.destination) { %><span> (<%= stay.destination %>)</span><% } %>
+                      </li>
+                    <% }); %>
+                  </ul>
+                <% } else { %>
+                  <p class="booking-confirmation__empty">Accommodation fulfilment is still being resolved.</p>
+                <% } %>
+              </div>
+            </div>
+          </section>
+
+          <!-- Guest & Traveller Details -->
+          <section class="booking-confirmation__section" aria-labelledby="confirmation-travellers-title">
+            <h2 id="confirmation-travellers-title" class="booking-confirmation__section-title">Guest & Traveller Details</h2>
+            <div class="card booking-confirmation__card">
+              <p><strong>Lead Traveller:</strong> <%= bookingConfirmationViewModel.leadTraveller || "Traveller pending" %></p>
+              <p><strong>Booking Contact Email:</strong> <%= bookingConfirmationViewModel.contactEmail || "Contact pending" %></p>
+              <p><strong>Total Guests:</strong> <%= bookingConfirmationViewModel.travellers.length %> traveller(s)</p>
+
+              <% if (bookingConfirmationViewModel.travellers.length > 0) { %>
+                <div class="booking-confirmation__travellers-list">
+                  <p class="booking-confirmation__subheading">Guest Manifest</p>
+                  <ul class="booking-confirmation__list">
+                    <% bookingConfirmationViewModel.travellers.forEach((traveller) => { %>
+                      <li>
+                        <strong><%= traveller.name %></strong>
+                        <% if (traveller.travellerType) { %><span class="booking-confirmation__type-badge"><%= traveller.travellerType %></span><% } %>
+                      </li>
+                    <% }); %>
+                  </ul>
+                </div>
+              <% } %>
+            </div>
+          </section>
+
+          <!-- Operational Next Steps -->
+          <section class="booking-confirmation__section" aria-labelledby="confirmation-next-steps-title">
+            <h2 id="confirmation-next-steps-title" class="booking-confirmation__section-title">Next Steps & Operational Processing</h2>
+            <div class="card booking-confirmation__card">
+              <ul class="booking-confirmation__steps-list">
+                <li>✉️ A formal booking confirmation and travel document packet will be sent to <strong><%= bookingConfirmationViewModel.contactEmail || "your email" %></strong>.</li>
+                <li>🛎 Our local Cape concierge team will coordinate your arrival, private transfers, and luxury lodge check-ins.</li>
+                <li>📞 Should you require any modifications or have special requests, contact GCT Core support quoting reference <strong><%= bookingConfirmationViewModel.reservationReference || "your booking ID" %></strong>.</li>
+              </ul>
+            </div>
+          </section>
+        <% } else { %>
+          <div class="card booking-confirmation__card">
+            <p role="alert">The confirmation details are not currently available.</p>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Sidebar Summary / Action Card -->
+      <aside class="booking-confirmation__sidebar">
+        <div class="card booking-confirmation__action-card">
+          <% if (bookingConfirmationViewModel.amount !== undefined) { %>
+            <div class="booking-confirmation__pricing" aria-label="Confirmed payment total">
+              <p class="booking-confirmation__pricing-label">Payment Summary</p>
+              <div class="price-display">
+                <span class="price-display__amount booking-confirmation__amount"><%= bookingConfirmationViewModel.currency || "ZAR" %> <%= bookingConfirmationViewModel.amount.toFixed(2) %></span>
+              </div>
+              <p class="booking-confirmation__pricing-meta">Payment Status: <strong><%= bookingConfirmationViewModel.paymentStatus || "Pending" %></strong></p>
+            </div>
+          <% } %>
+
+          <div class="booking-confirmation__status-summary">
+            <p class="booking-confirmation__meta-item">Reservation Status: <strong><%= bookingConfirmationViewModel.reservationStatus || "Pending" %></strong></p>
+            <p class="booking-confirmation__meta-item">Fulfilment Status: <strong><%= bookingConfirmationViewModel.fulfilmentStatus || "Pending" %></strong></p>
+          </div>
+
+          <div class="booking-confirmation__actions">
+            <a class="button button--<%= bookingConfirmationViewModel.recoveryAction.style %> button--full" href="<%= bookingConfirmationViewModel.recoveryAction.href %>"><%= bookingConfirmationViewModel.recoveryAction.label %></a>
+          </div>
+        </div>
+      </aside>
+    </div>
   </div>
 </article>

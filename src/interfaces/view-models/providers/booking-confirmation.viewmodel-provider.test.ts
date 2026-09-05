@@ -30,7 +30,7 @@ describe("BookingConfirmationViewModelProvider", () => {
     expect(viewModel.currency).toBe("ZAR");
     expect(viewModel.leadTraveller).toBe("Ava Cape");
     expect(viewModel.status).toBe("CONFIRMED");
-    expect(viewModel.recoveryAction.href).toBe("/ui/placeholder");
+    expect(viewModel.recoveryAction.href).toBe("/ui/journeys/journey-homepage-journey-001");
   });
 
   it("does not present pending state as confirmed", (): void => {
