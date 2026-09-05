@@ -1,39 +1,113 @@
-<article class="guest-information" aria-labelledby="guest-information-title">
+<article class="guest-information">
   <div class="container">
+    <nav class="guest-information__nav" aria-label="Breadcrumb navigation">
+      <a class="guest-information__back-link" href="/ui/journeys/<%= guestInformationViewModel.journeyId %>/quote">← Back to Quote & Pricing</a>
+    </nav>
+
     <header class="guest-information__header">
       <p class="journey-detail__eyebrow">Guest information</p>
-      <h1 id="guest-information-title"><%= guestInformationViewModel.journeyTitle %></h1>
-      <p>Provide the contact and traveller information needed for reservation review.</p>
+      <h1 class="guest-information__title"><%= guestInformationViewModel.journeyTitle %></h1>
+      <p class="guest-information__subtitle">Provide the contact and traveller details required for your reservation review.</p>
     </header>
-    <% if (guestInformationViewModel.errors.length > 0) { %><div id="guest-information-errors" role="alert" tabindex="-1"><h2>Please correct the following</h2><ul><% guestInformationViewModel.errors.forEach((error) => { %><li><%= error %></li><% }); %></ul></div><% } %>
+
+    <% if (guestInformationViewModel.errors.length > 0) { %>
+      <div class="feedback feedback--error guest-information__error-summary" id="guest-information-errors" role="alert" tabindex="-1">
+        <h2 class="guest-information__error-title">Please correct the following:</h2>
+        <ul class="guest-information__error-list">
+          <% guestInformationViewModel.errors.forEach((error) => { %>
+            <li><%= error %></li>
+          <% }); %>
+        </ul>
+      </div>
+    <% } %>
+
     <form method="post" action="/ui/journeys/<%= guestInformationViewModel.journeyId %>/guest-information"<% if (guestInformationViewModel.errors.length > 0) { %> aria-describedby="guest-information-errors"<% } %> data-protect-submit>
-      <fieldset>
-        <legend>Booking contact</legend>
-        <label for="contact-email">Email <span aria-hidden="true">*</span></label>
-        <input id="contact-email" name="contact[email]" type="email" autocomplete="email" required value="<%= guestInformationViewModel.contact.email %>">
-        <label for="contact-phone">Phone</label>
-        <input id="contact-phone" name="contact[phone]" type="tel" autocomplete="tel" value="<%= guestInformationViewModel.contact.phone || '' %>">
-      </fieldset>
-      <fieldset>
-        <legend>Travellers</legend>
-        <% guestInformationViewModel.travellers.forEach((traveller, index) => { %>
-          <div class="guest-information__traveller">
-            <h2><%= index === guestInformationViewModel.leadTravellerIndex ? 'Lead traveller' : `Traveller ${index + 1}` %></h2>
-            <input type="hidden" name="travellers[<%= index %>][travellerType]" value="<%= traveller.travellerType %>">
-            <label for="traveller-<%= index %>-first-name">First name <span aria-hidden="true">*</span></label>
-            <input id="traveller-<%= index %>-first-name" name="travellers[<%= index %>][firstName]" autocomplete="given-name" required value="<%= traveller.firstName %>">
-            <label for="traveller-<%= index %>-last-name">Last name <span aria-hidden="true">*</span></label>
-            <input id="traveller-<%= index %>-last-name" name="travellers[<%= index %>][lastName]" autocomplete="family-name" required value="<%= traveller.lastName %>">
-            <label for="traveller-<%= index %>-email">Email <span aria-hidden="true">*</span></label>
-            <input id="traveller-<%= index %>-email" name="travellers[<%= index %>][email]" type="email" autocomplete="email" required value="<%= traveller.email %>">
-            <label for="traveller-<%= index %>-nationality">Nationality</label>
-            <input id="traveller-<%= index %>-nationality" name="travellers[<%= index %>][nationality]" autocomplete="country-name" value="<%= traveller.nationality || '' %>">
-            <% if (traveller.travellerType === 'CHILD') { %><label for="traveller-<%= index %>-dob">Date of birth <span aria-hidden="true">*</span></label><input id="traveller-<%= index %>-dob" name="travellers[<%= index %>][dateOfBirth]" type="date" required value="<%= traveller.dateOfBirth || '' %>"><% } %>
+      <div class="guest-information__layout">
+        <div class="guest-information__main">
+          <fieldset class="guest-information__fieldset">
+            <legend class="guest-information__legend">Booking contact</legend>
+            <p class="guest-information__fieldset-subtext">Primary contact for booking updates, documentation, and confirmation notifications.</p>
+
+            <div class="guest-information__form-grid">
+              <div class="form-group">
+                <label class="form-label" for="contact-email">Contact Email <span class="form-required" aria-hidden="true">*</span></label>
+                <input class="form-input" id="contact-email" name="contact[email]" type="email" autocomplete="email" required value="<%= guestInformationViewModel.contact.email %>">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="contact-phone">Contact Telephone <span class="form-optional">(Optional)</span></label>
+                <input class="form-input" id="contact-phone" name="contact[phone]" type="tel" autocomplete="tel" value="<%= guestInformationViewModel.contact.phone || '' %>">
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="guest-information__fieldset">
+            <legend class="guest-information__legend">Traveller Details</legend>
+            <p class="guest-information__fieldset-subtext">Personal details for all guests travelling on this curated journey.</p>
+
+            <div class="guest-information__travellers-list">
+              <% guestInformationViewModel.travellers.forEach((traveller, index) => { %>
+                <article class="card guest-information__traveller-card">
+                  <div class="guest-information__traveller-header">
+                    <h2 class="guest-information__traveller-title">
+                      <%= index === guestInformationViewModel.leadTravellerIndex ? 'Lead Traveller (Guest 1)' : `Traveller ${index + 1}` %>
+                    </h2>
+                    <span class="guest-information__traveller-badge"><%= traveller.travellerType %></span>
+                  </div>
+
+                  <input type="hidden" name="travellers[<%= index %>][travellerType]" value="<%= traveller.travellerType %>">
+
+                  <div class="guest-information__form-grid">
+                    <div class="form-group">
+                      <label class="form-label" for="traveller-<%= index %>-first-name">First Name <span class="form-required" aria-hidden="true">*</span></label>
+                      <input class="form-input" id="traveller-<%= index %>-first-name" name="travellers[<%= index %>][firstName]" autocomplete="given-name" required value="<%= traveller.firstName %>">
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label" for="traveller-<%= index %>-last-name">Last Name <span class="form-required" aria-hidden="true">*</span></label>
+                      <input class="form-input" id="traveller-<%= index %>-last-name" name="travellers[<%= index %>][lastName]" autocomplete="family-name" required value="<%= traveller.lastName %>">
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label" for="traveller-<%= index %>-email">Email Address <span class="form-required" aria-hidden="true">*</span></label>
+                      <input class="form-input" id="traveller-<%= index %>-email" name="travellers[<%= index %>][email]" type="email" autocomplete="email" required value="<%= traveller.email %>">
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label" for="traveller-<%= index %>-nationality">Nationality <span class="form-optional">(Optional)</span></label>
+                      <input class="form-input" id="traveller-<%= index %>-nationality" name="travellers[<%= index %>][nationality]" autocomplete="country-name" value="<%= traveller.nationality || '' %>">
+                    </div>
+
+                    <% if (traveller.travellerType === 'CHILD') { %>
+                      <div class="form-group">
+                        <label class="form-label" for="traveller-<%= index %>-dob">Date of Birth <span class="form-required" aria-hidden="true">*</span></label>
+                        <input class="form-input" id="traveller-<%= index %>-dob" name="travellers[<%= index %>][dateOfBirth]" type="date" required value="<%= traveller.dateOfBirth || '' %>">
+                      </div>
+                    <% } %>
+                  </div>
+                </article>
+              <% }); %>
+            </div>
+          </fieldset>
+
+          <input type="hidden" name="leadTravellerIndex" value="<%= guestInformationViewModel.leadTravellerIndex %>">
+        </div>
+
+        <aside class="guest-information__sidebar">
+          <div class="card guest-information__action-card">
+            <div class="guest-information__summary-box">
+              <p class="guest-information__summary-label">Reservation Step 3 of 5</p>
+              <h3 class="guest-information__summary-title">Guest Details</h3>
+              <p class="guest-information__summary-text">Your information will be used strictly for reservation review, guest confirmation, and luxury itinerary coordination.</p>
+            </div>
+
+            <div class="guest-information__actions">
+              <button class="button button--primary button--full" type="submit">Continue to reservation review</button>
+              <a class="button button--secondary button--full" href="/ui/journeys/<%= guestInformationViewModel.journeyId %>/quote">Back to quote</a>
+            </div>
           </div>
-        <% }); %>
-      </fieldset>
-      <input type="hidden" name="leadTravellerIndex" value="<%= guestInformationViewModel.leadTravellerIndex %>">
-      <button class="button button--primary" type="submit">Continue to reservation review</button>
+        </aside>
+      </div>
     </form>
   </div>
 </article>
