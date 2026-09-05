@@ -1,9 +1,16 @@
-<section class="accommodation-selection" aria-labelledby="accommodation-selected-title">
+<article class="accommodation-selection">
   <div class="container">
-    <p class="journey-detail__eyebrow">Accommodation selection complete</p>
-    <h1 id="accommodation-selected-title">Your accommodation is selected</h1>
-    <p>The selected accommodation configuration is ready for pricing.</p>
-    <p>Final package pricing and availability confirmation are handled in the next stage.</p>
-    <a class="button button--primary" href="<%= quoteHref %>">Review quote</a>
+    <header class="accommodation-selection__header">
+      <p class="journey-detail__eyebrow">Accommodation selection complete</p>
+      <h1 id="accommodation-selected-title" class="accommodation-selection__title">Your accommodation is selected</h1>
+      <p class="accommodation-selection__subtitle">The selected accommodation configuration is ready for pricing.</p>
+    </header>
+
+    <div class="card step-card">
+      <p class="step-card__text">Final package pricing and availability confirmation are handled in the next stage.</p>
+      <div class="step-card__action">
+        <a class="button button--primary" href="<%= quoteHref %>">Review quote</a>
+      </div>
+    </div>
   </div>
-</section>
+</article>

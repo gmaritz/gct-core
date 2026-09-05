@@ -1,18 +1,50 @@
 <article class="journey-detail">
   <div class="container">
+    <nav class="journey-detail__nav" aria-label="Breadcrumb navigation">
+      <a class="journey-detail__back-link" href="/ui/placeholder#featured-experiences">← Back to Discover Journeys</a>
+    </nav>
+
     <header class="journey-detail__header">
-      <img class="journey-detail__image" src="<%= journeyDiscoveryViewModel.image.src %>" alt="<%= journeyDiscoveryViewModel.image.alt %>" width="<%= journeyDiscoveryViewModel.image.width %>" height="<%= journeyDiscoveryViewModel.image.height %>">
-      <p class="journey-detail__eyebrow"><%= journeyDiscoveryViewModel.id %></p>
-      <h1><%= journeyDiscoveryViewModel.title %></h1>
-      <p><strong><%= journeyDiscoveryViewModel.destination %></strong> · <%= journeyDiscoveryViewModel.duration %></p>
+      <div class="journey-detail__hero">
+        <img class="journey-detail__image" src="<%= journeyDiscoveryViewModel.image.src %>" alt="<%= journeyDiscoveryViewModel.image.alt %>" width="<%= journeyDiscoveryViewModel.image.width %>" height="<%= journeyDiscoveryViewModel.image.height %>">
+      </div>
+      <div class="journey-detail__intro">
+        <p class="journey-detail__kicker"><%= journeyDiscoveryViewModel.id %></p>
+        <h1 class="journey-detail__title"><%= journeyDiscoveryViewModel.title %></h1>
+        <div class="journey-detail__meta">
+          <span class="journey-detail__meta-badge">📍 <%= journeyDiscoveryViewModel.destination %></span>
+          <span class="journey-detail__meta-badge">⏱ <%= journeyDiscoveryViewModel.duration %></span>
+        </div>
+      </div>
     </header>
-    <section aria-labelledby="journey-highlights-title">
-      <h2 id="journey-highlights-title">Journey highlights</h2>
-      <% if (journeyDiscoveryViewModel.highlights.length > 0) { %>
-        <ul><% journeyDiscoveryViewModel.highlights.forEach((highlight) => { %><li><%= highlight %></li><% }); %></ul>
-      <% } else { %><p>Journey highlights will be confirmed during planning.</p><% } %>
-    </section>
-    <section aria-label="Journey pricing"><h2>Pricing</h2><p><%= journeyDiscoveryViewModel.price?.display || "Price on request" %></p></section>
-    <a class="button button--primary" href="<%= journeyDiscoveryViewModel.continuation.href %>"><%= journeyDiscoveryViewModel.continuation.label %></a>
+
+    <div class="journey-detail__content-layout">
+      <div class="journey-detail__main">
+        <section class="journey-detail__section" aria-labelledby="journey-highlights-title">
+          <h2 id="journey-highlights-title" class="journey-detail__section-title">Journey highlights</h2>
+          <% if (journeyDiscoveryViewModel.highlights.length > 0) { %>
+            <ul class="journey-detail__day-experiences">
+              <% journeyDiscoveryViewModel.highlights.forEach((highlight) => { %>
+                <li><%= highlight %></li>
+              <% }); %>
+            </ul>
+          <% } else { %>
+            <p class="journey-detail__empty">Journey highlights will be confirmed during planning.</p>
+          <% } %>
+        </section>
+      </div>
+
+      <aside class="journey-detail__sidebar">
+        <div class="card journey-detail__action-card">
+          <div class="journey-detail__pricing" aria-label="Journey pricing">
+            <p class="journey-detail__pricing-label">Journey Price</p>
+            <div class="price-display">
+              <span class="price-display__amount"><%= journeyDiscoveryViewModel.price?.display || "Price on request" %></span>
+            </div>
+          </div>
+          <a class="button button--primary button--full" href="<%= journeyDiscoveryViewModel.continuation.href %>"><%= journeyDiscoveryViewModel.continuation.label %></a>
+        </div>
+      </aside>
+    </div>
   </div>
 </article>

@@ -1,9 +1,16 @@
-<section class="reservation-review" aria-labelledby="payment-handoff-title">
+<article class="reservation-review">
   <div class="container">
-    <p class="journey-detail__eyebrow">Reservation review confirmed</p>
-    <h1 id="payment-handoff-title">Ready for payment</h1>
-    <p>Your reviewed journey is ready for the next payment stage.</p>
-    <p>Payment has not been initiated.</p>
-    <a class="button button--primary" href="/ui/journeys/<%= journeyId %>/payment">Proceed to secure payment</a>
+    <header class="reservation-review__header">
+      <p class="journey-detail__eyebrow">Reservation review confirmed</p>
+      <h1 id="payment-handoff-title" class="reservation-review__title">Ready for payment</h1>
+      <p class="reservation-review__subtitle">Your reviewed journey is ready for the next payment stage.</p>
+    </header>
+
+    <div class="card step-card">
+      <p class="step-card__text">Payment has not yet been initiated. Proceed to secure payment to complete your transaction.</p>
+      <div class="step-card__action">
+        <a class="button button--primary" href="/ui/journeys/<%= journeyId %>/payment">Proceed to secure payment</a>
+      </div>
+    </div>
   </div>
-</section>
+</article>

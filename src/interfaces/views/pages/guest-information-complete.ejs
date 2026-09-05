@@ -1,8 +1,16 @@
-<section class="guest-information" aria-labelledby="guest-information-complete-title">
+<article class="guest-information">
   <div class="container">
-    <p class="journey-detail__eyebrow">Guest information complete</p>
-    <h1 id="guest-information-complete-title">Ready for reservation review</h1>
-    <p>Your guest information has been validated for <%= guestInformationViewModel.journeyTitle %>.</p>
-    <a class="button button--primary" href="<%= guestInformationViewModel.continuation.href %>"><%= guestInformationViewModel.continuation.label %></a>
+    <header class="guest-information__header">
+      <p class="journey-detail__eyebrow">Guest information complete</p>
+      <h1 id="guest-information-complete-title" class="guest-information__title">Ready for reservation review</h1>
+      <p class="guest-information__subtitle">Your guest information has been validated for <%= guestInformationViewModel.journeyTitle %>.</p>
+    </header>
+
+    <div class="card step-card">
+      <p class="step-card__text">Proceed to review your complete reservation details, guest manifest, and commercial quote.</p>
+      <div class="step-card__action">
+        <a class="button button--primary" href="<%= guestInformationViewModel.continuation.href %>"><%= guestInformationViewModel.continuation.label %></a>
+      </div>
+    </div>
   </div>
-</section>
+</article>

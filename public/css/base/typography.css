@@ -72,6 +72,37 @@ small {
   text-transform: uppercase;
 }
 
+.back-link,
+[class*="__back-link"] {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--color-brand);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.back-link:hover,
+.back-link:focus-visible,
+[class*="__back-link"]:hover,
+[class*="__back-link"]:focus-visible {
+  color: var(--color-brand-hover);
+  text-decoration: underline;
+}
+
+.section-title,
+[class*="__section-title"] {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  border-bottom: 2px solid var(--color-background-secondary);
+  padding-bottom: var(--space-xs);
+}
+
 .supporting-text {
   color: var(--color-text-secondary);
   font-size: var(--font-size-small);
