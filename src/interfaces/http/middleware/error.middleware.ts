@@ -17,7 +17,7 @@ export function createGlobalErrorMiddleware(logger: Logger) {
 		const apiError = mapToApiError(error);
 
 		if (!(error instanceof ApiError)) {
-			logger.error("Unhandled exception", error);
+			logger.error("Unhandled exception", error instanceof Error ? { message: error.message, stack: error.stack } : { error });
 		}
 
 		const problemDetails: ProblemDetails = {

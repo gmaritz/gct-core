@@ -1,18 +1,109 @@
 <article class="journey-detail">
   <div class="container">
+    <nav class="journey-detail__nav" aria-label="Breadcrumb navigation">
+      <a class="journey-detail__back-link" href="/ui/placeholder#featured-experiences">← Back to Discover Journeys</a>
+    </nav>
+
     <header class="journey-detail__header">
-      <img class="journey-detail__image" src="<%= journeyDetailViewModel.image.src %>" alt="<%= journeyDetailViewModel.image.alt %>" width="<%= journeyDetailViewModel.image.width %>" height="<%= journeyDetailViewModel.image.height %>">
-      <h1><%= journeyDetailViewModel.title %></h1>
-      <p><%= journeyDetailViewModel.subtitle %></p>
-      <p><strong><%= journeyDetailViewModel.destinations.join(" + ") %></strong> · <%= journeyDetailViewModel.duration %></p>
-      <% if (journeyDetailViewModel.summary) { %><p><%= journeyDetailViewModel.summary %></p><% } %>
+      <div class="journey-detail__hero">
+        <img class="journey-detail__image" src="<%= journeyDetailViewModel.image.src %>" alt="<%= journeyDetailViewModel.image.alt %>" width="<%= journeyDetailViewModel.image.width %>" height="<%= journeyDetailViewModel.image.height %>">
+      </div>
+      <div class="journey-detail__intro">
+        <p class="journey-detail__kicker"><%= journeyDetailViewModel.subtitle %></p>
+        <h1 class="journey-detail__title"><%= journeyDetailViewModel.title %></h1>
+        <div class="journey-detail__meta">
+          <span class="journey-detail__meta-badge">📍 <%= journeyDetailViewModel.destinations.join(" + ") %></span>
+          <span class="journey-detail__meta-badge">⏱ <%= journeyDetailViewModel.duration %></span>
+          <span class="journey-detail__meta-badge">🔒 Curated Private Journey</span>
+        </div>
+        <% if (journeyDetailViewModel.summary) { %>
+          <p class="journey-detail__summary"><%= journeyDetailViewModel.summary %></p>
+        <% } %>
+      </div>
     </header>
-    <section aria-labelledby="journey-itinerary-title"><h2 id="journey-itinerary-title">Itinerary</h2><% if (journeyDetailViewModel.itinerary.length === 0) { %><p>Itinerary details will be confirmed during planning.</p><% } else { %><ol><% journeyDetailViewModel.itinerary.forEach((item) => { %><li><strong>Day <%= item.day %><% if (item.title) { %>: <%= item.title %><% } %></strong><ul><% item.experiences.forEach((experience) => { %><li><%= experience %></li><% }); %></ul></li><% }); %></ol><% } %></section>
-    <section aria-labelledby="journey-accommodation-title"><h2 id="journey-accommodation-title">Accommodation</h2><% if (journeyDetailViewModel.accommodation.length === 0) { %><p>Accommodation details will be confirmed during planning.</p><% } else { %><% journeyDetailViewModel.accommodation.forEach((stay) => { %><p><strong><%= stay.name %></strong><% if (stay.category) { %> · <%= stay.category %><% } %><% if (stay.rating) { %> · <%= stay.rating %> stars<% } %><% if (stay.nights) { %> · <%= stay.nights %> nights<% } %></p><% }); %><% } %></section>
-    <section aria-labelledby="journey-experiences-title"><h2 id="journey-experiences-title">Included experiences</h2><% if (journeyDetailViewModel.experiences.length === 0) { %><p>No experiences are currently listed.</p><% } else { %><ul><% journeyDetailViewModel.experiences.forEach((experience) => { %><li><%= experience.name %><% if (experience.type) { %> · <%= experience.type %><% } %></li><% }); %></ul><% } %></section>
-    <section aria-label="Journey pricing"><h2>Pricing</h2><p><%= journeyDetailViewModel.pricing.state === "AVAILABLE" && journeyDetailViewModel.pricing.price ? journeyDetailViewModel.pricing.price.display : "Price on request" %></p></section>
-    <form method="post" action="<%= journeyDetailViewModel.selectionAction.href %>">
-      <button class="button button--primary" type="submit"><%= journeyDetailViewModel.selectionAction.label %></button>
-    </form>
+
+    <div class="journey-detail__content-layout">
+      <div class="journey-detail__main">
+        <section class="journey-detail__section" aria-labelledby="journey-itinerary-title">
+          <h2 id="journey-itinerary-title" class="journey-detail__section-title">Itinerary</h2>
+          <% if (journeyDetailViewModel.itinerary.length === 0) { %>
+            <p class="journey-detail__empty">Itinerary details will be confirmed during planning.</p>
+          <% } else { %>
+            <ol class="journey-detail__itinerary-list">
+              <% journeyDetailViewModel.itinerary.forEach((item) => { %>
+                <li class="journey-detail__itinerary-item">
+                  <div class="journey-detail__day-header">
+                    <span class="journey-detail__day-badge">Day <%= item.day %></span>
+                    <% if (item.title) { %>
+                      <strong class="journey-detail__day-title"><%= item.title %></strong>
+                    <% } %>
+                  </div>
+                  <% if (item.experiences.length > 0) { %>
+                    <ul class="journey-detail__day-experiences">
+                      <% item.experiences.forEach((experience) => { %>
+                        <li><%= experience %></li>
+                      <% }); %>
+                    </ul>
+                  <% } %>
+                </li>
+              <% }); %>
+            </ol>
+          <% } %>
+        </section>
+
+        <section class="journey-detail__section" aria-labelledby="journey-accommodation-title">
+          <h2 id="journey-accommodation-title" class="journey-detail__section-title">Accommodation</h2>
+          <% if (journeyDetailViewModel.accommodation.length === 0) { %>
+            <p class="journey-detail__empty">Accommodation details will be confirmed during planning.</p>
+          <% } else { %>
+            <div class="journey-detail__accommodation-grid">
+              <% journeyDetailViewModel.accommodation.forEach((stay) => { %>
+                <article class="card journey-detail__accommodation-card">
+                  <h3 class="journey-detail__accommodation-name"><%= stay.name %></h3>
+                  <p class="journey-detail__accommodation-meta">
+                    <% if (stay.category) { %><span><%= stay.category %></span><% } %>
+                    <% if (stay.rating) { %><span> · ★ <%= stay.rating %> stars</span><% } %>
+                    <% if (stay.nights) { %><span> · <%= stay.nights %> night<%= stay.nights === 1 ? '' : 's' %></span><% } %>
+                  </p>
+                </article>
+              <% }); %>
+            </div>
+          <% } %>
+        </section>
+
+        <section class="journey-detail__section" aria-labelledby="journey-experiences-title">
+          <h2 id="journey-experiences-title" class="journey-detail__section-title">Included experiences</h2>
+          <% if (journeyDetailViewModel.experiences.length === 0) { %>
+            <p class="journey-detail__empty">No experiences are currently listed.</p>
+          <% } else { %>
+            <ul class="journey-detail__experiences-list">
+              <% journeyDetailViewModel.experiences.forEach((experience) => { %>
+                <li class="journey-detail__experience-item">
+                  <span class="journey-detail__experience-name"><%= experience.name %></span>
+                  <% if (experience.type) { %>
+                    <span class="journey-detail__experience-type"><%= experience.type %></span>
+                  <% } %>
+                </li>
+              <% }); %>
+            </ul>
+          <% } %>
+        </section>
+      </div>
+
+      <aside class="journey-detail__sidebar">
+        <div class="card journey-detail__action-card">
+          <div class="journey-detail__pricing" aria-label="Journey pricing">
+            <p class="journey-detail__pricing-label">Journey Price</p>
+            <div class="price-display">
+              <span class="price-display__amount"><%= journeyDetailViewModel.pricing.state === "AVAILABLE" && journeyDetailViewModel.pricing.price ? journeyDetailViewModel.pricing.price.display : "Price on request" %></span>
+            </div>
+            <p class="journey-detail__pricing-subtext">Includes luxury boutique accommodation, authentic regional experiences, and dedicated private guidance.</p>
+          </div>
+          <form method="post" action="<%= journeyDetailViewModel.selectionAction.href %>">
+            <button class="button button--primary button--full" type="submit"><%= journeyDetailViewModel.selectionAction.label %></button>
+          </form>
+        </div>
+      </aside>
+    </div>
   </div>
 </article>

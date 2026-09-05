@@ -1,11 +1,42 @@
 .journey-detail {
-  padding: var(--space-3xl) 0 var(--space-3xl);
+  padding-block: var(--space-2xl) var(--space-3xl);
+  background: var(--color-background-primary);
+}
+
+.journey-detail__nav {
+  margin-bottom: var(--space-lg);
+}
+
+.journey-detail__back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--color-brand);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.journey-detail__back-link:hover,
+.journey-detail__back-link:focus-visible {
+  color: var(--color-brand-hover);
+  text-decoration: underline;
 }
 
 .journey-detail__header {
   display: grid;
-  gap: var(--space-lg);
+  gap: var(--space-xl);
   margin-bottom: var(--space-2xl);
+  align-items: start;
+}
+
+.journey-detail__hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
 }
 
 .journey-detail__image {
@@ -13,37 +44,250 @@
   height: auto;
   aspect-ratio: 16 / 9;
   object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.journey-detail__intro {
+  display: grid;
+  gap: var(--space-md);
+  align-content: start;
+}
+
+.journey-detail__kicker {
+  margin: 0;
+  color: var(--color-brand);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.journey-detail__title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--color-text-primary);
+}
+
+.journey-detail__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+}
+
+.journey-detail__meta-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-pill);
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.journey-detail__summary {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-body);
+  font-size: 1.125rem;
+}
+
+/* Content & Sidebar Layout */
+.journey-detail__content-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-2xl);
+}
+
+.journey-detail__main {
+  display: grid;
+  gap: var(--space-2xl);
+}
+
+.journey-detail__section {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.journey-detail__section-title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  border-bottom: 2px solid var(--color-background-secondary);
+  padding-bottom: var(--space-xs);
+}
+
+.journey-detail__empty {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* Itinerary */
+.journey-detail__itinerary-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--space-md);
+}
+
+.journey-detail__itinerary-item {
+  display: grid;
+  gap: var(--space-xs);
+  padding: var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.journey-detail__day-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.journey-detail__day-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xs) var(--space-md);
+  background: var(--color-brand);
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+}
+
+.journey-detail__day-title {
+  font-size: 1.125rem;
+  color: var(--color-text-primary);
+}
+
+.journey-detail__day-experiences {
+  margin: var(--space-xs) 0 0 0;
+  padding-left: var(--space-xl);
+  color: var(--color-text-secondary);
+}
+
+.journey-detail__day-experiences li + li {
+  margin-top: var(--space-xs);
+}
+
+/* Accommodation */
+.journey-detail__accommodation-grid {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+}
+
+.journey-detail__accommodation-card {
+  padding: var(--space-md);
+  display: grid;
+  gap: var(--space-xs);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
 
-.journey-detail section {
-  max-width: 52rem;
-  margin: 0 auto var(--space-2xl);
+.journey-detail__accommodation-name {
+  margin: 0;
+  font-size: 1.125rem;
+  color: var(--color-text-primary);
 }
 
-.journey-detail__eyebrow {
-  color: var(--color-text-muted);
+.journey-detail__accommodation-meta {
+  margin: 0;
+  color: var(--color-text-secondary);
   font-size: 0.875rem;
+}
+
+/* Included Experiences */
+.journey-detail__experiences-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.journey-detail__experience-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.journey-detail__experience-name {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.journey-detail__experience-type {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  background: var(--color-background-secondary);
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius-sm);
+}
+
+/* Sidebar & Sticky Action Card */
+.journey-detail__sidebar {
+  display: grid;
+  align-content: start;
+}
+
+.journey-detail__action-card {
+  padding: var(--space-xl);
+  display: grid;
+  gap: var(--space-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  position: sticky;
+  top: var(--space-xl);
+}
+
+.journey-detail__pricing-label {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
 }
 
-.journey-detail ol,
-.journey-detail ul {
-  padding-left: var(--space-lg);
+.journey-detail__pricing-subtext {
+  margin: var(--space-xs) 0 0 0;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-body);
 }
 
-.journey-detail .button {
-  display: inline-flex;
+.button--full {
+  width: 100%;
+  justify-content: center;
 }
 
-@media (min-width: 48rem) {
+@media (min-width: 64rem) {
   .journey-detail__header {
-    grid-template-columns: minmax(0, 1.2fr) minmax(16rem, 0.8fr);
-    align-items: center;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 4fr);
   }
 
-  .journey-detail__image {
-    grid-row: span 5;
+  .journey-detail__content-layout {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
   }
 }

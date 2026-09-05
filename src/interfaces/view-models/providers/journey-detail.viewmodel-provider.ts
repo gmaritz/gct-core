@@ -2,14 +2,23 @@ import { Journey } from "../../../application/journeys";
 import { JourneyDetailViewModel } from "../journeys/journey-detail.viewmodel";
 import { ImageViewModel } from "../shared/image.viewmodel";
 
-function createPlaceholderImage(label: string): ImageViewModel {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720"><rect width="1280" height="720" fill="#b28746"/><text x="64" y="650" fill="white" font-size="48">${label}</text></svg>`;
-  return {
-    src: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    alt: label,
-    width: 1280,
-    height: 720,
-  };
+function createJourneyHeroImage(title: string, destination: string): ImageViewModel {
+  const destLower = destination.toLowerCase();
+  let src = "/images/hero/hero-cape-town-1600x900.webp";
+  if (destLower.includes("winelands")) {
+    src = "/images/journeys/cape-winelands-1600x900.webp";
+  } else if (destLower.includes("atlantic") || destLower.includes("seaboard")) {
+    src = "/images/journeys/atlantic-seaboard-1600x900.webp";
+  } else if (destLower.includes("franschhoek") || destLower.includes("valley")) {
+    src = "/images/journeys/franschhoek-valley-1600x900.webp";
+  }
+
+  return Object.freeze({
+    src,
+    alt: `${title} - ${destination} GCT Core Journey`,
+    width: 1600,
+    height: 900,
+  });
 }
 
 export class JourneyDetailViewModelProvider {
@@ -26,7 +35,7 @@ export class JourneyDetailViewModelProvider {
       destinations: Object.freeze(journey.destinations.map((item) => item.name)),
       duration,
       summary: undefined,
-      image: Object.freeze(createPlaceholderImage(title)),
+      image: createJourneyHeroImage(title, destination),
       itinerary: Object.freeze(
         journey.experiences.reduce<Array<{ day: number; title?: string; experiences: string[] }>>((days, experience) => {
           if (!experience.sequence) {

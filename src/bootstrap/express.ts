@@ -41,12 +41,12 @@ function createCorsOptions(configuration: ApplicationConfiguration): CorsOptions
 
 	return {
 		origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void): void => {
-			if (!origin || developmentOrigins.has(origin)) {
+			if (!origin || developmentOrigins.has(origin) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
 				callback(null, true);
 				return;
 			}
 
-			callback(new Error("CORS origin is not allowed"));
+			callback(null, false);
 		},
 	};
 }
