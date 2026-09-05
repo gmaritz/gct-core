@@ -31,7 +31,7 @@
             <div class="guest-information__form-grid">
               <div class="form-group">
                 <label class="form-label" for="contact-email">Contact Email <span class="form-required" aria-hidden="true">*</span></label>
-                <input class="form-input" id="contact-email" name="contact[email]" type="email" autocomplete="email" required value="<%= guestInformationViewModel.contact.email %>">
+                <input class="form-input" id="contact-email" name="contact[email]" type="email" autocomplete="email" required value="<%= guestInformationViewModel.contact.email %>"<% if (guestInformationViewModel.errors.some((err) => err.toLowerCase().includes("contact email"))) { %> aria-invalid="true"<% } %>>
               </div>
 
               <div class="form-group">
@@ -60,17 +60,17 @@
                   <div class="guest-information__form-grid">
                     <div class="form-group">
                       <label class="form-label" for="traveller-<%= index %>-first-name">First Name <span class="form-required" aria-hidden="true">*</span></label>
-                      <input class="form-input" id="traveller-<%= index %>-first-name" name="travellers[<%= index %>][firstName]" autocomplete="given-name" required value="<%= traveller.firstName %>">
+                      <input class="form-input" id="traveller-<%= index %>-first-name" name="travellers[<%= index %>][firstName]" autocomplete="given-name" required value="<%= traveller.firstName %>"<% if (guestInformationViewModel.errors.some((err) => err.toLowerCase().includes(`traveller ${index + 1} first name`))) { %> aria-invalid="true"<% } %>>
                     </div>
 
                     <div class="form-group">
                       <label class="form-label" for="traveller-<%= index %>-last-name">Last Name <span class="form-required" aria-hidden="true">*</span></label>
-                      <input class="form-input" id="traveller-<%= index %>-last-name" name="travellers[<%= index %>][lastName]" autocomplete="family-name" required value="<%= traveller.lastName %>">
+                      <input class="form-input" id="traveller-<%= index %>-last-name" name="travellers[<%= index %>][lastName]" autocomplete="family-name" required value="<%= traveller.lastName %>"<% if (guestInformationViewModel.errors.some((err) => err.toLowerCase().includes(`traveller ${index + 1} last name`))) { %> aria-invalid="true"<% } %>>
                     </div>
 
                     <div class="form-group">
                       <label class="form-label" for="traveller-<%= index %>-email">Email Address <span class="form-required" aria-hidden="true">*</span></label>
-                      <input class="form-input" id="traveller-<%= index %>-email" name="travellers[<%= index %>][email]" type="email" autocomplete="email" required value="<%= traveller.email %>">
+                      <input class="form-input" id="traveller-<%= index %>-email" name="travellers[<%= index %>][email]" type="email" autocomplete="email" required value="<%= traveller.email %>"<% if (guestInformationViewModel.errors.some((err) => err.toLowerCase().includes(`traveller ${index + 1} email`))) { %> aria-invalid="true"<% } %>>
                     </div>
 
                     <div class="form-group">
