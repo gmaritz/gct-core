@@ -9,9 +9,10 @@
   const primaryCTA = locals.primaryCTA || {};
   const highlights = Array.isArray(locals.highlights) ? locals.highlights : [];
   const ariaLabel = locals.ariaLabel || locals.title;
+  const imageFocalPosition = image.focalPosition || 'center';
 %>
 <article class="<%= wrapperClass %>" aria-label="<%= ariaLabel %>">
-  <img class="journey-card__image" src="<%= image.src %>" alt="<%= image.alt %>" width="<%= image.width || 1280 %>" height="<%= image.height || 720 %>">
+  <img class="journey-card__image" src="<%= image.src %>" alt="<%= image.alt %>" width="<%= image.width || 1600 %>" height="<%= image.height || 900 %>" style="object-position: <%= imageFocalPosition %>;">
   <div class="journey-card__content">
     <<%= headingTag %> class="<%= headingClass %>"><%= locals.title %></<%= headingTag %>>
     <p class="journey-card__destination"><%= locals.destination %></p>

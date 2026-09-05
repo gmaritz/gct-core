@@ -2,26 +2,23 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.JourneyPresentationMapper = void 0;
 const journey_presentation_model_1 = require("../models/journey-presentation-model");
-function createPlaceholderImage(label) {
-    const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-label="${label}">
-      <defs>
-        <linearGradient id="journeyHero" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#e8dfc9" />
-          <stop offset="50%" stop-color="#b28746" />
-          <stop offset="100%" stop-color="#5d3f1f" />
-        </linearGradient>
-      </defs>
-      <rect width="1280" height="720" fill="url(#journeyHero)" />
-      <circle cx="1040" cy="160" r="88" fill="rgba(255,255,255,0.18)" />
-      <path d="M0 540 L210 430 L410 470 L650 330 L910 430 L1120 300 L1280 360 L1280 720 L0 720 Z" fill="rgba(255,255,255,0.14)" />
-    </svg>
-  `.trim();
+function createJourneyHeroImage(destination, title) {
+    const destLower = destination.toLowerCase();
+    let src = "/images/hero/hero-cape-town-1600x900.webp";
+    if (destLower.includes("winelands")) {
+        src = "/images/journeys/cape-winelands-1600x900.webp";
+    }
+    else if (destLower.includes("atlantic") || destLower.includes("seaboard")) {
+        src = "/images/journeys/atlantic-seaboard-1600x900.webp";
+    }
+    else if (destLower.includes("franschhoek") || destLower.includes("valley")) {
+        src = "/images/journeys/franschhoek-valley-1600x900.webp";
+    }
     return Object.freeze({
-        src: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-        alt: label,
-        width: 1280,
-        height: 720,
+        src,
+        alt: `${title} - ${destination} GCT Core Journey`,
+        width: 1600,
+        height: 900,
     });
 }
 function formatDestination(destinations) {
@@ -78,7 +75,7 @@ class JourneyPresentationMapper {
             subtitle,
             destination,
             duration,
-            heroImage: createPlaceholderImage(title),
+            heroImage: createJourneyHeroImage(destination, title),
             highlights: createHighlights(result),
             accommodationSummary: `${journey.accommodation.length} accommodation option${journey.accommodation.length === 1 ? "" : "s"}`,
             experienceSummary: `${journey.experiences.length} experience${journey.experiences.length === 1 ? "" : "s"}`,

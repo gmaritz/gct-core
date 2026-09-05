@@ -9,7 +9,7 @@
 
 .homepage-showcase__layout {
   display: grid;
-  grid-template-columns: 40% 60%;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 6fr);
   grid-template-areas: "editorial journeys";
   gap: var(--space-xl);
   align-items: center;
@@ -20,6 +20,12 @@
   display: grid;
   align-content: center;
   gap: var(--space-lg);
+  padding: var(--space-xl);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 247, 250, 0.92) 100%),
+              url('/images/hero/hero-cape-town-1600x900.webp') center/cover no-repeat;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
 }
 
 .homepage-showcase__kicker {

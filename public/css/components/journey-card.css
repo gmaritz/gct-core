@@ -14,8 +14,14 @@
   box-shadow: var(--shadow-lg);
 }
 
+.journey-card:focus-within {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
 .journey-card__image {
   width: 100%;
+  height: auto;
   aspect-ratio: 16 / 9;
   border-radius: var(--radius-sm);
   object-fit: cover;

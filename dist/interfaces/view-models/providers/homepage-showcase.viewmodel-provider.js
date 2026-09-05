@@ -2,26 +2,23 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getHomepageShowcaseViewModel = getHomepageShowcaseViewModel;
 const merchandising_1 = require("../../../application/merchandising");
-function createPlaceholderImage(label) {
-    const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-label="${label}">
-      <defs>
-        <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#f3d8ad" />
-          <stop offset="50%" stop-color="#c58f44" />
-          <stop offset="100%" stop-color="#8f5c1a" />
-        </linearGradient>
-      </defs>
-      <rect width="1280" height="720" fill="url(#g)" />
-      <circle cx="1020" cy="150" r="92" fill="rgba(255,255,255,0.18)" />
-      <path d="M0 520 L220 390 L410 470 L620 340 L860 430 L1080 300 L1280 360 L1280 720 L0 720 Z" fill="rgba(255,255,255,0.12)" />
-    </svg>
-  `.trim();
+function createMerchandisingImage(label, destination) {
+    const destLower = (destination || label).toLowerCase();
+    let src = "/images/hero/hero-cape-town-1600x900.webp";
+    if (destLower.includes("winelands")) {
+        src = "/images/journeys/cape-winelands-1600x900.webp";
+    }
+    else if (destLower.includes("atlantic") || destLower.includes("seaboard")) {
+        src = "/images/journeys/atlantic-seaboard-1600x900.webp";
+    }
+    else if (destLower.includes("franschhoek") || destLower.includes("valley")) {
+        src = "/images/journeys/franschhoek-valley-1600x900.webp";
+    }
     return {
-        src: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+        src,
         alt: label,
-        width: 1280,
-        height: 720,
+        width: 1600,
+        height: 900,
     };
 }
 function createPrice(display) {
@@ -51,7 +48,7 @@ function mapJourneyToViewModel(journey, index) {
         title: journey.title,
         destination: journey.destination,
         duration: journey.duration,
-        image: createPlaceholderImage(journey.imageLabel),
+        image: createMerchandisingImage(journey.imageLabel, journey.destination),
         highlights: [...journey.highlights],
         price: createPrice(journey.priceDisplay),
         saving: createSaving(journey.savingDisplay),
