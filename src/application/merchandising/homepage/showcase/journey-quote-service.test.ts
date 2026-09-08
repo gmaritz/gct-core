@@ -39,6 +39,30 @@ describe("DefaultJourneyQuoteService", () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
+  it("passes canonical accommodation pricing inputs to the pricing engine", async (): Promise<void> => {
+    const resolver = new DefaultDynamicHomepageJourneyResolver();
+    const execute = jest.fn(async (request: PricingEngineRequest): Promise<ReturnType<typeof createPricingEngineResult>> => createPricingEngineResult({
+      successful: true,
+      pricing: null,
+      metadata: {
+        completedAt: new Date(),
+        version: "1.0.0",
+        requestId: request.requestId ?? "quote",
+        stages: [],
+      },
+    }));
+    await new DefaultAccommodationSelectionService(resolver).selectAccommodation("journey-homepage-journey-001", [selection]);
+    await new DefaultJourneyQuoteService(resolver, { execute } as never).priceCurrentJourney("journey-homepage-journey-001");
+
+    const request = execute.mock.calls[0]?.[0] as PricingEngineRequest;
+    const accommodationItems = request.pricingRequest.breakdown?.lineItems.filter((item) => item.code.startsWith("ACCOMMODATION:")) ?? [];
+
+    expect(accommodationItems.length).toBeGreaterThan(0);
+    expect(request.pricingRequest.breakdown?.lineItems.some((item) => item.code === "BASE")).toBe(true);
+    expect(request.pricingRequest.totals?.grandTotal.amount).toBe(18950);
+    expect(accommodationItems[0]?.metadata?.packageStopId).toBeDefined();
+  });
+
   it("returns the current deterministic quote from the application journey", async (): Promise<void> => {
     const resolver = new DefaultDynamicHomepageJourneyResolver();
     await new DefaultAccommodationSelectionService(resolver).selectAccommodation("journey-homepage-journey-001", [selection]);

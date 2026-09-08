@@ -5,8 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "dev": "ts-node src/index.ts",
-    "start": "node dist/index.js",
+    "dev": "node -r tsconfig-paths/register -r ts-node/register src/index.ts",
+    "start": "node -r tsconfig-paths/register dist/index.js",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "test": "jest",
@@ -51,6 +51,7 @@
     "express": "^4.22.2",
     "helmet": "^8.3.0",
     "prisma": "^5.22.0",
+    "tsconfig-paths": "^4.2.0",
     "uuid": "^9.0.1",
     "xlsx": "^0.18.5"
   },

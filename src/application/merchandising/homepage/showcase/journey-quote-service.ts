@@ -1,4 +1,4 @@
-import { Journey, selectJourneyAccommodation } from "../../../journeys";
+import { Journey, JourneyAccommodationPricingInput, selectJourneyAccommodation } from "../../../journeys";
 import {
   createMoney,
   createPricingBreakdown,
@@ -13,6 +13,7 @@ import {
   PricingEngineRequest,
   PricingEngineResult,
   TaxType,
+  withAccommodationPricingInputs,
 } from "../../../pricing";
 import { AccommodationSelectionInput } from "./accommodation-selection-service";
 import { DynamicHomepageJourneyResolver } from "./dynamic-homepage-journey-resolver";
@@ -54,16 +55,55 @@ export function createDefaultPricingEngine(): PricingEngine {
     new PricingCalculatorPipeline(),
   );
 }
-function createPricingRequest(journey: Journey, amounts: ReadonlyArray<number>, travellerCount: number): PricingEngineRequest {
-  const total = amounts.reduce((sum, amount) => sum + amount, 0);
+function createPricingRequest(
+  journey: Journey,
+  pricingInputs: ReadonlyArray<JourneyAccommodationPricingInput>,
+  travellerCount: number,
+): PricingEngineRequest {
   const currency = Currency.ZAR;
-  const lineItems = amounts.map((amount, index) => createPricingLineItem({
-    code: `ACCOMMODATION:${index + 1}`,
-    label: `Accommodation ${index + 1}`,
-    unitAmount: createMoney({ amount, currency }),
-    totalAmount: createMoney({ amount, currency }),
-    quantity: 1,
-  }));
+  const baseRequest = {
+    currency,
+    summary: createPricingSummary({
+      productId: journey.identity.id,
+      productType: "DYNAMIC_HOMEPAGE_JOURNEY",
+      description: `${journey.classification.category} journey`,
+    }),
+    breakdown: createPricingBreakdown({
+      lineItems: [createPricingLineItem({
+        code: "BASE",
+        label: "Base package",
+        unitAmount: createMoney({ amount: 0, currency }),
+        totalAmount: createMoney({ amount: 0, currency }),
+        quantity: 1,
+      })],
+    }),
+    taxes: createTaxBreakdown({
+      entries: [createTax({
+        code: "VAT",
+        type: TaxType.VAT,
+        amount: createMoney({ amount: 0, currency }),
+      })],
+      total: createMoney({ amount: 0, currency }),
+    }),
+    fees: [createFee({
+      code: "SERVICE_FEE",
+      label: "Service fee",
+      amount: createMoney({ amount: 0, currency }),
+    })],
+    discounts: [],
+    markups: [],
+    commissions: [],
+    promotions: [],
+    totals: createPricingTotal({
+      subtotal: createMoney({ amount: 0, currency }),
+      taxTotal: createMoney({ amount: 0, currency }),
+      feeTotal: createMoney({ amount: 0, currency }),
+      discountTotal: createMoney({ amount: 0, currency }),
+      markupTotal: createMoney({ amount: 0, currency }),
+      commissionTotal: createMoney({ amount: 0, currency }),
+      grandTotal: createMoney({ amount: 0, currency }),
+    }),
+  };
 
   return {
     requestId: `quote-${journey.identity.id}`,
@@ -71,41 +111,7 @@ function createPricingRequest(journey: Journey, amounts: ReadonlyArray<number>, 
     destination: journey.destinations[0]?.name,
     market: "ZA",
     salesChannel: "DIRECT",
-    pricingRequest: {
-      currency,
-      summary: createPricingSummary({
-        productId: journey.identity.id,
-        productType: "DYNAMIC_HOMEPAGE_JOURNEY",
-        description: `${journey.classification.category} journey`,
-      }),
-      breakdown: createPricingBreakdown({ lineItems }),
-      taxes: createTaxBreakdown({
-        entries: [createTax({
-          code: "VAT",
-          type: TaxType.VAT,
-          amount: createMoney({ amount: 0, currency }),
-        })],
-        total: createMoney({ amount: 0, currency }),
-      }),
-      fees: [createFee({
-        code: "SERVICE_FEE",
-        label: "Service fee",
-        amount: createMoney({ amount: 0, currency }),
-      })],
-      discounts: [],
-      markups: [],
-      commissions: [],
-      promotions: [],
-      totals: createPricingTotal({
-        subtotal: createMoney({ amount: total, currency }),
-        taxTotal: createMoney({ amount: 0, currency }),
-        feeTotal: createMoney({ amount: 0, currency }),
-        discountTotal: createMoney({ amount: 0, currency }),
-        markupTotal: createMoney({ amount: 0, currency }),
-        commissionTotal: createMoney({ amount: 0, currency }),
-        grandTotal: createMoney({ amount: total, currency }),
-      }),
-    },
+    pricingRequest: withAccommodationPricingInputs(baseRequest, pricingInputs),
   };
 }
 
@@ -129,7 +135,7 @@ export class DefaultJourneyQuoteService implements JourneyQuoteService {
       return { status: "INVALID", journeyId, journey: resolution.journey, selections };
     }
 
-    const amounts: number[] = [];
+    const pricingInputs: JourneyAccommodationPricingInput[] = [];
     let travellerCount = 0;
     for (const selection of selections) {
       const option = resolution.journey.accommodation.find((candidate) =>
@@ -151,18 +157,23 @@ export class DefaultJourneyQuoteService implements JourneyQuoteService {
       if (rate.status !== "BOOKABLE") {
         return { status: "RECHECK_REQUIRED", journeyId, journey: resolution.journey, selections };
       }
-      selectJourneyAccommodation(option, {
+
+      const selected = selectJourneyAccommodation(option, {
         accommodationId: selection.accommodationId,
         packageStopId: selection.stopId,
         roomReference: selection.roomReference,
         rateReference: selection.rateReference,
       });
-      amounts.push(rate.pricing.amount);
-      travellerCount += (rate.occupancy ?? option.requestedOccupancy)?.rooms
-        .reduce((total, room) => total + room.adults + room.children, 0) ?? 0;
+      const pricingInput = selected.pricingInput;
+      if (!pricingInput) {
+        return { status: "INVALID", journeyId, journey: resolution.journey, selections };
+      }
+      pricingInputs.push(pricingInput);
+      travellerCount += (pricingInput.occupancy ?? rate.occupancy ?? option.requestedOccupancy)?.rooms
+        .reduce((total, roomOccupancy) => total + roomOccupancy.adults + roomOccupancy.children, 0) ?? 0;
     }
 
-    const pricing = await this.pricingEngine.execute(createPricingRequest(resolution.journey, amounts, travellerCount));
+    const pricing = await this.pricingEngine.execute(createPricingRequest(resolution.journey, pricingInputs, travellerCount));
     return {
       status: pricing.successful && pricing.pricing ? "PRICED" : "UNAVAILABLE",
       journeyId,

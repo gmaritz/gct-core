@@ -14,57 +14,58 @@ function createDefaultPricingEngine() {
         quoteReadinessValidator: new pricing_2.QuoteReadinessValidator(),
     }), new pricing_2.PricingPolicyPipeline(), new pricing_2.PricingCalculatorPipeline());
 }
-function createPricingRequest(journey, amounts, travellerCount) {
-    const total = amounts.reduce((sum, amount) => sum + amount, 0);
+function createPricingRequest(journey, pricingInputs, travellerCount) {
     const currency = pricing_1.Currency.ZAR;
-    const lineItems = amounts.map((amount, index) => (0, pricing_1.createPricingLineItem)({
-        code: `ACCOMMODATION:${index + 1}`,
-        label: `Accommodation ${index + 1}`,
-        unitAmount: (0, pricing_1.createMoney)({ amount, currency }),
-        totalAmount: (0, pricing_1.createMoney)({ amount, currency }),
-        quantity: 1,
-    }));
+    const baseRequest = {
+        currency,
+        summary: (0, pricing_1.createPricingSummary)({
+            productId: journey.identity.id,
+            productType: "DYNAMIC_HOMEPAGE_JOURNEY",
+            description: `${journey.classification.category} journey`,
+        }),
+        breakdown: (0, pricing_1.createPricingBreakdown)({
+            lineItems: [(0, pricing_1.createPricingLineItem)({
+                    code: "BASE",
+                    label: "Base package",
+                    unitAmount: (0, pricing_1.createMoney)({ amount: 0, currency }),
+                    totalAmount: (0, pricing_1.createMoney)({ amount: 0, currency }),
+                    quantity: 1,
+                })],
+        }),
+        taxes: (0, pricing_1.createTaxBreakdown)({
+            entries: [(0, pricing_1.createTax)({
+                    code: "VAT",
+                    type: pricing_1.TaxType.VAT,
+                    amount: (0, pricing_1.createMoney)({ amount: 0, currency }),
+                })],
+            total: (0, pricing_1.createMoney)({ amount: 0, currency }),
+        }),
+        fees: [(0, pricing_1.createFee)({
+                code: "SERVICE_FEE",
+                label: "Service fee",
+                amount: (0, pricing_1.createMoney)({ amount: 0, currency }),
+            })],
+        discounts: [],
+        markups: [],
+        commissions: [],
+        promotions: [],
+        totals: (0, pricing_1.createPricingTotal)({
+            subtotal: (0, pricing_1.createMoney)({ amount: 0, currency }),
+            taxTotal: (0, pricing_1.createMoney)({ amount: 0, currency }),
+            feeTotal: (0, pricing_1.createMoney)({ amount: 0, currency }),
+            discountTotal: (0, pricing_1.createMoney)({ amount: 0, currency }),
+            markupTotal: (0, pricing_1.createMoney)({ amount: 0, currency }),
+            commissionTotal: (0, pricing_1.createMoney)({ amount: 0, currency }),
+            grandTotal: (0, pricing_1.createMoney)({ amount: 0, currency }),
+        }),
+    };
     return {
         requestId: `quote-${journey.identity.id}`,
         travellerCount,
         destination: journey.destinations[0]?.name,
         market: "ZA",
         salesChannel: "DIRECT",
-        pricingRequest: {
-            currency,
-            summary: (0, pricing_1.createPricingSummary)({
-                productId: journey.identity.id,
-                productType: "DYNAMIC_HOMEPAGE_JOURNEY",
-                description: `${journey.classification.category} journey`,
-            }),
-            breakdown: (0, pricing_1.createPricingBreakdown)({ lineItems }),
-            taxes: (0, pricing_1.createTaxBreakdown)({
-                entries: [(0, pricing_1.createTax)({
-                        code: "VAT",
-                        type: pricing_1.TaxType.VAT,
-                        amount: (0, pricing_1.createMoney)({ amount: 0, currency }),
-                    })],
-                total: (0, pricing_1.createMoney)({ amount: 0, currency }),
-            }),
-            fees: [(0, pricing_1.createFee)({
-                    code: "SERVICE_FEE",
-                    label: "Service fee",
-                    amount: (0, pricing_1.createMoney)({ amount: 0, currency }),
-                })],
-            discounts: [],
-            markups: [],
-            commissions: [],
-            promotions: [],
-            totals: (0, pricing_1.createPricingTotal)({
-                subtotal: (0, pricing_1.createMoney)({ amount: total, currency }),
-                taxTotal: (0, pricing_1.createMoney)({ amount: 0, currency }),
-                feeTotal: (0, pricing_1.createMoney)({ amount: 0, currency }),
-                discountTotal: (0, pricing_1.createMoney)({ amount: 0, currency }),
-                markupTotal: (0, pricing_1.createMoney)({ amount: 0, currency }),
-                commissionTotal: (0, pricing_1.createMoney)({ amount: 0, currency }),
-                grandTotal: (0, pricing_1.createMoney)({ amount: total, currency }),
-            }),
-        },
+        pricingRequest: (0, pricing_1.withAccommodationPricingInputs)(baseRequest, pricingInputs),
     };
 }
 class DefaultJourneyQuoteService {
@@ -81,7 +82,7 @@ class DefaultJourneyQuoteService {
         if (selections.length !== resolution.journey.accommodation.length) {
             return { status: "INVALID", journeyId, journey: resolution.journey, selections };
         }
-        const amounts = [];
+        const pricingInputs = [];
         let travellerCount = 0;
         for (const selection of selections) {
             const option = resolution.journey.accommodation.find((candidate) => candidate.accommodationId === selection.accommodationId
@@ -96,17 +97,21 @@ class DefaultJourneyQuoteService {
             if (rate.status !== "BOOKABLE") {
                 return { status: "RECHECK_REQUIRED", journeyId, journey: resolution.journey, selections };
             }
-            (0, journeys_1.selectJourneyAccommodation)(option, {
+            const selected = (0, journeys_1.selectJourneyAccommodation)(option, {
                 accommodationId: selection.accommodationId,
                 packageStopId: selection.stopId,
                 roomReference: selection.roomReference,
                 rateReference: selection.rateReference,
             });
-            amounts.push(rate.pricing.amount);
-            travellerCount += (rate.occupancy ?? option.requestedOccupancy)?.rooms
-                .reduce((total, room) => total + room.adults + room.children, 0) ?? 0;
+            const pricingInput = selected.pricingInput;
+            if (!pricingInput) {
+                return { status: "INVALID", journeyId, journey: resolution.journey, selections };
+            }
+            pricingInputs.push(pricingInput);
+            travellerCount += (pricingInput.occupancy ?? rate.occupancy ?? option.requestedOccupancy)?.rooms
+                .reduce((total, roomOccupancy) => total + roomOccupancy.adults + roomOccupancy.children, 0) ?? 0;
         }
-        const pricing = await this.pricingEngine.execute(createPricingRequest(resolution.journey, amounts, travellerCount));
+        const pricing = await this.pricingEngine.execute(createPricingRequest(resolution.journey, pricingInputs, travellerCount));
         return {
             status: pricing.successful && pricing.pricing ? "PRICED" : "UNAVAILABLE",
             journeyId,
