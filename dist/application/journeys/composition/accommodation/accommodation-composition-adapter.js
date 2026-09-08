@@ -188,6 +188,7 @@ function toJourneyAccommodation(accommodation, contentResult, inventoryResult, c
     const option = {
         accommodationId,
         name: resolvedName,
+        accommodation,
         ...(context.packageStop ? { packageStop: context.packageStop } : {}),
         ...(roomOptions || context.packageStop || positiveResult?.requestedOccupancy || context.occupancy
             ? { provider }

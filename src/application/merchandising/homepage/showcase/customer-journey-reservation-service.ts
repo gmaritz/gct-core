@@ -4,6 +4,9 @@ import {
   ReservationServiceRequest,
   ReservationTimelineMilestone,
 } from "../../../reservations";
+import { selectJourneyAccommodation } from "../../../journeys";
+import { AccommodationReservationHandoffInput } from "../../../reservations/integration";
+import { AccommodationBookingOrchestrationService } from "../../../reservations/service/accommodation-booking-orchestration";
 import { ReservationReviewResult } from "./reservation-review-service";
 
 export interface CustomerJourneyReservationResult {
@@ -15,6 +18,7 @@ export class CustomerJourneyReservationService {
   public constructor(
     private readonly customerResolutionService: CustomerResolutionService,
     private readonly reservationService: ReservationService,
+    private readonly bookingOrchestration?: AccommodationBookingOrchestrationService,
   ) {}
 
   public async create(review: ReservationReviewResult): Promise<CustomerJourneyReservationResult> {
@@ -32,7 +36,10 @@ export class CustomerJourneyReservationService {
       phone: review.guestInformation.contact.phone,
     });
     const selected = review.quote.selections.map((selection) => {
-      const accommodation = review.journey!.accommodation.find((candidate) => candidate.accommodationId === selection.accommodationId);
+      const accommodation = review.journey!.accommodation.find((candidate) =>
+        candidate.accommodationId === selection.accommodationId
+        && (!selection.stopId || candidate.packageStop?.stopId === selection.stopId),
+      );
       const room = accommodation?.roomOptions?.find((candidate) => candidate.reference.opaqueReference === selection.roomReference.opaqueReference);
       const rate = room?.rateOptions.find((candidate) => candidate.reference.opaqueReference === selection.rateReference.opaqueReference);
       return accommodation && room && rate
@@ -135,6 +142,63 @@ export class CustomerJourneyReservationService {
       }],
     };
     const result = await this.reservationService.executeIfAbsent(request);
-    return { successful: result.successful, errors: result.errors };
+    if (!result.successful || !result.reservation || !this.bookingOrchestration) {
+      return { successful: result.successful, errors: result.errors };
+    }
+
+    const pricingInputs = stays.map(({ accommodation, room, rate }) => {
+      const selectedAccommodation = selectJourneyAccommodation(accommodation, {
+        accommodationId: accommodation.accommodationId,
+        packageStopId: accommodation.packageStop?.stopId,
+        roomReference: room.reference,
+        rateReference: rate.reference,
+      });
+      if (!selectedAccommodation.pricingInput) throw new Error("Selected accommodation pricing input is unavailable.");
+      return selectedAccommodation.pricingInput;
+    });
+    const reservationInputs = stays.map(({ accommodation, room, rate }) => ({
+      ...pricingInputs.find((input) => input.packageStopId === accommodation.packageStop?.stopId),
+      accommodationId: accommodation.accommodationId,
+      room,
+      rate,
+      occupancy: rate.occupancy ?? accommodation.requestedOccupancy,
+      provider: rate.reference.provider,
+      supplierReference: rate.reference,
+    }));
+    const handoff: AccommodationReservationHandoffInput = {
+      packageId: firstStay.packageId,
+      pricingInputs,
+      reservationInputs,
+      finalPackagePrice: {
+        amount: pricing.totals.grandTotal.amount,
+        currency: pricing.currency,
+      },
+      holder: {
+        firstName: leadTraveller.firstName,
+        lastName: leadTraveller.lastName,
+        email: review.guestInformation.contact.email,
+        phone: review.guestInformation.contact.phone,
+      },
+      guests: review.guestInformation.travellers.flatMap((traveller, index) => {
+        const roomCount = pricingInputs[0]?.occupancy?.rooms.length ?? 1;
+        return [{
+          roomIndex: Math.min(index, roomCount - 1),
+          type: traveller.travellerType,
+          firstName: traveller.firstName,
+          lastName: traveller.lastName,
+          age: traveller.dateOfBirth ? Math.max(0, new Date().getFullYear() - new Date(traveller.dateOfBirth).getFullYear()) : undefined,
+        }];
+      }),
+      idempotencyKey: `reservation-${review.journeyId}`,
+    };
+    const fulfilment = await this.bookingOrchestration.fulfilReservation(result.reservation, handoff, {
+      customerId: customer.customerId,
+      bookingStartDate: firstStay.checkInDate,
+      bookingEndDate: lastStay.checkOutDate,
+    });
+    return {
+      successful: true,
+      errors: fulfilment.errors,
+    };
   }
 }

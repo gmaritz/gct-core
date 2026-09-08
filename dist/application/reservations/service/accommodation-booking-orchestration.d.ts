@@ -4,6 +4,7 @@ import { AccommodationRateRevalidationResult, AccommodationRateRevalidationServi
 import { PricingEngine, PricingEngineRequest } from "../../pricing";
 import { Reservation } from "../aggregate";
 import { ReservationService, ReservationServiceRequest } from "./index";
+import { ReservationPersistenceContext, ReservationRepository } from "../repository";
 import { AccommodationReservationHandoffInput } from "../integration";
 export interface AccommodationBookingOrchestrationRequest {
     readonly pricing: PricingEngineRequest;
@@ -26,7 +27,10 @@ export declare class AccommodationBookingOrchestrationService implements Applica
     private readonly reservationService;
     private readonly revalidationService;
     private readonly bookingService;
-    constructor(pricingEngine: PricingEngine, reservationService: ReservationService, revalidationService: AccommodationRateRevalidationService, bookingService: AccommodationBookingService);
+    private readonly reservationRepository?;
+    constructor(pricingEngine: PricingEngine, reservationService: ReservationService, revalidationService: AccommodationRateRevalidationService, bookingService: AccommodationBookingService, reservationRepository?: ReservationRepository | undefined);
+    fulfilReservation(reservation: Reservation, handoff: AccommodationReservationHandoffInput, persistenceContext: ReservationPersistenceContext): Promise<AccommodationBookingOrchestrationResult>;
     execute(request: AccommodationBookingOrchestrationRequest): Promise<AccommodationBookingOrchestrationResult>;
+    private bookAccommodation;
 }
 //# sourceMappingURL=accommodation-booking-orchestration.d.ts.map

@@ -202,6 +202,7 @@ describe("AccommodationCompositionAdapter", () => {
       {
         accommodationId: "acc-1001",
         name: "Signal Hill Signature Lodge",
+        accommodation,
       },
     ]);
   });

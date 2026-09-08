@@ -3,7 +3,7 @@ import { AccommodationBookingService } from "@application/accommodation/booking"
 import { AccommodationRateRevalidationService } from "@application/accommodation/revalidation";
 import { PricingEngine, PricingEngineRequest } from "@application/pricing";
 import { ReservationService } from "./reservation-service";
-import { ReservationStatus } from "../aggregate";
+import { Reservation, ReservationStatus } from "../aggregate";
 import { JourneyAccommodationPricingInput, JourneyAccommodationReservationInput } from "@application/journeys/models";
 
 function input(status: "BOOKABLE" | "RECHECK_REQUIRED" = "BOOKABLE"): {
@@ -50,5 +50,53 @@ describe("AccommodationBookingOrchestrationService", () => {
 
     expect(calls).toEqual(["pricing", "reservation", "revalidation", "booking"]);
     expect(result.successful).toBe(true);
+  });
+
+  it("persists stop-specific supplier fulfilment on an existing reservation", async () => {
+    const selected = input();
+    let persisted: import("@application/reservations/aggregate").Reservation | undefined;
+    const repository = {
+      save: async (reservation: import("@application/reservations/aggregate").Reservation): Promise<void> => {
+        persisted = reservation;
+      },
+    };
+    const booking = {
+      successful: true,
+      status: "CONFIRMED" as const,
+      provider: "supplier-a",
+      accommodation: selected.pricing.accommodation,
+      room: selected.pricing.room,
+      rate: selected.pricing.rate,
+      supplierBookingReference: "SUP-BOOK-1",
+      packageStopId: "stop-1",
+      errors: [],
+      warnings: [],
+    };
+    const service = new AccommodationBookingOrchestrationService(
+      Object.assign(Object.create(PricingEngine.prototype), { execute: async () => { throw new Error("not used"); } }),
+      Object.assign(Object.create(ReservationService.prototype), {}),
+      Object.assign(Object.create(AccommodationRateRevalidationService.prototype), {}),
+      Object.assign(Object.create(AccommodationBookingService.prototype), { execute: async () => booking }),
+      repository as never,
+    );
+    const existing = Reservation.create({
+      identity: { id: "reservation-1" }, reservationNumber: "RES-1", status: ReservationStatus.CREATED,
+      journeySnapshot: { snapshotId: "journey", capturedAt: new Date(), version: "1", journeyId: "j1", title: "Journey" },
+      travellerSnapshots: [{ snapshotId: "traveller", capturedAt: new Date(), version: "1", travellerId: "t1", fullName: "Ari" }],
+      metadata: { createdAt: new Date(), updatedAt: new Date(), version: "1" },
+    });
+    const result = await service.fulfilReservation(existing, {
+      packageId: "package-1",
+      pricingInputs: [selected.pricing],
+      reservationInputs: [selected.reservation],
+      finalPackagePrice: { amount: 250, currency: "ZAR" },
+      holder: { firstName: "Ari", lastName: "A", email: "ari@example.com" },
+      guests: [{ roomIndex: 0, type: "ADULT", firstName: "Ari", lastName: "A" }],
+      idempotencyKey: "reservation-1",
+    }, { customerId: "customer-1", bookingStartDate: new Date(), bookingEndDate: new Date() });
+
+    expect(result.successful).toBe(true);
+    expect(persisted?.supplierReferences[0]?.snapshotId).toContain("stop-1");
+    expect(persisted?.supplierReferences[0]?.supplierBookingReference).toBe("SUP-BOOK-1");
   });
 });
