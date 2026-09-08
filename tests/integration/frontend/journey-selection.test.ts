@@ -23,7 +23,7 @@ describe("Frontend journey selection", () => {
     expect(detail.text).toContain("Select this journey");
     expect(selection.status).toBe(200);
     expect(selection.text).toContain("Journey selected");
-    expect(selection.text).toContain("Accommodation availability and final pricing will be confirmed later.");
+    expect(selection.text).toContain("Accommodation availability and final package pricing will be confirmed in the subsequent steps.");
   });
 
   it("handles invalid selection without exposing internal details", async () => {

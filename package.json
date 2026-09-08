@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "node -r tsconfig-paths/register -r ts-node/register src/index.ts",
-    "start": "node -r tsconfig-paths/register dist/index.js",
+    "start": "node -e \"process.env.TS_NODE_BASEURL='./dist'; require('tsconfig-paths/register'); require('./dist/index.js')\"",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "test": "jest",
