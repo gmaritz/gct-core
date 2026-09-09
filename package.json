@@ -19,7 +19,8 @@
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
     "hotelbeds:content:initial": "ts-node src/scripts/hotelbeds/initial-content-sync.ts",
-    "hotelbeds:availability:live-verify": "ts-node src/scripts/hotelbeds/availability-live-verification.ts"
+    "hotelbeds:availability:live-verify": "ts-node src/scripts/hotelbeds/availability-live-verification.ts",
+    "hotelbeds:certification:verify": "ts-node src/scripts/hotelbeds/certification-verification.ts"
   },
   "repository": {
     "type": "git",

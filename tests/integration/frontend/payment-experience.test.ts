@@ -3,6 +3,7 @@ import { createTestApplication } from "../../helpers/application.helper";
 import { createRequest } from "../../helpers/request.helper";
 
 describe("Frontend payment experience", () => {
+  const isolatedJourneyId = "journey-homepage-journey-003";
   let app: Express;
   let getRequest: ReturnType<typeof createRequest>;
   let postRequest: ReturnType<typeof createRequest>;
@@ -14,7 +15,7 @@ describe("Frontend payment experience", () => {
   });
 
   it("renders a controlled payment page without trusting browser payment state", async (): Promise<void> => {
-    const response = await getRequest("/ui/journeys/journey-homepage-journey-001/payment");
+    const response = await getRequest(`/ui/journeys/${isolatedJourneyId}/payment`);
 
     expect(response.status).toBe(200);
     expect(response.text).toContain("Secure payment");
@@ -23,7 +24,7 @@ describe("Frontend payment experience", () => {
   });
 
   it("does not initiate payment without an authoritative reservation context", async (): Promise<void> => {
-    const response = await postRequest("/ui/journeys/journey-homepage-journey-001/payment")
+    const response = await postRequest(`/ui/journeys/${isolatedJourneyId}/payment`)
       .type("form")
       .send({ amount: "1", currency: "USD", status: "COMPLETED" });
 
@@ -33,7 +34,7 @@ describe("Frontend payment experience", () => {
   });
 
   it("treats provider return as unknown until authoritative state is available", async (): Promise<void> => {
-    const response = await getRequest("/ui/journeys/journey-homepage-journey-001/payment/return?payment_status=COMPLETE");
+    const response = await getRequest(`/ui/journeys/${isolatedJourneyId}/payment/return?payment_status=COMPLETE`);
 
     expect(response.status).toBe(200);
     expect(response.text).toContain("Payment is not available");
