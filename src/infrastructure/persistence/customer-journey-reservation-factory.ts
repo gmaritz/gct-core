@@ -14,10 +14,10 @@ import {
 import { AccommodationBookingService } from "../../application/accommodation/booking";
 import { AccommodationRateRevalidationService } from "../../application/accommodation/revalidation";
 import { InMemoryProviderRegistry } from "../../application/accommodation/registry";
-import { HotelbedsProvider } from "../../application/accommodation/providers/hotelbeds";
 import { AccommodationBookingOrchestrationService } from "../../application/reservations/service/accommodation-booking-orchestration";
 import { createDefaultPricingEngine } from "../../application/merchandising/homepage/showcase/journey-quote-service";
 import { CustomerPrismaRepository, CanonicalReservationPrismaRepository } from "./repositories";
+import { createHotelbedsRuntimeProvider } from "../accommodation/hotelbeds/hotelbeds-runtime";
 
 export function createCustomerJourneyReservationService(): CustomerJourneyReservationService {
   const reservationRepository = new CanonicalReservationPrismaRepository();
@@ -32,7 +32,7 @@ export function createCustomerJourneyReservationService(): CustomerJourneyReserv
     reservationRepository,
   );
   const providerRegistry = new InMemoryProviderRegistry();
-  providerRegistry.register(new HotelbedsProvider());
+  providerRegistry.register(createHotelbedsRuntimeProvider());
   const bookingOrchestration = new AccommodationBookingOrchestrationService(
     createDefaultPricingEngine(),
     reservationService,
