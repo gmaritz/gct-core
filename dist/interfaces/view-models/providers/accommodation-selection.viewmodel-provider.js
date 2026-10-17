@@ -23,7 +23,8 @@ function createAccommodationImage(name, destination) {
 class AccommodationSelectionViewModelProvider {
     provide(journey, status) {
         const destinations = journey.destinations.map((destination) => destination.name);
-        const stops = journey.accommodation.map((option, index) => {
+        const stopsById = new Map();
+        journey.accommodation.forEach((option, index) => {
             const rooms = option.roomOptions?.map((room) => ({
                 id: room.reference.opaqueReference,
                 name: room.name,
@@ -33,34 +34,46 @@ class AccommodationSelectionViewModelProvider {
                     status: rate.status,
                     amount: rate.pricing.amount,
                     currency: rate.pricing.currency,
+                    adults: rate.occupancy.rooms.length === 1 ? rate.occupancy.rooms[0]?.adults : undefined,
                 })),
             })) ?? [];
-            const selection = option.selection;
-            const state = selection
-                ? "COMPLETE"
-                : rooms.length > 0 ? "NOT_SELECTED" : "NOT_SELECTED";
-            return Object.freeze({
+            const stopId = option.packageStop?.stopId ?? `journey-stop-${index + 1}`;
+            const existing = stopsById.get(stopId);
+            const property = Object.freeze({
+                id: option.accommodationId,
+                name: option.name,
+                destination: option.accommodation?.location.city ?? option.packageStop?.destination ?? destinations[index] ?? destinations[0] ?? "",
+                provider: option.provider ?? option.accommodation?.providerReference.provider ?? "curated",
+                category: option.accommodation?.category,
+                rating: option.accommodation?.rating.stars,
+                image: createAccommodationImage(option.name, option.packageStop?.destination ?? destinations[0] ?? ""),
+                images: Object.freeze([createAccommodationImage(option.name, option.packageStop?.destination ?? destinations[0] ?? "")]),
+                rooms: Object.freeze(rooms.map((room) => Object.freeze({
+                    ...room,
+                    rates: Object.freeze(room.rates.map((rate) => Object.freeze(rate))),
+                }))),
+            });
+            if (existing) {
+                existing.properties.push(property);
+                return;
+            }
+            stopsById.set(stopId, {
                 id: option.packageStop?.stopId,
                 order: option.packageStop?.stopOrder ?? index + 1,
-                destination: option.packageStop ? destinations[index] ?? destinations[0] ?? "" : destinations[0] ?? "",
+                destination: option.packageStop?.destination ?? destinations[index] ?? destinations[0] ?? "",
                 checkIn: option.packageStop?.checkInDate.toISOString(),
                 checkOut: option.packageStop?.checkOutDate.toISOString(),
                 nights: option.packageStop ? Math.max(0, Math.round((option.packageStop.checkOutDate.getTime() - option.packageStop.checkInDate.getTime()) / 86400000)) : undefined,
                 occupancy: option.requestedOccupancy?.rooms,
-                properties: Object.freeze([Object.freeze({
-                        id: option.accommodationId,
-                        name: option.name,
-                        destination: destinations[index] ?? destinations[0] ?? "",
-                        category: option.accommodation?.category,
-                        rating: option.accommodation?.rating.stars,
-                        image: createAccommodationImage(option.name, destinations[index] ?? destinations[0] ?? ""),
-                        images: Object.freeze([createAccommodationImage(option.name, destinations[index] ?? destinations[0] ?? "")]),
-                        rooms: Object.freeze(rooms.map((room) => Object.freeze({ ...room, rates: Object.freeze(room.rates.map((rate) => Object.freeze(rate))) }))),
-                    })]),
-                state,
+                properties: [property],
             });
         });
-        const complete = stops.length > 0 && stops.every((stop) => stop.state === "COMPLETE");
+        const stops = [...stopsById.values()].sort((left, right) => left.order - right.order).map((stop) => Object.freeze({
+            ...stop,
+            properties: Object.freeze(stop.properties),
+            state: "NOT_SELECTED",
+        }));
+        const complete = false;
         return Object.freeze({
             journeyId: journey.identity.id,
             journeyTitle: `${journey.classification.category} ${destinations[0] ?? "Journey"} Journey`,

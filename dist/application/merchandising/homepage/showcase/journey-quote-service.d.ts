@@ -3,12 +3,16 @@ import { PricingEngine, PricingEngineResult } from "../../../pricing";
 import { AccommodationSelectionInput } from "./accommodation-selection-service";
 import { DynamicHomepageJourneyResolver } from "./dynamic-homepage-journey-resolver";
 import { JourneySelectionStore } from "./journey-selection-store";
-export type JourneyQuoteStatus = "PRICED" | "RECHECK_REQUIRED" | "UNAVAILABLE" | "INVALID" | "NOT_FOUND";
+export type JourneyQuoteStatus = "PRICED" | "RECHECK_REQUIRED" | "UNAVAILABLE" | "INVALID" | "NOT_FOUND" | "CURRENCY_UNCONFIRMED";
 export interface JourneyQuoteResult {
     readonly status: JourneyQuoteStatus;
     readonly journeyId: string;
     readonly journey?: Journey;
     readonly pricing?: PricingEngineResult;
+    readonly groupComponent?: {
+        readonly amount: number;
+        readonly currency: string;
+    };
     readonly selections: ReadonlyArray<AccommodationSelectionInput>;
 }
 export interface JourneyQuoteService {

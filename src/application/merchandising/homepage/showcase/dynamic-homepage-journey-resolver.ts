@@ -5,6 +5,7 @@ import {
   FEATURED_JOURNEYS,
   JourneyCompositionExecutor,
 } from "./homepage-journey-showcase-service";
+import { JourneyBookingContext } from "./journey-selection-store";
 
 export type DynamicHomepageJourneyResolutionStatus = "RESOLVED" | "INVALID" | "NOT_FOUND" | "UNAVAILABLE";
 
@@ -14,7 +15,7 @@ export interface DynamicHomepageJourneyResolution {
 }
 
 export interface DynamicHomepageJourneyResolver {
-  resolve(publicJourneyId: string): Promise<DynamicHomepageJourneyResolution>;
+  resolve(publicJourneyId: string, selection?: JourneyBookingContext): Promise<DynamicHomepageJourneyResolution>;
 }
 
 export class DefaultDynamicHomepageJourneyResolver implements DynamicHomepageJourneyResolver {

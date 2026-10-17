@@ -9,6 +9,7 @@ export interface AccommodationRateOptionViewModel {
   readonly status: string;
   readonly amount: number;
   readonly currency: string;
+  readonly adults?: number;
 }
 
 export interface AccommodationRoomOptionViewModel {
@@ -21,6 +22,7 @@ export interface AccommodationPropertyOptionViewModel {
   readonly id: string;
   readonly name: string;
   readonly destination: string;
+  readonly provider: string;
   readonly category?: string;
   readonly rating?: number;
   readonly image?: ImageViewModel;

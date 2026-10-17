@@ -22,9 +22,16 @@ export interface AccommodationPricingComponent {
   readonly childAges: ReadonlyArray<number>;
 }
 
+export class AccommodationCurrencyError extends Error {
+  public constructor(message: string) {
+    super(message);
+    this.name = "AccommodationCurrencyError";
+  }
+}
+
 function toCurrency(value: string): Currency {
   if (!Object.values(Currency).includes(value as Currency)) {
-    throw new Error(`Unsupported accommodation pricing currency: ${value}.`);
+    throw new AccommodationCurrencyError(`Unsupported accommodation pricing currency: ${value}.`);
   }
   return value as Currency;
 }
@@ -38,7 +45,7 @@ function componentFromInput(input: JourneyAccommodationPricingInput): Accommodat
   if (!Number.isFinite(input.rate.pricing.amount) || input.rate.pricing.amount <= 0) {
     throw new Error("Accommodation pricing input requires a positive supplier price.");
   }
-  if (!input.rate.pricing.currency.trim()) throw new Error("Accommodation pricing input requires a currency.");
+  if (!input.rate.pricing.currency.trim()) throw new AccommodationCurrencyError("Accommodation pricing input requires a currency.");
 
   return Object.freeze({
     packageStopId: stopId,
@@ -46,7 +53,8 @@ function componentFromInput(input: JourneyAccommodationPricingInput): Accommodat
     roomReference: input.room.reference.opaqueReference,
     rateReference: input.rate.reference.opaqueReference,
     provider: input.rate.reference.provider,
-    amount: input.rate.pricing.amount,
+    amount: input.roomRates?.reduce((total, roomRate) => total + roomRate.rate.pricing.amount, 0)
+      ?? input.rate.pricing.amount,
     currency: toCurrency(input.rate.pricing.currency),
     pricingBasis: input.rate.pricing.basis ?? "UNSPECIFIED",
     occupancyRoomCount: input.occupancy?.rooms.length ?? input.rate.occupancy.rooms.length,
@@ -101,7 +109,7 @@ export function withAccommodationPricingInputs(
   const lineItems = components.map(componentLineItem);
   const baseCurrency = request.currency;
   if (components.some((component) => component.currency !== baseCurrency)) {
-    throw new Error("Accommodation pricing currency must match the package pricing currency.");
+    throw new AccommodationCurrencyError("Accommodation pricing currency must match the package pricing currency.");
   }
   const accommodationTotal = lineItems.reduce((total, item) => total + item.totalAmount.amount, 0);
   const subtotal = request.totals.subtotal.amount + accommodationTotal;

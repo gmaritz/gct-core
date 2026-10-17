@@ -35,11 +35,8 @@ describe("JourneyDetailViewModelProvider", () => {
 
     expect(viewModel.id).toBe("journey-homepage-journey-001");
     expect(viewModel.destination).toBe("Cape Winelands");
-    expect(viewModel.accommodation[0]).toMatchObject({
-      id: "acc-1",
-      name: "Cape Winelands Retreat",
-      destination: "Cape Winelands",
-    });
+    expect(viewModel.accommodation).toEqual([]);
+    expect(viewModel.requiresBookingDetails).toBe(true);
     expect(viewModel.experiences).toEqual([
       { id: "exp-1", name: "Signature cellar experience" },
     ]);

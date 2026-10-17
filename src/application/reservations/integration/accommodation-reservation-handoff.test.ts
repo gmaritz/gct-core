@@ -85,6 +85,65 @@ describe("APP-004 pricing-to-reservation accommodation handoff", () => {
     expect(requests[0]?.idempotencyKey).toBe("reservation-request-1-stop-1");
   });
 
+  it("preserves each selected room, rate, price, occupancy and guest assignment", () => {
+    const input = createInput("stop-1", "BOOKABLE", 250);
+    const firstRate = {
+      ...input.pricing.rate,
+      pricing: { amount: 250, currency: "ZAR", basis: "TOTAL_STAY" },
+      occupancy: { rooms: [{ adults: 1, children: 1, childAges: [8] }] },
+    };
+    const secondRate = {
+      ...input.pricing.rate,
+      reference: { provider: "hotelbeds", opaqueReference: "rate-stop-1-second" },
+      pricing: { amount: 300, currency: "ZAR", basis: "TOTAL_STAY" },
+      occupancy: { rooms: [{ adults: 1, children: 0, childAges: [] }] },
+    };
+    const secondRoom = {
+      ...input.pricing.room,
+      reference: { provider: "hotelbeds", opaqueReference: "room-stop-1-second" },
+      rateOptions: [secondRate],
+    };
+    const pricing = {
+      ...input.pricing,
+      rate: {
+        ...firstRate,
+        pricing: { amount: 550, currency: "ZAR", basis: "TOTAL_STAY" },
+        occupancy: { rooms: [...firstRate.occupancy.rooms, ...secondRate.occupancy.rooms] },
+      },
+      roomRates: [
+        { room: input.pricing.room, rate: firstRate },
+        { room: secondRoom, rate: secondRate },
+      ],
+      occupancy: { rooms: [...firstRate.occupancy.rooms, ...secondRate.occupancy.rooms] },
+    } as JourneyAccommodationPricingInput;
+    const reservation = {
+      ...input.reservation,
+      ...pricing,
+      provider: "hotelbeds",
+      supplierReference: firstRate.reference,
+    } as JourneyAccommodationReservationInput;
+    const handoff = createHandoff([{ pricing, reservation }]);
+    const bookings = createAccommodationBookingRequests(handoff);
+    const snapshots = createAccommodationReservationSnapshots(handoff);
+
+    expect(bookings).toHaveLength(2);
+    expect(bookings.map((booking) => booking.rate.reference.opaqueReference)).toEqual([
+      "rate-stop-1",
+      "rate-stop-1-second",
+    ]);
+    expect(bookings.map((booking) => booking.occupancy.rooms[0]?.adults)).toEqual([1, 1]);
+    expect(bookings.map((booking) => booking.guests.map((guest) => guest.firstName))).toEqual([
+      ["Ari", "Leo"],
+      ["Sam"],
+    ]);
+    expect(bookings.map((booking) => booking.idempotencyKey)).toEqual([
+      "reservation-request-1-stop-1-room-1",
+      "reservation-request-1-stop-1-room-2",
+    ]);
+    expect(snapshots[0]?.supplierPrice?.amount).toBe(550);
+    expect(snapshots[0]?.selectedRooms?.map((room) => room.supplierPrice.amount)).toEqual([250, 300]);
+  });
+
   it("preserves RECHECK continuity for downstream revalidation", () => {
     const input = createInput("stop-1", "RECHECK_REQUIRED", 250);
     const snapshots = createAccommodationReservationSnapshots(createHandoff([input]));

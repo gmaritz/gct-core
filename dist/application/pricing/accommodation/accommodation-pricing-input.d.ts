@@ -13,6 +13,9 @@ export interface AccommodationPricingComponent {
     readonly occupancyRoomCount: number;
     readonly childAges: ReadonlyArray<number>;
 }
+export declare class AccommodationCurrencyError extends Error {
+    constructor(message: string);
+}
 export declare function createAccommodationPricingComponents(inputs: ReadonlyArray<JourneyAccommodationPricingInput>): ReadonlyArray<AccommodationPricingComponent>;
 export declare function withAccommodationPricingInputs(request: PricingValidationRequest, inputs: ReadonlyArray<JourneyAccommodationPricingInput>): PricingValidationRequest;
 //# sourceMappingURL=accommodation-pricing-input.d.ts.map

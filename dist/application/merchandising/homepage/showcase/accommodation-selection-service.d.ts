@@ -4,14 +4,24 @@ export type AccommodationSelectionStatus = "COMPLETE" | "INVALID" | "NOT_FOUND" 
 export interface AccommodationSelectionInput {
     readonly stopId?: string;
     readonly accommodationId: string;
-    readonly roomReference: {
+    readonly roomReference?: {
         readonly provider: string;
         readonly opaqueReference: string;
     };
-    readonly rateReference: {
+    readonly rateReference?: {
         readonly provider: string;
         readonly opaqueReference: string;
     };
+    readonly roomSelections?: ReadonlyArray<{
+        readonly roomReference: {
+            readonly provider: string;
+            readonly opaqueReference: string;
+        };
+        readonly rateReference: {
+            readonly provider: string;
+            readonly opaqueReference: string;
+        };
+    }>;
 }
 export interface AccommodationSelectionResult {
     readonly status: AccommodationSelectionStatus;

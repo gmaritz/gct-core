@@ -9,3 +9,5 @@ export * from "./reservation-review-service";
 export * from "./journey-selection-store";
 export * from "./guest-information-store";
 export * from "./customer-journey-reservation-service";
+export * from "./cape-winelands-property-configuration";
+export * from "./cape-winelands-journey-resolver";

@@ -1,11 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.AccommodationCurrencyError = void 0;
 exports.createAccommodationPricingComponents = createAccommodationPricingComponents;
 exports.withAccommodationPricingInputs = withAccommodationPricingInputs;
 const models_1 = require("../models");
+class AccommodationCurrencyError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "AccommodationCurrencyError";
+    }
+}
+exports.AccommodationCurrencyError = AccommodationCurrencyError;
 function toCurrency(value) {
     if (!Object.values(models_1.Currency).includes(value)) {
-        throw new Error(`Unsupported accommodation pricing currency: ${value}.`);
+        throw new AccommodationCurrencyError(`Unsupported accommodation pricing currency: ${value}.`);
     }
     return value;
 }
@@ -23,14 +31,15 @@ function componentFromInput(input) {
         throw new Error("Accommodation pricing input requires a positive supplier price.");
     }
     if (!input.rate.pricing.currency.trim())
-        throw new Error("Accommodation pricing input requires a currency.");
+        throw new AccommodationCurrencyError("Accommodation pricing input requires a currency.");
     return Object.freeze({
         packageStopId: stopId,
         accommodationId: input.accommodationId,
         roomReference: input.room.reference.opaqueReference,
         rateReference: input.rate.reference.opaqueReference,
         provider: input.rate.reference.provider,
-        amount: input.rate.pricing.amount,
+        amount: input.roomRates?.reduce((total, roomRate) => total + roomRate.rate.pricing.amount, 0)
+            ?? input.rate.pricing.amount,
         currency: toCurrency(input.rate.pricing.currency),
         pricingBasis: input.rate.pricing.basis ?? "UNSPECIFIED",
         occupancyRoomCount: input.occupancy?.rooms.length ?? input.rate.occupancy.rooms.length,
@@ -76,7 +85,7 @@ function withAccommodationPricingInputs(request, inputs) {
     const lineItems = components.map(componentLineItem);
     const baseCurrency = request.currency;
     if (components.some((component) => component.currency !== baseCurrency)) {
-        throw new Error("Accommodation pricing currency must match the package pricing currency.");
+        throw new AccommodationCurrencyError("Accommodation pricing currency must match the package pricing currency.");
     }
     const accommodationTotal = lineItems.reduce((total, item) => total + item.totalAmount.amount, 0);
     const subtotal = request.totals.subtotal.amount + accommodationTotal;

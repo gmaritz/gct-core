@@ -14,6 +14,10 @@ export class GuestInformationStore {
   public find(journeyId: string): GuestInformationInput | undefined {
     return this.information.get(journeyId);
   }
+
+  public clear(journeyId: string): void {
+    this.information.delete(journeyId);
+  }
 }
 
 export const guestInformationStore = new GuestInformationStore();

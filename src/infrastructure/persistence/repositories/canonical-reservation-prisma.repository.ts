@@ -356,6 +356,24 @@ function toDomain(booking: PersistedBooking | LegacyBooking): Reservation {
             basis: typeof item.supplierPrice.basis === "string" ? item.supplierPrice.basis : undefined,
           }
         : undefined,
+      selectedRooms: Array.isArray(item.selectedRooms)
+          ? item.selectedRooms.filter(isObject).map((room) => ({
+              roomType: String(room.roomType ?? ""),
+              roomReference: isObject(room.roomReference)
+                ? { provider: String(room.roomReference.provider ?? ""), opaqueReference: String(room.roomReference.opaqueReference ?? "") }
+                : { provider: "", opaqueReference: "" },
+              rateReference: isObject(room.rateReference)
+                ? { provider: String(room.rateReference.provider ?? ""), opaqueReference: String(room.rateReference.opaqueReference ?? "") }
+                : { provider: "", opaqueReference: "" },
+              supplierPrice: isObject(room.supplierPrice)
+                ? {
+                    amount: Number(room.supplierPrice.amount ?? 0),
+                    currency: String(room.supplierPrice.currency ?? ""),
+                    basis: typeof room.supplierPrice.basis === "string" ? room.supplierPrice.basis : undefined,
+                  }
+                : { amount: 0, currency: "" },
+            }))
+          : undefined,
     })),
     bookingItems: toBookingItemSnapshots(booking),
     pricingSnapshot: pricingSnapshot

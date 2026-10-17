@@ -25,4 +25,6 @@ __exportStar(require("./reservation-review-service"), exports);
 __exportStar(require("./journey-selection-store"), exports);
 __exportStar(require("./guest-information-store"), exports);
 __exportStar(require("./customer-journey-reservation-service"), exports);
+__exportStar(require("./cape-winelands-property-configuration"), exports);
+__exportStar(require("./cape-winelands-journey-resolver"), exports);
 //# sourceMappingURL=index.js.map

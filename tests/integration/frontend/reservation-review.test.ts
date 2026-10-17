@@ -34,14 +34,14 @@ describe("Frontend reservation review", () => {
     await prisma.customer.deleteMany({ where: { email: "contact@example.com" } });
   });
 
-  it("renders controlled prerequisites for a direct GET", async (): Promise<void> => {
+  it("does not render a review without current dated accommodation offers", async (): Promise<void> => {
     const response = await getRequest("/ui/journeys/journey-homepage-journey-001/review");
 
-    expect(response.status).toBe(422);
-    expect(response.text).toContain("Complete guest information before reviewing the reservation.");
+    expect(response.status).toBe(410);
+    expect(response.text).toContain("This journey is no longer available");
   });
 
-  it("renders the complete review after valid guest information", async (): Promise<void> => {
+  it("does not accept guest information without live accommodation availability", async (): Promise<void> => {
     const response = await postRequest("/ui/journeys/journey-homepage-journey-001/guest-information")
       .type("form")
       .send({
@@ -57,15 +57,8 @@ describe("Frontend reservation review", () => {
         "travellers[1][travellerType]": "ADULT",
       });
 
-    expect(response.status).toBe(302);
-    const review = await getRequest(response.headers.location);
-    expect(review.status).toBe(200);
-    expect(review.text).toContain("Reservation review");
-    expect(review.text).toContain("Cape Winelands Retreat");
-    expect(review.text).toContain("contact@example.com");
-    expect(review.text).toContain("ZAR 18950.00");
-    expect(review.text).toContain("Confirm and continue to payment");
-    expect(review.text).not.toContain("Booking confirmed");
+    expect(response.status).toBe(410);
+    expect(response.text).toContain("This journey is no longer available");
   });
 
   it("requires explicit confirmation before payment handoff", async (): Promise<void> => {
@@ -85,10 +78,10 @@ describe("Frontend reservation review", () => {
       });
 
     expect(response.status).toBe(422);
-    expect(response.text).toContain("Confirm the reviewed information before continuing to payment.");
+    expect(response.text).toContain("Complete guest information before reviewing the reservation.");
   });
 
-  it("hands off to payment only after explicit confirmation", async (): Promise<void> => {
+  it("does not hand off to payment when guest details were never accepted", async (): Promise<void> => {
     const response = await postRequest("/ui/journeys/journey-homepage-journey-001/review")
       .type("form")
       .send({
@@ -105,16 +98,7 @@ describe("Frontend reservation review", () => {
         "travellers[1][travellerType]": "ADULT",
       });
 
-    expect(response.status).toBe(302);
-    expect(response.headers.location).toBe("/ui/journeys/journey-homepage-journey-001/payment");
-
-    const payment = await getRequest("/ui/journeys/journey-homepage-journey-001/payment");
-    expect(payment.status).toBe(200);
-    expect(payment.text).toContain("ZAR 18950.00");
-    expect(payment.text).not.toContain("Payment is not available");
-
-    const confirmation = await getRequest("/ui/journeys/journey-homepage-journey-001/confirmation");
-    expect(confirmation.status).toBe(409);
-    expect(confirmation.text).toContain("still being processed");
+    expect(response.status).toBe(422);
+    expect(response.text).toContain("Complete guest information before reviewing the reservation.");
   });
 });

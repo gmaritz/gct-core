@@ -22,14 +22,11 @@ describe("Frontend guest information", () => {
       });
   });
 
-  it("renders contact and occupancy-aligned traveller forms", async (): Promise<void> => {
+  it("does not accept guest details before a live room allocation exists", async (): Promise<void> => {
     const response = await getRequest("/ui/journeys/journey-homepage-journey-001/guest-information");
 
-    expect(response.status).toBe(200);
-    expect(response.text).toContain("Booking contact");
-    expect(response.text).toContain("Lead traveller");
-    expect(response.text).toContain("Traveller 2");
-    expect(response.text).toContain('autocomplete="email"');
+    expect(response.status).toBe(410);
+    expect(response.text).toContain("This journey is no longer available");
   });
 
   it("redisplays invalid submitted values and validation errors", async (): Promise<void> => {
@@ -45,13 +42,11 @@ describe("Frontend guest information", () => {
         "travellers[0][travellerType]": "ADULT",
       });
 
-    expect(response.status).toBe(422);
-    expect(response.text).toContain("A valid contact email is required.");
-    expect(response.text).toContain('value="bad-email"');
-    expect(response.text).toContain('value="Ava"');
+    expect(response.status).toBe(410);
+    expect(response.text).toContain("This journey is no longer available");
   });
 
-  it("accepts valid guest information and continues to reservation review", async (): Promise<void> => {
+  it("does not continue to review without live accommodation availability", async (): Promise<void> => {
     const response = await postRequest("/ui/journeys/journey-homepage-journey-001/guest-information")
       .type("form")
       .send({
@@ -68,12 +63,7 @@ describe("Frontend guest information", () => {
         "travellers[1][travellerType]": "ADULT",
       });
 
-    expect(response.status).toBe(302);
-    expect(response.headers.location).toBe("/ui/journeys/journey-homepage-journey-001/review");
-
-    const review = await getRequest(response.headers.location);
-    expect(review.status).toBe(200);
-    expect(review.text).toContain("Reservation review");
-    expect(review.text).toContain("Confirm and continue to payment");
+    expect(response.status).toBe(410);
+    expect(response.text).toContain("This journey is no longer available");
   });
 });

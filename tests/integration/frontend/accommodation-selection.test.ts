@@ -13,18 +13,15 @@ describe("Frontend accommodation selection", () => {
     postRequest = createRequest(app, "post");
   });
 
-  it("renders available property, room and rate options", async (): Promise<void> => {
+  it("does not present accommodation without a dated availability search", async (): Promise<void> => {
     const response = await getRequest("/ui/journeys/journey-homepage-journey-001/accommodation");
 
-    expect(response.status).toBe(200);
-    expect(response.text).toContain("Accommodation selection");
-    expect(response.text).toContain("Cape Winelands Retreat");
-    expect(response.text).toContain("Signature Room");
-    expect(response.text).toContain("Breakfast Included");
-    expect(response.text).toContain("Continue to pricing");
+    expect(response.status).toBe(410);
+    expect(response.text).toContain("This journey is no longer available");
+    expect(response.text).not.toContain("Cape Winelands Retreat");
   });
 
-  it("accepts a valid server-validated accommodation selection", async (): Promise<void> => {
+  it("rejects fixture room and rate selections without current availability", async (): Promise<void> => {
     const response = await postRequest("/ui/journeys/journey-homepage-journey-001/accommodation")
       .type("form")
       .send({
@@ -35,16 +32,16 @@ describe("Frontend accommodation selection", () => {
         "selections[0][rateReference][opaqueReference]": "cape-winelands-rate-1",
       });
 
-    expect(response.status).toBe(200);
-    expect(response.text).toContain("Accommodation selection complete");
-    expect(response.text).toContain("ready for pricing");
+    expect(response.status).toBe(409);
+    expect(response.text).toContain("This journey is no longer available");
+    expect(response.text).not.toContain("Accommodation selection complete");
   });
 
   it("rejects incomplete selection without claiming completion", async (): Promise<void> => {
     const response = await postRequest("/ui/journeys/journey-homepage-journey-001/accommodation");
 
-    expect(response.status).toBe(422);
-    expect(response.text).toContain("Select accommodation for every stop.");
+    expect(response.status).toBe(409);
+    expect(response.text).toContain("This journey is no longer available");
     expect(response.text).not.toContain("Accommodation selection complete");
   });
 });

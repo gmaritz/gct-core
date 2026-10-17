@@ -23,6 +23,8 @@ export interface JourneyDetailAccommodationViewModel {
 }
 export interface JourneyDetailViewModel {
     readonly id: string;
+    readonly requiresBookingDetails: boolean;
+    readonly selectionError?: string;
     readonly title: string;
     readonly subtitle: string;
     readonly destination: string;

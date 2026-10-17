@@ -52,13 +52,14 @@ export function createAccommodationReservationSnapshots(
       throw new Error("Accommodation reservation requires a positive supplier price.");
     }
     const reservation = matchingReservationInput(input, pricing);
+    const roomRates = pricing.roomRates ?? [{ room: pricing.room, rate: pricing.rate }];
     return Object.freeze({
       snapshotId: `accommodation-${input.packageId}-${stopId}`,
       capturedAt: new Date(),
       version: "1.0.0",
       accommodationId: pricing.accommodationId,
       propertyName: pricing.accommodation?.identity.name ?? pricing.accommodationId,
-      roomType: pricing.room.name,
+      roomType: roomRates.map(({ room }) => room.name).join(", "),
       checkInDate: pricing.stayPeriod?.checkIn,
       checkOutDate: pricing.stayPeriod?.checkOut,
       packageId: pricing.packageId ?? input.packageId,
@@ -73,6 +74,12 @@ export function createAccommodationReservationSnapshots(
         currency: pricing.rate.pricing.currency,
         basis: pricing.rate.pricing.basis,
       }),
+      selectedRooms: Object.freeze(roomRates.map(({ room, rate }) => Object.freeze({
+        roomType: room.name,
+        roomReference: Object.freeze({ ...room.reference }),
+        rateReference: Object.freeze({ ...rate.reference }),
+        supplierPrice: Object.freeze({ ...rate.pricing }),
+      }))),
     });
   }));
 }
@@ -81,22 +88,35 @@ export function createAccommodationBookingRequests(
   input: AccommodationReservationHandoffInput,
 ): ReadonlyArray<AccommodationBookingRequest> {
   const snapshots = createAccommodationReservationSnapshots(input);
-  return Object.freeze(input.reservationInputs.map((reservation, index) => {
-    const pricing = input.pricingInputs[index];
-    if (!pricing) throw new Error("Accommodation pricing and reservation inputs are misaligned.");
+  return Object.freeze(input.pricingInputs.flatMap((pricing, index) => {
+    const reservation = matchingReservationInput(input, pricing);
+    const roomRates = pricing.roomRates ?? [{ room: reservation.room, rate: reservation.rate }];
     const occupancy = pricing.occupancy ?? pricing.rate.occupancy;
     validateOccupancy(occupancy);
-    return Object.freeze({
-      accommodation: pricing.accommodation ?? (() : NonNullable<AccommodationBookingRequest["accommodation"]> => { throw new Error("Selected accommodation is required for booking handoff."); })(),
-      room: reservation.room,
-      rate: reservation.rate,
-      providerReference: reservation.supplierReference,
-      stayPeriod: pricing.stayPeriod ?? (() : NonNullable<AccommodationBookingRequest["stayPeriod"]> => { throw new Error("Selected stay period is required for booking handoff."); })(),
-      occupancy,
-      holder: input.holder,
-      guests: input.guests,
-      packageStopId: pricing.packageStopId,
-      idempotencyKey: `${input.idempotencyKey}-${snapshots[index]?.packageStopId ?? index}`,
+    const stayPeriod = pricing.stayPeriod
+      ?? (() : NonNullable<AccommodationBookingRequest["stayPeriod"]> => { throw new Error("Selected stay period is required for booking handoff."); })();
+    const accommodation = pricing.accommodation
+      ?? (() : NonNullable<AccommodationBookingRequest["accommodation"]> => { throw new Error("Selected accommodation is required for booking handoff."); })();
+    return roomRates.map(({ room, rate }, roomIndex) => {
+      const roomOccupancy = occupancy.rooms[roomIndex];
+      if (!roomOccupancy) throw new Error("Selected room occupancy is missing.");
+      const roomGuests = input.guests
+        .filter((guest) => guest.roomIndex === roomIndex)
+        .map((guest) => Object.freeze({ ...guest, roomIndex: 0 }));
+      return Object.freeze({
+        accommodation,
+        room,
+        rate,
+        providerReference: rate.reference,
+        stayPeriod,
+        occupancy: Object.freeze({ rooms: Object.freeze([roomOccupancy]) }),
+        holder: input.holder,
+        guests: Object.freeze(roomGuests),
+        packageStopId: pricing.packageStopId,
+        idempotencyKey: pricing.roomRates
+          ? `${input.idempotencyKey}-${snapshots[index]?.packageStopId ?? index}-room-${roomIndex + 1}`
+          : `${input.idempotencyKey}-${snapshots[index]?.packageStopId ?? index}`,
+      });
     });
   }));
 }

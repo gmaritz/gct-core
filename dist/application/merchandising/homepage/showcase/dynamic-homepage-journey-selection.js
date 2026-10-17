@@ -20,8 +20,8 @@ class DefaultDynamicHomepageJourneySelector {
     constructor(resolver = new dynamic_homepage_journey_resolver_1.DefaultDynamicHomepageJourneyResolver()) {
         this.resolver = resolver;
     }
-    async selectJourney(journeyId) {
-        return toSelectionResult(journeyId, await this.resolver.resolve(journeyId));
+    async selectJourney(journeyId, selection) {
+        return toSelectionResult(journeyId, await this.resolver.resolve(journeyId, selection));
     }
 }
 exports.DefaultDynamicHomepageJourneySelector = DefaultDynamicHomepageJourneySelector;

@@ -22,14 +22,12 @@ describe("Frontend journey quote", () => {
       });
   });
 
-  it("renders the authoritative quote for the current selected accommodation", async (): Promise<void> => {
+  it("does not return a quote without current accommodation availability", async (): Promise<void> => {
     const response = await requestTo("/ui/journeys/journey-homepage-journey-001/quote");
 
-    expect(response.status).toBe(200);
-    expect(response.text).toContain("Journey quote");
-    expect(response.text).toContain("Cape Winelands Retreat");
-    expect(response.text).toContain("ZAR 18950.00");
-    expect(response.text).toContain("Price breakdown");
+    expect(response.status).toBe(409);
+    expect(response.text).toContain("This journey or its accommodation is no longer available.");
+    expect(response.text).not.toContain("ZAR 18950.00");
     expect(response.text).not.toContain("Booking confirmed");
   });
 

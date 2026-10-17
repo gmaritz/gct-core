@@ -15,6 +15,9 @@ class GuestInformationStore {
     find(journeyId) {
         return this.information.get(journeyId);
     }
+    clear(journeyId) {
+        this.information.delete(journeyId);
+    }
 }
 exports.GuestInformationStore = GuestInformationStore;
 exports.guestInformationStore = new GuestInformationStore();

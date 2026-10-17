@@ -34,7 +34,7 @@
               <% if (stop.properties.length === 0) { %>
                 <p class="accommodation-selection__empty" role="status">No accommodation is currently available for this stop.</p>
               <% } else { %>
-                <% stop.properties.forEach((property) => { %>
+                <% stop.properties.forEach((property, propertyIndex) => { %>
                   <article class="card accommodation-selection__property">
                     <% if (property.image) { %>
                       <div class="accommodation-selection__property-image-container">
@@ -52,33 +52,41 @@
                         </div>
                       </div>
 
-                      <input type="hidden" name="selections[<%= stopIndex %>][accommodationId]" value="<%= property.id %>">
-                      <input type="hidden" name="selections[<%= stopIndex %>][stopId]" value="<%= stop.id || '' %>">
+                      <label class="form-label">
+                        <input type="radio" name="selections[<%= stopIndex %>][accommodationId]" value="<%= property.id %>"<% if (propertyIndex === 0) { %> checked<% } %> required>
+                        Select this establishment
+                      </label>
 
                       <% if (property.rooms.length === 0) { %>
                         <p class="accommodation-selection__empty" role="status">No rooms are currently available.</p>
                       <% } else { %>
-                        <div class="accommodation-selection__options-grid">
-                          <div class="form-group">
-                            <label class="form-label" for="room-<%= stopIndex %>">Select Room</label>
-                            <select class="form-select" id="room-<%= stopIndex %>" name="selections[<%= stopIndex %>][roomReference][opaqueReference]" required>
-                              <% property.rooms.forEach((room) => { %>
-                                <option value="<%= room.id %>"><%= room.name %></option>
-                              <% }); %>
-                            </select>
-                            <input type="hidden" name="selections[<%= stopIndex %>][roomReference][provider]" value="curated">
-                          </div>
+                        <fieldset class="accommodation-selection__options-grid" data-property-options="<%= stopIndex %>" data-property-id="<%= property.id %>"<% if (propertyIndex > 0) { %> disabled<% } %>>
+                          <input type="hidden" name="selections[<%= stopIndex %>][stopId]" value="<%= stop.id || '' %>">
+                          <% (stop.occupancy || [{ adults: 2 }]).forEach((occupancy, roomIndex) => { %>
+                            <div class="accommodation-selection__options-grid">
+                              <h3>Room <%= roomIndex + 1 %> · <%= occupancy.adults %> adult<%= occupancy.adults === 1 ? '' : 's' %></h3>
+                              <div class="form-group">
+                                <label class="form-label" for="room-<%= stopIndex %>-<%= propertyIndex %>-<%= roomIndex %>">Select Room</label>
+                                <select class="form-select" id="room-<%= stopIndex %>-<%= propertyIndex %>-<%= roomIndex %>" name="selections[<%= stopIndex %>][roomSelections][<%= roomIndex %>][roomReference][opaqueReference]" data-room-choice required>
+                                  <% property.rooms.forEach((room) => { if (room.rates.some((rate) => rate.adults === occupancy.adults)) { %>
+                                    <option value="<%= room.id %>"><%= room.name %></option>
+                                  <% } }); %>
+                                </select>
+                                <input type="hidden" name="selections[<%= stopIndex %>][roomSelections][<%= roomIndex %>][roomReference][provider]" value="<%= property.provider %>">
+                              </div>
 
-                          <div class="form-group">
-                            <label class="form-label" for="rate-<%= stopIndex %>">Select Rate & Board</label>
-                            <select class="form-select" id="rate-<%= stopIndex %>" name="selections[<%= stopIndex %>][rateReference][opaqueReference]" required>
-                              <% property.rooms[0].rates.forEach((rate) => { %>
-                                <option value="<%= rate.id %>"><%= rate.name || "Available rate" %> · <%= rate.currency %> <%= rate.amount %></option>
-                              <% }); %>
-                            </select>
-                            <input type="hidden" name="selections[<%= stopIndex %>][rateReference][provider]" value="curated">
-                          </div>
-                        </div>
+                              <div class="form-group">
+                                <label class="form-label" for="rate-<%= stopIndex %>-<%= propertyIndex %>-<%= roomIndex %>">Select Rate & Board</label>
+                                <select class="form-select" id="rate-<%= stopIndex %>-<%= propertyIndex %>-<%= roomIndex %>" name="selections[<%= stopIndex %>][roomSelections][<%= roomIndex %>][rateReference][opaqueReference]" data-rate-choice required>
+                                  <% property.rooms.forEach((room) => { room.rates.forEach((rate) => { if (rate.adults === occupancy.adults) { %>
+                                    <option value="<%= rate.id %>" data-room-id="<%= room.id %>"><%= rate.name || "Available rate" %> · <%= rate.currency %> <%= rate.amount.toLocaleString() %></option>
+                                  <% } }); }); %>
+                                </select>
+                                <input type="hidden" name="selections[<%= stopIndex %>][roomSelections][<%= roomIndex %>][rateReference][provider]" value="<%= property.provider %>">
+                              </div>
+                            </div>
+                          <% }); %>
+                        </fieldset>
                       <% } %>
                     </div>
                   </article>
@@ -101,3 +109,4 @@
     </form>
   </div>
 </article>
+<script defer src="/js/cape-winelands-accommodation.js"></script>

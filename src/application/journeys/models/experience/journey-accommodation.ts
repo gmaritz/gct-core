@@ -10,6 +10,7 @@ export interface JourneyPackageStop {
   readonly packageId: string;
   readonly stopId: string;
   readonly stopOrder: number;
+  readonly destination?: string;
   readonly checkInDate: Date;
   readonly checkOutDate: Date;
   readonly approvedAccommodationIds?: ReadonlyArray<string>;
@@ -18,6 +19,12 @@ export interface JourneyPackageStop {
 export interface JourneyAccommodationSelection {
   readonly accommodationId: string;
   readonly packageStopId?: string;
+  readonly roomReference: AccommodationSupplierReference;
+  readonly rateReference: AccommodationSupplierReference;
+  readonly roomSelections?: ReadonlyArray<JourneyRoomRateSelection>;
+}
+
+export interface JourneyRoomRateSelection {
   readonly roomReference: AccommodationSupplierReference;
   readonly rateReference: AccommodationSupplierReference;
 }
@@ -31,6 +38,7 @@ export interface JourneyAccommodationPricingInput {
   readonly accommodationId: string;
   readonly room: AccommodationRoomOption;
   readonly rate: AccommodationRateOption;
+  readonly roomRates?: ReadonlyArray<{ readonly room: AccommodationRoomOption; readonly rate: AccommodationRateOption }>;
   readonly occupancy?: AccommodationAvailabilityOccupancy;
 }
 
@@ -63,22 +71,42 @@ export function selectJourneyAccommodation(
     throw new Error("Selected accommodation belongs to another package stop.");
   }
 
-  const room = option.roomOptions?.find((candidate) =>
-    candidate.reference.provider === selection.roomReference.provider &&
-    candidate.reference.opaqueReference === selection.roomReference.opaqueReference,
-  );
-  if (!room) throw new Error("Selected room does not belong to the accommodation option.");
-
-  const rate = room.rateOptions.find((candidate) =>
-    candidate.reference.provider === selection.rateReference.provider &&
-    candidate.reference.opaqueReference === selection.rateReference.opaqueReference,
-  );
-  if (!rate) throw new Error("Selected rate does not belong to the selected room.");
-  if (rate.status !== "BOOKABLE" && rate.status !== "RECHECK_REQUIRED") {
-    throw new Error("Selected rate is not available.");
+  const requestedRoomSelections = selection.roomSelections ?? [{
+    roomReference: selection.roomReference,
+    rateReference: selection.rateReference,
+  }];
+  if (requestedRoomSelections.length === 0) throw new Error("At least one room and rate selection is required.");
+  const roomRates = requestedRoomSelections.map((roomSelection) => {
+    const room = option.roomOptions?.find((candidate) =>
+      candidate.reference.provider === roomSelection.roomReference.provider
+      && candidate.reference.opaqueReference === roomSelection.roomReference.opaqueReference,
+    );
+    if (!room) throw new Error("Selected room does not belong to the accommodation option.");
+    const rate = room.rateOptions.find((candidate) =>
+      candidate.reference.provider === roomSelection.rateReference.provider
+      && candidate.reference.opaqueReference === roomSelection.rateReference.opaqueReference,
+    );
+    if (!rate) throw new Error("Selected rate does not belong to the selected room.");
+    if (rate.status !== "BOOKABLE" && rate.status !== "RECHECK_REQUIRED") {
+      throw new Error("Selected rate is not available.");
+    }
+    return Object.freeze({ room, rate });
+  });
+  const firstRoomRate = roomRates[0]!;
+  const currency = firstRoomRate.rate.pricing.currency;
+  if (roomRates.some(({ rate }) => rate.pricing.currency !== currency)) {
+    throw new Error("Selected room rates must use the same currency.");
   }
-
-  const provider = rate.reference.provider;
+  const rate = Object.freeze({
+    ...firstRoomRate.rate,
+    pricing: Object.freeze({
+      ...firstRoomRate.rate.pricing,
+      amount: roomRates.reduce((total, item) => total + item.rate.pricing.amount, 0),
+    }),
+    occupancy: option.requestedOccupancy ?? firstRoomRate.rate.occupancy,
+    status: roomRates.some((item) => item.rate.status === "RECHECK_REQUIRED") ? "RECHECK_REQUIRED" as const : "BOOKABLE" as const,
+  });
+  const provider = firstRoomRate.rate.reference.provider;
   return Object.freeze({
     ...option,
     selection: Object.freeze(selection),
@@ -91,8 +119,9 @@ export function selectJourneyAccommodation(
         ? { checkIn: option.packageStop.checkInDate, checkOut: option.packageStop.checkOutDate }
         : undefined,
       accommodationId: option.accommodationId,
-      room,
+      room: firstRoomRate.room,
       rate,
+      roomRates: Object.freeze(roomRates),
       occupancy: option.requestedOccupancy,
     }),
     reservationInput: Object.freeze({
@@ -104,8 +133,9 @@ export function selectJourneyAccommodation(
         ? { checkIn: option.packageStop.checkInDate, checkOut: option.packageStop.checkOutDate }
         : undefined,
       accommodationId: option.accommodationId,
-      room,
+      room: firstRoomRate.room,
       rate,
+      roomRates: Object.freeze(roomRates),
       occupancy: option.requestedOccupancy,
       provider,
       supplierReference: rate.reference,

@@ -4,6 +4,7 @@ export interface JourneyPackageStop {
     readonly packageId: string;
     readonly stopId: string;
     readonly stopOrder: number;
+    readonly destination?: string;
     readonly checkInDate: Date;
     readonly checkOutDate: Date;
     readonly approvedAccommodationIds?: ReadonlyArray<string>;
@@ -11,6 +12,11 @@ export interface JourneyPackageStop {
 export interface JourneyAccommodationSelection {
     readonly accommodationId: string;
     readonly packageStopId?: string;
+    readonly roomReference: AccommodationSupplierReference;
+    readonly rateReference: AccommodationSupplierReference;
+    readonly roomSelections?: ReadonlyArray<JourneyRoomRateSelection>;
+}
+export interface JourneyRoomRateSelection {
     readonly roomReference: AccommodationSupplierReference;
     readonly rateReference: AccommodationSupplierReference;
 }
@@ -26,6 +32,10 @@ export interface JourneyAccommodationPricingInput {
     readonly accommodationId: string;
     readonly room: AccommodationRoomOption;
     readonly rate: AccommodationRateOption;
+    readonly roomRates?: ReadonlyArray<{
+        readonly room: AccommodationRoomOption;
+        readonly rate: AccommodationRateOption;
+    }>;
     readonly occupancy?: AccommodationAvailabilityOccupancy;
 }
 export interface JourneyAccommodationReservationInput extends JourneyAccommodationPricingInput {

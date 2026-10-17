@@ -23,8 +23,19 @@
             <h2 id="quote-breakdown-title" class="journey-quote__section-title">Price breakdown</h2>
             <div class="card journey-quote__breakdown-card">
               <dl class="journey-quote__breakdown">
-                <dt>Accommodation</dt>
-                <dd><%= quoteViewModel.pricing.displayLabels.totalLabel %></dd>
+                <% if (quoteViewModel.groupComponent) { %>
+                  <dt>Go Cape Tours journey component</dt>
+                  <dd><%= quoteViewModel.groupComponent.currency %> <%= quoteViewModel.groupComponent.amount.toLocaleString() %></dd>
+                  <% quoteViewModel.accommodation.forEach((stay) => { %>
+                    <dt><%= stay.destination || "Stop" %> accommodation<% if (stay.checkIn && stay.checkOut) { %> (<%= stay.checkIn %> – <%= stay.checkOut %>)<% } %></dt>
+                    <dd><%= stay.currency %> <%= stay.amount.toLocaleString() %></dd>
+                  <% }); %>
+                  <dt>Total accommodation</dt>
+                  <dd><%= quoteViewModel.accommodation[0]?.currency || quoteViewModel.groupComponent.currency %> <%= quoteViewModel.accommodationTotal?.toLocaleString() %></dd>
+                <% } else { %>
+                  <dt>Accommodation</dt>
+                  <dd><%= quoteViewModel.pricing.displayLabels.totalLabel %></dd>
+                <% } %>
                 <dt>Taxes</dt>
                 <dd><%= quoteViewModel.pricing.displayLabels.taxLabel %></dd>
                 <dt>Fees</dt>
@@ -37,6 +48,7 @@
 
               <div class="journey-quote__commercial-meta">
                 <span class="journey-quote__meta-badge">👥 <%= quoteViewModel.pricing.summary.travellerCount %> traveller(s)</span>
+                <% if (quoteViewModel.roomAllocation?.length) { %><span class="journey-quote__meta-badge">🛏 <%= quoteViewModel.roomAllocation.join(" / ") %> adults per room</span><% } %>
                 <span class="journey-quote__meta-badge">💱 <%= quoteViewModel.pricing.summary.currency %></span>
                 <% if (quoteViewModel.pricing.quote.quotationReference) { %>
                   <span class="journey-quote__meta-badge">📋 Ref: <%= quoteViewModel.pricing.quote.quotationReference %></span>
@@ -70,8 +82,25 @@
               <% }); %>
             </div>
           </section>
-        <% } else { %>
+        <% } else if (quoteViewModel.status === "CURRENCY_UNCONFIRMED") { %>
           <section class="journey-quote__section" aria-labelledby="quote-status-title">
+            <h2 id="quote-status-title" class="journey-quote__section-title">Quote status</h2>
+            <div class="card journey-quote__status-card">
+              <p class="journey-quote__status-tag">Status: <strong>Final price pending currency confirmation</strong></p>
+              <p><%= quoteViewModel.message %></p>
+              <dl class="journey-quote__breakdown">
+                <% if (quoteViewModel.groupComponent) { %>
+                  <dt>Go Cape Tours journey component</dt>
+                  <dd><%= quoteViewModel.groupComponent.currency %> <%= quoteViewModel.groupComponent.amount.toLocaleString() %></dd>
+                <% } %>
+                <% quoteViewModel.accommodation.forEach((stay) => { %>
+                  <dt><%= stay.destination || "Stop" %> accommodation (supplier price)<% if (stay.checkIn && stay.checkOut) { %> (<%= stay.checkIn %> – <%= stay.checkOut %>)<% } %></dt>
+                  <dd><%= stay.currency %><% if (stay.amount !== undefined) { %> <%= stay.amount.toLocaleString() %><% } else { %> (amounts in more than one currency)<% } %></dd>
+                <% }); %>
+              </dl>
+            </div>
+          </section>
+        <% } else { %>
             <h2 id="quote-status-title" class="journey-quote__section-title">Quote status</h2>
             <div class="card journey-quote__status-card">
               <p class="journey-quote__status-tag">Status: <strong><%= quoteViewModel.status %></strong></p>
@@ -84,13 +113,15 @@
       <aside class="journey-quote__sidebar">
         <div class="card journey-quote__action-card">
           <div class="journey-quote__pricing" aria-label="Authoritative quote total">
-            <p class="journey-quote__pricing-label">Total Payable Quote</p>
+            <p class="journey-quote__pricing-label"><%= quoteViewModel.status === "CURRENCY_UNCONFIRMED" ? "Final package price" : "Total Payable Quote" %></p>
             <div class="price-display">
-              <span class="price-display__amount"><%= quoteViewModel.pricing ? quoteViewModel.pricing.displayLabels.totalLabel : "Price on request" %></span>
+              <span class="price-display__amount"><%= quoteViewModel.pricing ? quoteViewModel.pricing.displayLabels.totalLabel : (quoteViewModel.status === "CURRENCY_UNCONFIRMED" ? "Pending currency confirmation" : "Price on request") %></span>
             </div>
             <p class="journey-quote__pricing-subtext">
               <% if (quoteViewModel.pricing) { %>
-                Includes luxury accommodation, taxes, and service fees for <%= quoteViewModel.pricing.summary.travellerCount %> traveller(s).
+                Includes the Go Cape Tours journey component and selected accommodation for <%= quoteViewModel.pricing.summary.travellerCount %> traveller(s), plus any applicable existing pricing components.
+              <% } else if (quoteViewModel.status === "CURRENCY_UNCONFIRMED") { %>
+                Accommodation supplier prices are shown in their own currency and are not added to the ZAR journey component until the currency is confirmed.
               <% } else { %>
                 Review your accommodation selection to generate an authoritative quote.
               <% } %>

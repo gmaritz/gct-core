@@ -25,8 +25,10 @@ class JourneyDetailViewModelProvider {
         const destination = journey.destinations.map((item) => item.name).join(" + ");
         const title = `${journey.classification.category} ${destination} Journey`;
         const duration = journey.duration.description || `${journey.duration.days} Days / ${journey.duration.nights} Nights`;
+        const requiresBookingDetails = journey.identity.id === "journey-homepage-journey-001";
         return Object.freeze({
             id: journey.identity.id,
+            requiresBookingDetails,
             title,
             subtitle: `${journey.classification.type} experience for curated travel`,
             destination,
@@ -54,7 +56,7 @@ class JourneyDetailViewModelProvider {
                 title: item.title,
                 experiences: Object.freeze([...item.experiences]),
             }))),
-            accommodation: Object.freeze(journey.accommodation.map((stay) => Object.freeze({
+            accommodation: Object.freeze(requiresBookingDetails ? [] : journey.accommodation.map((stay) => Object.freeze({
                 id: stay.accommodationId,
                 name: stay.name,
                 destination,

@@ -14,16 +14,16 @@ describe("Frontend journey selection", () => {
     postRequestTo = createRequest(app, "post");
   });
 
-  it("keeps detail retrieval on GET and accepts selection on POST", async () => {
+  it("keeps detail retrieval on GET and requires booking details before availability", async () => {
     const detail = await requestTo("/ui/journeys/journey-homepage-journey-001");
     const selection = await postRequestTo("/ui/journeys/journey-homepage-journey-001/select");
 
     expect(detail.status).toBe(200);
     expect(detail.text).toContain('method="post"');
-    expect(detail.text).toContain("Select this journey");
-    expect(selection.status).toBe(200);
-    expect(selection.text).toContain("Journey selected");
-    expect(selection.text).toContain("Accommodation availability and final package pricing will be confirmed in the subsequent steps.");
+    expect(detail.text).toContain('name="startDate"');
+    expect(detail.text).toContain("Check live availability");
+    expect(selection.status).toBe(422);
+    expect(selection.text).toContain("Select a valid journey start date and room allocation.");
   });
 
   it("handles invalid selection without exposing internal details", async () => {

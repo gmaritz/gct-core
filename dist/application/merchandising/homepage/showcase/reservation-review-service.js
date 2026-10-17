@@ -36,7 +36,10 @@ class DefaultReservationReviewService {
             return { status: "RECHECK_REQUIRED", journeyId: request.journeyId, journey: resolution.journey, quote, guestInformation: request.guestInformation, errors: ["The current quote requires revalidation."], confirmed: false };
         }
         if (quote.status !== "PRICED") {
-            return { status: "UNAVAILABLE", journeyId: request.journeyId, journey: resolution.journey, quote, guestInformation: request.guestInformation, errors: ["The current quote is unavailable."], confirmed: false };
+            const errors = quote.status === "CURRENCY_UNCONFIRMED"
+                ? ["A final package price is unavailable until the accommodation currency is confirmed."]
+                : ["The current quote is unavailable."];
+            return { status: "UNAVAILABLE", journeyId: request.journeyId, journey: resolution.journey, quote, guestInformation: request.guestInformation, errors, confirmed: false };
         }
         return {
             status: "READY",

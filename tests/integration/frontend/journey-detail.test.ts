@@ -12,16 +12,18 @@ describe("Frontend dynamic journey detail page", () => {
     requestTo = createRequest(app, "get");
   });
 
-  it("renders a reconstructed homepage journey", async () => {
+  it("renders the itinerary and booking inputs without showing fixture accommodation", async () => {
     const response = await requestTo("/ui/journeys/journey-homepage-journey-001");
 
     expect(response.status).toBe(200);
     expect(response.text).toContain("SIGNATURE Cape Winelands Journey");
-    expect(response.text).toContain("Cape Winelands Retreat");
     expect(response.text).toContain("Cape Winelands Signature Experience");
     expect(response.text).toContain("Price on request");
     expect(response.text).toContain("Itinerary");
-    expect(response.text).toContain("Select this journey");
+    expect(response.text).toContain('name="startDate"');
+    expect(response.text).toContain('name="participants"');
+    expect(response.text).not.toContain("Cape Winelands Retreat");
+    expect(response.text).toContain("Check live availability");
   });
 
   it("renders the established not-found response for an invalid journey", async () => {

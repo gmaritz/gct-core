@@ -53,7 +53,9 @@
 
         <section class="journey-detail__section" aria-labelledby="journey-accommodation-title">
           <h2 id="journey-accommodation-title" class="journey-detail__section-title">Accommodation</h2>
-          <% if (journeyDetailViewModel.accommodation.length === 0) { %>
+          <% if (journeyDetailViewModel.requiresBookingDetails) { %>
+            <p class="journey-detail__empty">Choose your start date and group size to check live accommodation availability.</p>
+          <% } else if (journeyDetailViewModel.accommodation.length === 0) { %>
             <p class="journey-detail__empty">Accommodation details will be confirmed during planning.</p>
           <% } else { %>
             <div class="journey-detail__accommodation-grid">
@@ -100,10 +102,44 @@
             <p class="journey-detail__pricing-subtext">Includes luxury boutique accommodation, authentic regional experiences, and dedicated private guidance.</p>
           </div>
           <form method="post" action="<%= journeyDetailViewModel.selectionAction.href %>">
-            <button class="button button--primary button--full" type="submit"><%= journeyDetailViewModel.selectionAction.label %></button>
+            <% if (journeyDetailViewModel.requiresBookingDetails) { %>
+              <div class="form-group">
+                <label class="form-label" for="start-date">Journey start date</label>
+                <input class="form-input" id="start-date" name="startDate" type="date" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="participants">Adult participants</label>
+                <select class="form-select" id="participants" name="participants" required>
+                  <% for (let count = 2; count <= 8; count += 1) { %>
+                    <option value="<%= count %>"><%= count %> adults</option>
+                  <% } %>
+                  <option value="9">More than 8 adults</option>
+                </select>
+              </div>
+              <fieldset class="form-group">
+                <legend class="form-label">Room allocation</legend>
+                <div id="room-allocation" data-participants="participants">
+                  <label class="form-label" for="room-adults-0">Room 1 adults</label>
+                  <select class="form-select" id="room-adults-0" name="roomAdults" required>
+                    <% for (let count = 1; count <= 8; count += 1) { %>
+                      <option value="<%= count %>"<% if (count === 2) { %> selected<% } %>><%= count %></option>
+                    <% } %>
+                  </select>
+                </div>
+                <button class="button button--secondary" id="add-room" type="button">Add room</button>
+                <p id="room-allocation-total" role="status">Adults allocated: 2 of 2</p>
+                <p id="group-size-guidance" role="status" hidden>Groups over 8 adults are not bookable online. <a href="/ui/placeholder#contact">Contact us</a>.</p>
+              </fieldset>
+              <% if (journeyDetailViewModel.selectionError) { %><p class="feedback feedback--warning" role="alert"><%= journeyDetailViewModel.selectionError %></p><% } %>
+              <p class="feedback feedback--warning" id="journey-selection-error" role="alert" hidden></p>
+              <button class="button button--primary button--full" type="submit">Check live availability</button>
+            <% } else { %>
+              <button class="button button--primary button--full" type="submit"><%= journeyDetailViewModel.selectionAction.label %></button>
+            <% } %>
           </form>
         </div>
       </aside>
     </div>
   </div>
 </article>
+<% if (journeyDetailViewModel.requiresBookingDetails) { %><script defer src="/js/cape-winelands-booking.js"></script><% } %>

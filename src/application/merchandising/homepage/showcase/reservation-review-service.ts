@@ -1,5 +1,5 @@
 import { GuestInformationInput, DefaultGuestInformationService } from "./guest-information-service";
-import { DefaultDynamicHomepageJourneyResolver } from "./dynamic-homepage-journey-resolver";
+import { DefaultDynamicHomepageJourneyResolver, DynamicHomepageJourneyResolver } from "./dynamic-homepage-journey-resolver";
 import { DefaultJourneyQuoteService, JourneyQuoteResult, createDefaultPricingEngine } from "./journey-quote-service";
 
 export type ReservationReviewStatus = "READY" | "INVALID" | "RECHECK_REQUIRED" | "UNAVAILABLE";
@@ -26,7 +26,7 @@ export interface ReservationReviewService {
 
 export class DefaultReservationReviewService implements ReservationReviewService {
   public constructor(
-    private readonly resolver = new DefaultDynamicHomepageJourneyResolver(),
+    private readonly resolver: DynamicHomepageJourneyResolver = new DefaultDynamicHomepageJourneyResolver(),
     private readonly guestService = new DefaultGuestInformationService(resolver),
     private readonly quoteService = new DefaultJourneyQuoteService(resolver, createDefaultPricingEngine()),
   ) {}
@@ -59,7 +59,10 @@ export class DefaultReservationReviewService implements ReservationReviewService
       return { status: "RECHECK_REQUIRED", journeyId: request.journeyId, journey: resolution.journey, quote, guestInformation: request.guestInformation, errors: ["The current quote requires revalidation."], confirmed: false };
     }
     if (quote.status !== "PRICED") {
-      return { status: "UNAVAILABLE", journeyId: request.journeyId, journey: resolution.journey, quote, guestInformation: request.guestInformation, errors: ["The current quote is unavailable."], confirmed: false };
+      const errors = quote.status === "CURRENCY_UNCONFIRMED"
+        ? ["A final package price is unavailable until the accommodation currency is confirmed."]
+        : ["The current quote is unavailable."];
+      return { status: "UNAVAILABLE", journeyId: request.journeyId, journey: resolution.journey, quote, guestInformation: request.guestInformation, errors, confirmed: false };
     }
 
     return {

@@ -12,6 +12,9 @@ function findOption(journey, input) {
     return journey.accommodation.find((option) => option.accommodationId === input.accommodationId
         && (!input.stopId || option.packageStop?.stopId === input.stopId));
 }
+function stopKeys(journey) {
+    return new Set(journey.accommodation.map((option, index) => option.packageStop?.stopId ?? `legacy-stop-${index + 1}`));
+}
 class DefaultAccommodationSelectionService {
     constructor(resolver, selectionStore = journey_selection_store_1.journeySelectionStore) {
         this.resolver = resolver;
@@ -22,30 +25,53 @@ class DefaultAccommodationSelectionService {
         if (resolution.status === "INVALID" || resolution.status === "NOT_FOUND" || resolution.status === "UNAVAILABLE") {
             return { status: resolution.status, journeyId, selectedStops: [] };
         }
-        if (!Array.isArray(selections) || selections.length !== resolution.journey?.accommodation.length) {
+        if (!Array.isArray(selections) || selections.length !== stopKeys(resolution.journey).size) {
             return { status: "INCOMPLETE", journeyId, selectedStops: [] };
         }
         const selectedStops = [];
+        const selectedStopIds = new Set();
         for (const input of selections) {
-            if (!isValidReference(input.roomReference) || !isValidReference(input.rateReference)) {
+            const roomSelections = input.roomSelections ?? (input.roomReference && input.rateReference
+                ? [{ roomReference: input.roomReference, rateReference: input.rateReference }]
+                : []);
+            const firstRoomSelection = roomSelections[0];
+            if (!firstRoomSelection || !roomSelections.every((roomSelection) => isValidReference(roomSelection.roomReference) && isValidReference(roomSelection.rateReference))) {
                 return { status: "INVALID", journeyId, selectedStops: [] };
             }
             const option = findOption(resolution.journey, input);
             if (!option) {
                 return { status: "INVALID", journeyId, selectedStops: [] };
             }
+            const stopId = option.packageStop?.stopId ?? input.stopId ?? option.accommodationId;
+            if (selectedStopIds.has(stopId)) {
+                return { status: "INVALID", journeyId, selectedStops: [] };
+            }
+            selectedStopIds.add(stopId);
             try {
                 const selected = (0, journeys_1.selectJourneyAccommodation)(option, {
                     accommodationId: input.accommodationId,
                     packageStopId: input.stopId,
-                    roomReference: input.roomReference,
-                    rateReference: input.rateReference,
+                    roomReference: firstRoomSelection.roomReference,
+                    rateReference: firstRoomSelection.rateReference,
+                    roomSelections,
                 });
+                const requestedOccupancy = option.requestedOccupancy?.rooms;
+                if (requestedOccupancy && requestedOccupancy.length !== roomSelections.length) {
+                    return { status: "INVALID", journeyId, selectedStops: [] };
+                }
+                if (requestedOccupancy?.some((occupancy, index) => {
+                    const selectedRate = selected.pricingInput?.roomRates?.[index]?.rate;
+                    return !selectedRate || selectedRate.occupancy.rooms.length !== 1
+                        || selectedRate.occupancy.rooms[0]?.adults !== occupancy.adults
+                        || selectedRate.occupancy.rooms[0]?.children !== 0;
+                })) {
+                    return { status: "STALE", journeyId, selectedStops: [] };
+                }
                 selectedStops.push({
-                    stopId: selected.packageStop?.stopId,
+                    stopId: selected.packageStop?.stopId ?? input.stopId,
                     accommodationId: selected.accommodationId,
-                    roomReference: input.roomReference.opaqueReference,
-                    rateReference: input.rateReference.opaqueReference,
+                    roomReference: firstRoomSelection.roomReference.opaqueReference,
+                    rateReference: firstRoomSelection.rateReference.opaqueReference,
                 });
             }
             catch {

@@ -106,6 +106,14 @@ function freezeAccommodationSnapshot(snapshot: AccommodationSnapshot): Accommoda
         })
       : undefined,
     supplierPrice: snapshot.supplierPrice ? Object.freeze({ ...snapshot.supplierPrice }) : undefined,
+    selectedRooms: snapshot.selectedRooms
+      ? Object.freeze(snapshot.selectedRooms.map((room) => Object.freeze({
+          ...room,
+          roomReference: Object.freeze({ ...room.roomReference }),
+          rateReference: Object.freeze({ ...room.rateReference }),
+          supplierPrice: Object.freeze({ ...room.supplierPrice }),
+        })))
+      : undefined,
   });
 }
 

@@ -8,6 +8,7 @@ import {
   createPricingTotal,
 } from "@application/pricing";
 import {
+  AccommodationCurrencyError,
   createAccommodationPricingComponents,
   withAccommodationPricingInputs,
 } from "./accommodation-pricing-input";
@@ -108,6 +109,13 @@ describe("APP-005 accommodation pricing integration", () => {
       rate: { ...input.rate, pricing: { ...input.rate.pricing, currency: "EUR" } },
     };
     expect(() => withAccommodationPricingInputs(createBaseRequest(), [mismatched])).toThrow("currency");
+    expect(() => withAccommodationPricingInputs(createBaseRequest(), [mismatched])).toThrow(AccommodationCurrencyError);
+  });
+
+  it.each(["UNKNOWN", ""])("never treats unknown or missing currency %p as ZAR", (currency) => {
+    const input = createInput("stop-1", "hotel-a", 250);
+    const unknown = { ...input, rate: { ...input.rate, pricing: { ...input.rate.pricing, currency } } };
+    expect(() => withAccommodationPricingInputs(createBaseRequest(), [unknown])).toThrow(AccommodationCurrencyError);
   });
 
   it("is idempotent when no accommodation inputs are supplied", () => {

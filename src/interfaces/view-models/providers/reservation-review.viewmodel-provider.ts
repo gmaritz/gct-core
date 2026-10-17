@@ -19,13 +19,25 @@ export class ReservationReviewViewModelProvider {
       duration: journey?.duration.description ?? "Duration unavailable",
       accommodation: Object.freeze((result.quote?.selections ?? []).map((selection, index) => {
         const option = journey?.accommodation.find((candidate) => candidate.accommodationId === selection.accommodationId);
-        const room = option?.roomOptions?.find((candidate) => candidate.reference.opaqueReference === selection.roomReference.opaqueReference);
-        const rate = room?.rateOptions.find((candidate) => candidate.reference.opaqueReference === selection.rateReference.opaqueReference);
+        const roomSelections = selection.roomSelections ?? (selection.roomReference && selection.rateReference
+          ? [{ roomReference: selection.roomReference, rateReference: selection.rateReference }]
+          : []);
+        const selectedRates = roomSelections.flatMap((roomSelection) => {
+          const room = option?.roomOptions?.find((candidate) =>
+            candidate.reference.provider === roomSelection.roomReference.provider
+            && candidate.reference.opaqueReference === roomSelection.roomReference.opaqueReference,
+          );
+          const rate = room?.rateOptions.find((candidate) =>
+            candidate.reference.provider === roomSelection.rateReference.provider
+            && candidate.reference.opaqueReference === roomSelection.rateReference.opaqueReference,
+          );
+          return room && rate ? [{ room, rate }] : [];
+        });
         return Object.freeze({
-          destination: journey?.destinations[index]?.name ?? journey?.destinations[0]?.name ?? "Destination unavailable",
+          destination: option?.packageStop?.destination ?? journey?.destinations[index]?.name ?? journey?.destinations[0]?.name ?? "Destination unavailable",
           property: option?.name ?? "Accommodation unavailable",
-          room: room?.name ?? "Room unavailable",
-          rate: rate?.board?.name ?? "Rate unavailable",
+          room: selectedRates.map(({ room }) => room.name).join(", ") || "Room unavailable",
+          rate: selectedRates.map(({ rate }) => rate.board?.name ?? "Rate unavailable").join(", ") || "Rate unavailable",
         });
       })),
       contact: Object.freeze({
