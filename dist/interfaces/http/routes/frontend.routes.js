@@ -2,9 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createFrontendRouter = createFrontendRouter;
 const express_1 = require("express");
+const anonymous_session_middleware_1 = require("../middleware/anonymous-session.middleware");
 const frontend_controller_1 = require("../controllers/frontend.controller");
-function createFrontendRouter() {
+function createFrontendRouter(sessionService, sessionCookiePolicy) {
     const router = (0, express_1.Router)();
+    router.use((0, anonymous_session_middleware_1.createAnonymousSessionMiddleware)(sessionService, sessionCookiePolicy));
     router.get("/placeholder", frontend_controller_1.renderPlaceholderPage);
     router.get("/journeys/:journeyId", frontend_controller_1.renderJourneyDetailPage);
     router.post("/journeys/:journeyId/select", frontend_controller_1.selectJourney);

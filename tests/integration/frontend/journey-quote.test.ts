@@ -1,6 +1,6 @@
 import { Express } from "express";
 import { createTestApplication } from "../../helpers/application.helper";
-import { createRequest } from "../../helpers/request.helper";
+import { createRequest, getCsrfToken } from "../../helpers/request.helper";
 
 describe("Frontend journey quote", () => {
   let app: Express;
@@ -11,7 +11,9 @@ describe("Frontend journey quote", () => {
     app = await createTestApplication();
     requestTo = createRequest(app, "get");
     postRequest = createRequest(app, "post");
+    const csrfToken = await getCsrfToken(app);
     await postRequest("/ui/journeys/journey-homepage-journey-001/accommodation")
+      .set("X-CSRF-Token", csrfToken)
       .type("form")
       .send({
         "selections[0][accommodationId]": "cape-winelands",

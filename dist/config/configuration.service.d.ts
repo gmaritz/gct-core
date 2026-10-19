@@ -17,6 +17,7 @@ export declare class ConfigurationService {
     private createConfiguration;
     private parsePort;
     private parseBoolean;
+    private parseBoundedInteger;
 }
 export declare function loadConfiguration(): ApplicationConfiguration;
 //# sourceMappingURL=configuration.service.d.ts.map

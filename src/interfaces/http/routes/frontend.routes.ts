@@ -1,4 +1,9 @@
 import { Router } from "express";
+import { AnonymousSessionService } from "../../../application/sessions";
+import {
+	AnonymousSessionCookiePolicy,
+	createAnonymousSessionMiddleware,
+} from "../middleware/anonymous-session.middleware";
 
 import {
 	renderAccommodationSelectionPage,
@@ -18,9 +23,13 @@ import {
 	renderBookingConfirmationPage,
 } from "../controllers/frontend.controller";
 
-export function createFrontendRouter(): Router {
+export function createFrontendRouter(
+	sessionService: AnonymousSessionService,
+	sessionCookiePolicy: AnonymousSessionCookiePolicy,
+): Router {
 	const router = Router();
 
+	router.use(createAnonymousSessionMiddleware(sessionService, sessionCookiePolicy));
 	router.get("/placeholder", renderPlaceholderPage);
 	router.get("/journeys/:journeyId", renderJourneyDetailPage);
 	router.post("/journeys/:journeyId/select", selectJourney);

@@ -12,6 +12,13 @@ import { createRootRouter } from "../interfaces/http/routes";
 import { ApplicationConfiguration } from "../config/configuration.service";
 import { NotFoundError } from "../interfaces/http/errors";
 import { createOpenApiRouter } from "../interfaces/http/openapi/openapi";
+import { AnonymousSessionService } from "../application/sessions";
+import { createAnonymousSessionService } from "../infrastructure/persistence/anonymous-session-factory";
+import {
+	ANONYMOUS_SESSION_COOKIE_NAME,
+	ANONYMOUS_SESSION_COOKIE_PATH,
+	AnonymousSessionCookiePolicy,
+} from "../interfaces/http/middleware/anonymous-session.middleware";
 
 const LOCALHOST_ORIGINS = [
 	"http://localhost:3000",
@@ -55,9 +62,17 @@ export function createExpressApplication(
 	configuration: ApplicationConfiguration,
 	logger: Logger,
 	configure?: (application: Express) => void,
+	anonymousSessionService: AnonymousSessionService = createAnonymousSessionService(configuration),
 ): Express {
 	const app = express();
 	const corsOptions = createCorsOptions(configuration);
+	const anonymousSessionCookiePolicy: AnonymousSessionCookiePolicy = {
+		cookieName: ANONYMOUS_SESSION_COOKIE_NAME,
+		cookiePath: ANONYMOUS_SESSION_COOKIE_PATH,
+		sameSite: "lax",
+		secure: configuration.security.anonymousSessionCookieSecure,
+		lifetimeSeconds: configuration.security.anonymousSessionLifetimeSeconds,
+	};
 
 	app.set("trust proxy", true);
 	app.disable("x-powered-by");
@@ -105,7 +120,7 @@ export function createExpressApplication(
 		app.use(createOpenApiRouter());
 	}
 
-	app.use(createRootRouter());
+	app.use(createRootRouter(anonymousSessionService, anonymousSessionCookiePolicy));
 
 	app.use((_request: Request, _response: Response, next: NextFunction) => {
 		next(new NotFoundError());

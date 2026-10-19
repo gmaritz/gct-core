@@ -16,6 +16,7 @@
     </header>
 
     <form method="post" action="/ui/journeys/<%= accommodationSelectionViewModel.journeyId %>/accommodation">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="accommodation-selection__layout">
         <div class="accommodation-selection__main">
           <% accommodationSelectionViewModel.stops.forEach((stop, stopIndex) => { %>

@@ -1,6 +1,6 @@
 import { Express } from "express";
 import { createTestApplication } from "../../helpers/application.helper";
-import { createRequest } from "../../helpers/request.helper";
+import { createRequest, getCsrfToken } from "../../helpers/request.helper";
 
 describe("Frontend payment experience", () => {
   const isolatedJourneyId = "journey-homepage-journey-003";
@@ -24,7 +24,9 @@ describe("Frontend payment experience", () => {
   });
 
   it("does not initiate payment without an authoritative reservation context", async (): Promise<void> => {
+    const csrfToken = await getCsrfToken(app);
     const response = await postRequest(`/ui/journeys/${isolatedJourneyId}/payment`)
+      .set("X-CSRF-Token", csrfToken)
       .type("form")
       .send({ amount: "1", currency: "USD", status: "COMPLETED" });
 

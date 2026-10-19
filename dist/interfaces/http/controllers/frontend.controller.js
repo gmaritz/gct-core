@@ -39,9 +39,13 @@ function diagnostic(request, operation, outcome) {
 async function renderView(response, viewName, locals) {
     const viewsRoot = path_1.default.join(process.cwd(), "src/interfaces/views");
     const viewPath = path_1.default.join(viewsRoot, `${viewName}.ejs`);
-    const markup = await ejs_1.default.renderFile(viewPath, locals, { filename: viewPath, root: viewsRoot });
+    const markup = await ejs_1.default.renderFile(viewPath, {
+        ...locals,
+        csrfToken: response.locals.csrfToken,
+    }, { filename: viewPath, root: viewsRoot });
     response.render("layouts/main", {
         ...locals,
+        csrfToken: response.locals.csrfToken,
         body: markup,
     });
 }

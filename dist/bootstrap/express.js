@@ -14,6 +14,8 @@ const error_middleware_1 = require("../interfaces/http/middleware/error.middlewa
 const routes_1 = require("../interfaces/http/routes");
 const errors_1 = require("../interfaces/http/errors");
 const openapi_1 = require("../interfaces/http/openapi/openapi");
+const anonymous_session_factory_1 = require("../infrastructure/persistence/anonymous-session-factory");
+const anonymous_session_middleware_1 = require("../interfaces/http/middleware/anonymous-session.middleware");
 const LOCALHOST_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -44,9 +46,16 @@ function createCorsOptions(configuration) {
         },
     };
 }
-function createExpressApplication(configuration, logger, configure) {
+function createExpressApplication(configuration, logger, configure, anonymousSessionService = (0, anonymous_session_factory_1.createAnonymousSessionService)(configuration)) {
     const app = (0, express_1.default)();
     const corsOptions = createCorsOptions(configuration);
+    const anonymousSessionCookiePolicy = {
+        cookieName: anonymous_session_middleware_1.ANONYMOUS_SESSION_COOKIE_NAME,
+        cookiePath: anonymous_session_middleware_1.ANONYMOUS_SESSION_COOKIE_PATH,
+        sameSite: "lax",
+        secure: configuration.security.anonymousSessionCookieSecure,
+        lifetimeSeconds: configuration.security.anonymousSessionLifetimeSeconds,
+    };
     app.set("trust proxy", true);
     app.disable("x-powered-by");
     app.use((request, response, next) => {
@@ -85,7 +94,7 @@ function createExpressApplication(configuration, logger, configure) {
     if (configuration.platform.environment === "development") {
         app.use((0, openapi_1.createOpenApiRouter)());
     }
-    app.use((0, routes_1.createRootRouter)());
+    app.use((0, routes_1.createRootRouter)(anonymousSessionService, anonymousSessionCookiePolicy));
     app.use((_request, _response, next) => {
         next(new errors_1.NotFoundError());
     });

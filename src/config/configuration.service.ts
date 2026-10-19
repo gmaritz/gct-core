@@ -29,12 +29,18 @@ export class ConfigurationService {
 		const databaseUrl = process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/gct_core";
 		const loggingLevel = process.env.LOG_LEVEL ?? "info";
 		const corsEnabled = this.parseBoolean(process.env.CORS_ENABLED ?? "true");
+		const anonymousSessionLifetimeSeconds = this.parseBoundedInteger(
+			process.env.ANONYMOUS_SESSION_TTL_SECONDS ?? "43200",
+			"ANONYMOUS_SESSION_TTL_SECONDS",
+			300,
+			604800,
+		);
 
 		return {
 			platform: createPlatformConfig("0.1.0", "local", nodeEnv),
 			database: createDatabaseConfig(databaseUrl),
 			logging: createLoggingConfig(loggingLevel),
-			security: createSecurityConfig(corsEnabled),
+			security: createSecurityConfig(corsEnabled, nodeEnv, anonymousSessionLifetimeSeconds),
 			server: createServerConfig(port, corsEnabled),
 		};
 	}
@@ -50,6 +56,14 @@ export class ConfigurationService {
 
 	private parseBoolean(value: string): boolean {
 		return value === "true";
+	}
+
+	private parseBoundedInteger(value: string, name: string, minimum: number, maximum: number): number {
+		const parsed = Number(value);
+		if (!Number.isInteger(parsed) || parsed < minimum || parsed > maximum) {
+			throw new Error(`${name} must be an integer between ${minimum} and ${maximum}.`);
+		}
+		return parsed;
 	}
 }
 

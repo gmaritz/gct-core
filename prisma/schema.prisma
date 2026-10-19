@@ -2282,3 +2282,15 @@ model SystemConfiguration {
   @@index([category])
   @@map("system_configuration")
 }
+
+model AnonymousSession {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  csrfToken String
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  @@index([expiresAt])
+  @@map("anonymous_session")
+}

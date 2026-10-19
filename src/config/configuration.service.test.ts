@@ -28,6 +28,8 @@ describe("ConfigurationService", () => {
 		expect(config.logging.level).toBe("debug");
 		expect(config.logging.structured).toBe(true);
 		expect(config.security.corsEnabled).toBe(false);
+		expect(config.security.anonymousSessionLifetimeSeconds).toBe(43200);
+		expect(config.security.anonymousSessionCookieSecure).toBe(true);
 	});
 
 	it("uses default values when environment variables are absent", () => {
@@ -44,6 +46,16 @@ describe("ConfigurationService", () => {
 		expect(config.database.url).toContain("postgresql://postgres:postgres@localhost:5432/gct_core");
 		expect(config.logging.level).toBe("info");
 		expect(config.security.corsEnabled).toBe(true);
+		expect(config.security.anonymousSessionLifetimeSeconds).toBe(43200);
+		expect(config.security.anonymousSessionCookieSecure).toBe(false);
+	});
+
+	it("accepts a bounded anonymous-session lifetime and rejects unsafe values", () => {
+		process.env.ANONYMOUS_SESSION_TTL_SECONDS = "3600";
+		expect(new ConfigurationService().getConfiguration().security.anonymousSessionLifetimeSeconds).toBe(3600);
+
+		process.env.ANONYMOUS_SESSION_TTL_SECONDS = "0";
+		expect(() => new ConfigurationService()).toThrow("ANONYMOUS_SESSION_TTL_SECONDS");
 	});
 
 	it("validates and normalises service access through the loader", () => {

@@ -54,9 +54,13 @@ function diagnostic(request: Request, operation: string, outcome: string): Recor
 async function renderView(response: Response, viewName: string, locals: Record<string, unknown>): Promise<void> {
 	const viewsRoot = path.join(process.cwd(), "src/interfaces/views");
 	const viewPath = path.join(viewsRoot, `${viewName}.ejs`);
-	const markup = await ejs.renderFile(viewPath, locals, { filename: viewPath, root: viewsRoot });
+	const markup = await ejs.renderFile(viewPath, {
+		...locals,
+		csrfToken: response.locals.csrfToken,
+	}, { filename: viewPath, root: viewsRoot });
 	response.render("layouts/main", {
 		...locals,
+		csrfToken: response.locals.csrfToken,
 		body: markup,
 	});
 }

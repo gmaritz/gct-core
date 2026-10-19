@@ -1,6 +1,6 @@
 import { Express } from "express";
 import { createTestApplication } from "../../helpers/application.helper";
-import { createRequest } from "../../helpers/request.helper";
+import { createRequest, getCsrfToken } from "../../helpers/request.helper";
 
 describe("Frontend accommodation selection", () => {
   let app: Express;
@@ -22,7 +22,9 @@ describe("Frontend accommodation selection", () => {
   });
 
   it("rejects fixture room and rate selections without current availability", async (): Promise<void> => {
+    const csrfToken = await getCsrfToken(app);
     const response = await postRequest("/ui/journeys/journey-homepage-journey-001/accommodation")
+      .set("X-CSRF-Token", csrfToken)
       .type("form")
       .send({
         "selections[0][accommodationId]": "cape-winelands",
@@ -38,7 +40,9 @@ describe("Frontend accommodation selection", () => {
   });
 
   it("rejects incomplete selection without claiming completion", async (): Promise<void> => {
-    const response = await postRequest("/ui/journeys/journey-homepage-journey-001/accommodation");
+    const csrfToken = await getCsrfToken(app);
+    const response = await postRequest("/ui/journeys/journey-homepage-journey-001/accommodation")
+      .set("X-CSRF-Token", csrfToken);
 
     expect(response.status).toBe(409);
     expect(response.text).toContain("This journey is no longer available");

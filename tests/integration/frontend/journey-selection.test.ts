@@ -1,7 +1,7 @@
 import { Express } from "express";
 
 import { createTestApplication } from "../../helpers/application.helper";
-import { createRequest } from "../../helpers/request.helper";
+import { createRequest, getCsrfToken } from "../../helpers/request.helper";
 
 describe("Frontend journey selection", () => {
   let app: Express;
@@ -16,7 +16,9 @@ describe("Frontend journey selection", () => {
 
   it("keeps detail retrieval on GET and requires booking details before availability", async () => {
     const detail = await requestTo("/ui/journeys/journey-homepage-journey-001");
-    const selection = await postRequestTo("/ui/journeys/journey-homepage-journey-001/select");
+    const csrfToken = await getCsrfToken(app);
+    const selection = await postRequestTo("/ui/journeys/journey-homepage-journey-001/select")
+      .set("X-CSRF-Token", csrfToken);
 
     expect(detail.status).toBe(200);
     expect(detail.text).toContain('method="post"');
@@ -27,7 +29,9 @@ describe("Frontend journey selection", () => {
   });
 
   it("handles invalid selection without exposing internal details", async () => {
-    const response = await postRequestTo("/ui/journeys/not-valid/select");
+    const csrfToken = await getCsrfToken(app);
+    const response = await postRequestTo("/ui/journeys/not-valid/select")
+      .set("X-CSRF-Token", csrfToken);
 
     expect(response.status).toBe(404);
     expect(response.text).toContain("Page unavailable");

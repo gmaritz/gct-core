@@ -108,6 +108,7 @@
 
           <% if (reservationReviewViewModel.confirmationAction) { %>
             <form method="post" action="<%= reservationReviewViewModel.confirmationAction.href %>"<% if (reservationReviewViewModel.errors.length > 0) { %> aria-describedby="reservation-review-errors"<% } %> data-protect-submit>
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <input type="hidden" name="contact[email]" value="<%= reservationReviewViewModel.contact.email %>">
               <input type="hidden" name="contact[phone]" value="<%= reservationReviewViewModel.contact.phone || '' %>">
               <% reservationReviewViewModel.travellers.forEach((traveller, index) => { %>

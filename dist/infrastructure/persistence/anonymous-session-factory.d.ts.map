@@ -1,0 +1,1 @@
+{"version":3,"file":"anonymous-session-factory.d.ts","sourceRoot":"","sources":["../../../src/infrastructure/persistence/anonymous-session-factory.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,uBAAuB,EAAE,MAAM,4BAA4B,CAAC;AACrE,OAAO,EAAE,wBAAwB,EAAE,MAAM,oCAAoC,CAAC;AAG9E,wBAAgB,6BAA6B,CAAC,aAAa,EAAE,wBAAwB,GAAG,uBAAuB,CAK9G"}

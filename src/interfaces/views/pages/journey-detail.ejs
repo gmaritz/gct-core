@@ -102,6 +102,7 @@
             <p class="journey-detail__pricing-subtext">Includes luxury boutique accommodation, authentic regional experiences, and dedicated private guidance.</p>
           </div>
           <form method="post" action="<%= journeyDetailViewModel.selectionAction.href %>">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <% if (journeyDetailViewModel.requiresBookingDetails) { %>
               <div class="form-group">
                 <label class="form-label" for="start-date">Journey start date</label>

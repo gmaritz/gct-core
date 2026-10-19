@@ -1,6 +1,6 @@
 import { Express } from "express";
 import { createTestApplication } from "../../helpers/application.helper";
-import { createRequest } from "../../helpers/request.helper";
+import { createRequest, getCsrfToken } from "../../helpers/request.helper";
 
 describe("Frontend guest information", () => {
   let app: Express;
@@ -11,7 +11,9 @@ describe("Frontend guest information", () => {
     app = await createTestApplication();
     getRequest = createRequest(app, "get");
     postRequest = createRequest(app, "post");
+    const csrfToken = await getCsrfToken(app);
     await postRequest("/ui/journeys/journey-homepage-journey-001/accommodation")
+      .set("X-CSRF-Token", csrfToken)
       .type("form")
       .send({
         "selections[0][accommodationId]": "cape-winelands",
@@ -30,7 +32,9 @@ describe("Frontend guest information", () => {
   });
 
   it("redisplays invalid submitted values and validation errors", async (): Promise<void> => {
+    const csrfToken = await getCsrfToken(app);
     const response = await postRequest("/ui/journeys/journey-homepage-journey-001/guest-information")
+      .set("X-CSRF-Token", csrfToken)
       .type("form")
       .send({
         "contact[email]": "bad-email",
@@ -47,7 +51,9 @@ describe("Frontend guest information", () => {
   });
 
   it("does not continue to review without live accommodation availability", async (): Promise<void> => {
+    const csrfToken = await getCsrfToken(app);
     const response = await postRequest("/ui/journeys/journey-homepage-journey-001/guest-information")
+      .set("X-CSRF-Token", csrfToken)
       .type("form")
       .send({
         "contact[email]": "contact@example.com",
