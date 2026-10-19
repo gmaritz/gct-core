@@ -7,11 +7,11 @@ export interface DynamicHomepageJourneyResolution {
     readonly journey?: Journey;
 }
 export interface DynamicHomepageJourneyResolver {
-    resolve(publicJourneyId: string, selection?: JourneyBookingContext): Promise<DynamicHomepageJourneyResolution>;
+    resolve(ownerId: string, publicJourneyId: string, selection?: JourneyBookingContext): Promise<DynamicHomepageJourneyResolution>;
 }
 export declare class DefaultDynamicHomepageJourneyResolver implements DynamicHomepageJourneyResolver {
     private readonly compositionService;
     constructor(compositionService?: JourneyCompositionExecutor);
-    resolve(publicJourneyId: string): Promise<DynamicHomepageJourneyResolution>;
+    resolve(ownerId: string, publicJourneyId: string): Promise<DynamicHomepageJourneyResolution>;
 }
 //# sourceMappingURL=dynamic-homepage-journey-resolver.d.ts.map

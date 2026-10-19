@@ -48,6 +48,7 @@ const validSelection: AccommodationSelectionInput = {
 describe("DefaultAccommodationSelectionService", () => {
   it("validates and completes a property, room and rate selection", async (): Promise<void> => {
     const result = await new DefaultAccommodationSelectionService(createResolver()).selectAccommodation(
+      "owner-a",
       "journey-homepage-journey-001",
       [validSelection],
     );
@@ -62,8 +63,8 @@ describe("DefaultAccommodationSelectionService", () => {
 
   it("rejects invalid hierarchy selections and incomplete journeys", async (): Promise<void> => {
     const service = new DefaultAccommodationSelectionService(createResolver());
-    const invalid = await service.selectAccommodation("journey-homepage-journey-001", [{ ...validSelection, accommodationId: "other" }]);
-    const incomplete = await service.selectAccommodation("journey-homepage-journey-001", []);
+    const invalid = await service.selectAccommodation("owner-a", "journey-homepage-journey-001", [{ ...validSelection, accommodationId: "other" }]);
+    const incomplete = await service.selectAccommodation("owner-a", "journey-homepage-journey-001", []);
 
     expect(invalid.status).toBe("INVALID");
     expect(incomplete.status).toBe("INCOMPLETE");
@@ -71,6 +72,7 @@ describe("DefaultAccommodationSelectionService", () => {
 
   it("reports a stale rate without silently substituting another option", async (): Promise<void> => {
     const result = await new DefaultAccommodationSelectionService(createResolver("UNAVAILABLE")).selectAccommodation(
+      "owner-a",
       "journey-homepage-journey-001",
       [validSelection],
     );

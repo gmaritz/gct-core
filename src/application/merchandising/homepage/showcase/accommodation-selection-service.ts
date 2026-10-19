@@ -1,6 +1,7 @@
 import { Journey, JourneyAccommodation, selectJourneyAccommodation } from "../../../journeys";
 import { DynamicHomepageJourneyResolver } from "./dynamic-homepage-journey-resolver";
 import { JourneySelectionStore, journeySelectionStore } from "./journey-selection-store";
+import { assertJourneyStateOwner } from "./journey-state-ownership";
 
 export type AccommodationSelectionStatus = "COMPLETE" | "INVALID" | "NOT_FOUND" | "UNAVAILABLE" | "INCOMPLETE" | "STALE";
 
@@ -22,7 +23,7 @@ export interface AccommodationSelectionResult {
 }
 
 export interface AccommodationSelectionService {
-  selectAccommodation(journeyId: string, selections: ReadonlyArray<AccommodationSelectionInput>): Promise<AccommodationSelectionResult>;
+  selectAccommodation(ownerId: string, journeyId: string, selections: ReadonlyArray<AccommodationSelectionInput>): Promise<AccommodationSelectionResult>;
 }
 
 function isValidReference(reference: unknown): reference is { readonly provider: string; readonly opaqueReference: string } {
@@ -51,10 +52,12 @@ export class DefaultAccommodationSelectionService implements AccommodationSelect
   ) {}
 
   public async selectAccommodation(
+    ownerId: string,
     journeyId: string,
     selections: ReadonlyArray<AccommodationSelectionInput>,
   ): Promise<AccommodationSelectionResult> {
-    const resolution = await this.resolver.resolve(journeyId);
+    assertJourneyStateOwner(ownerId);
+    const resolution = await this.resolver.resolve(ownerId, journeyId);
     if (resolution.status === "INVALID" || resolution.status === "NOT_FOUND" || resolution.status === "UNAVAILABLE") {
       return { status: resolution.status, journeyId, selectedStops: [] };
     }
@@ -115,7 +118,7 @@ export class DefaultAccommodationSelectionService implements AccommodationSelect
       }
     }
 
-    this.selectionStore.save(journeyId, selections);
+    this.selectionStore.save(ownerId, journeyId, selections);
     return { status: "COMPLETE", journeyId, selectedStops };
   }
 }

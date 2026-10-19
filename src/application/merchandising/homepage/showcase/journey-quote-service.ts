@@ -19,6 +19,7 @@ import {
 import { AccommodationSelectionInput } from "./accommodation-selection-service";
 import { DynamicHomepageJourneyResolver } from "./dynamic-homepage-journey-resolver";
 import { JourneySelectionStore, journeySelectionStore } from "./journey-selection-store";
+import { assertJourneyStateOwner } from "./journey-state-ownership";
 import { CAPE_WINELANDS_JOURNEY_ID } from "./cape-winelands-journey-resolver";
 
 export type JourneyQuoteStatus = "PRICED" | "RECHECK_REQUIRED" | "UNAVAILABLE" | "INVALID" | "NOT_FOUND" | "CURRENCY_UNCONFIRMED";
@@ -42,8 +43,8 @@ import {
 } from "../../../pricing";
 
 export interface JourneyQuoteService {
-  priceJourney(journeyId: string, selections: ReadonlyArray<AccommodationSelectionInput>): Promise<JourneyQuoteResult>;
-  priceCurrentJourney(journeyId: string): Promise<JourneyQuoteResult>;
+  priceJourney(ownerId: string, journeyId: string, selections: ReadonlyArray<AccommodationSelectionInput>): Promise<JourneyQuoteResult>;
+  priceCurrentJourney(ownerId: string, journeyId: string): Promise<JourneyQuoteResult>;
 }
 
 export function createDefaultPricingEngine(): PricingEngine {
@@ -162,10 +163,12 @@ export class DefaultJourneyQuoteService implements JourneyQuoteService {
   ) {}
 
   public async priceJourney(
+    ownerId: string,
     journeyId: string,
     selections: ReadonlyArray<AccommodationSelectionInput>,
   ): Promise<JourneyQuoteResult> {
-    const resolution = await this.resolver.resolve(journeyId);
+    assertJourneyStateOwner(ownerId);
+    const resolution = await this.resolver.resolve(ownerId, journeyId);
     if (resolution.status !== "RESOLVED" || !resolution.journey) {
       return { status: resolution.status === "RESOLVED" ? "UNAVAILABLE" : resolution.status, journeyId, selections };
     }
@@ -266,7 +269,7 @@ export class DefaultJourneyQuoteService implements JourneyQuoteService {
     };
   }
 
-  public async priceCurrentJourney(journeyId: string): Promise<JourneyQuoteResult> {
-    return this.priceJourney(journeyId, this.selectionStore.find(journeyId));
+  public async priceCurrentJourney(ownerId: string, journeyId: string): Promise<JourneyQuoteResult> {
+    return this.priceJourney(ownerId, journeyId, this.selectionStore.find(ownerId, journeyId));
   }
 }

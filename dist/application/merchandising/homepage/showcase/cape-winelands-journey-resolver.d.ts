@@ -18,7 +18,7 @@ export declare class CapeWinelandsJourneyResolver implements DynamicHomepageJour
     private readonly fallbackResolver;
     private readonly selectionStore;
     constructor(catalogueService: HotelCatalogueService, availabilityService: AccommodationAvailabilityService, fallbackResolver?: DynamicHomepageJourneyResolver, selectionStore?: JourneySelectionStore);
-    resolve(journeyId: string, selection?: JourneyBookingContext): Promise<DynamicHomepageJourneyResolution>;
+    resolve(ownerId: string, journeyId: string, selection?: JourneyBookingContext): Promise<DynamicHomepageJourneyResolution>;
     private activeProperties;
     private availableOptions;
     private composeJourney;

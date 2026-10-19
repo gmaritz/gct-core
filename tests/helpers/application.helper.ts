@@ -1,4 +1,5 @@
 import { Express } from "express";
+import { randomUUID } from "crypto";
 
 import { createExpressApplication } from "../../src/bootstrap/express";
 import { initialiseLogging } from "../../src/bootstrap/logging";
@@ -15,7 +16,7 @@ class TestAnonymousSessionRepository implements AnonymousSessionRepository {
 	private readonly records = new Map<string, AnonymousSessionRecord & { tokenHash: string; revokedAt?: Date }>();
 
 	public async create(record: NewAnonymousSessionRecord): Promise<AnonymousSessionRecord> {
-		const created = { ...record, id: `test-session-${this.records.size + 1}` };
+		const created = { ...record, id: randomUUID() };
 		this.records.set(created.id, created);
 		return created;
 	}

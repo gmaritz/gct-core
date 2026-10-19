@@ -35,6 +35,7 @@ const validInformation: GuestInformationInput = {
 describe("DefaultGuestInformationService", () => {
   it("validates contact, lead and multiple travellers against occupancy", async (): Promise<void> => {
     const result = await new DefaultGuestInformationService(createResolver()).captureGuestInformation(
+      "owner-a",
       "journey-homepage-journey-001",
       validInformation,
     );
@@ -51,6 +52,7 @@ describe("DefaultGuestInformationService", () => {
       travellers: [{ ...validInformation.travellers[0], firstName: "" }],
     };
     const result = await new DefaultGuestInformationService(createResolver()).captureGuestInformation(
+      "owner-a",
       "journey-homepage-journey-001",
       information,
     );
@@ -67,7 +69,7 @@ describe("DefaultGuestInformationService", () => {
   it("returns the resolver outcome for an invalid journey", async (): Promise<void> => {
     const result = await new DefaultGuestInformationService({
       resolve: async () => ({ status: "INVALID" }),
-    }).captureGuestInformation("invalid", validInformation);
+    }).captureGuestInformation("owner-a", "invalid", validInformation);
 
     expect(result.status).toBe("INVALID");
     expect(result.errors).toEqual([]);

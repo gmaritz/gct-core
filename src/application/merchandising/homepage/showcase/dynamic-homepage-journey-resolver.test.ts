@@ -20,7 +20,7 @@ function unavailableComposition(): JourneyCompositionResult {
 describe("DefaultDynamicHomepageJourneyResolver", () => {
   it("reconstructs a known homepage journey through the composition service", async () => {
     const resolver: DynamicHomepageJourneyResolver = new DefaultDynamicHomepageJourneyResolver();
-    const result = await resolver.resolve("journey-homepage-journey-001");
+    const result = await resolver.resolve("owner-a", "journey-homepage-journey-001");
 
     expect(result.status).toBe("RESOLVED");
     expect(result.journey?.identity.id).toBe("journey-homepage-journey-001");
@@ -30,8 +30,8 @@ describe("DefaultDynamicHomepageJourneyResolver", () => {
   it("rejects malformed and unknown identifiers", async () => {
     const resolver = new DefaultDynamicHomepageJourneyResolver();
 
-    await expect(resolver.resolve("journey/unsafe")).resolves.toEqual({ status: "INVALID" });
-    await expect(resolver.resolve("journey-homepage-journey-999")).resolves.toEqual({ status: "NOT_FOUND" });
+    await expect(resolver.resolve("owner-a", "journey/unsafe")).resolves.toEqual({ status: "INVALID" });
+    await expect(resolver.resolve("owner-a", "journey-homepage-journey-999")).resolves.toEqual({ status: "NOT_FOUND" });
   });
 
   it("reports an unavailable offer when reconstruction fails", async () => {
@@ -39,6 +39,6 @@ describe("DefaultDynamicHomepageJourneyResolver", () => {
       execute: async (): Promise<JourneyCompositionResult> => unavailableComposition(),
     });
 
-    await expect(resolver.resolve("journey-homepage-journey-001")).resolves.toEqual({ status: "UNAVAILABLE" });
+    await expect(resolver.resolve("owner-a", "journey-homepage-journey-001")).resolves.toEqual({ status: "UNAVAILABLE" });
   });
 });

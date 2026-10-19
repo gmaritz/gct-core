@@ -140,7 +140,7 @@ describe("CapeWinelandsJourneyResolver", () => {
       new JourneySelectionStore(),
     );
 
-    const result = await resolver.resolve("journey-homepage-journey-001", context());
+    const result = await resolver.resolve("owner-a", "journey-homepage-journey-001", context());
     expect(result.status).toBe("RESOLVED");
     expect(result.journey?.accommodation.map((option) => option.packageStop?.destination)).toEqual(["Stellenbosch", "Hermanus"]);
     expect(result.journey?.accommodation[0]?.accommodationId).toBe(CAPE_WINELANDS_FRANSCHHOEK_PROPERTIES[0]?.hotelCode);
@@ -170,7 +170,7 @@ describe("CapeWinelandsJourneyResolver", () => {
       new JourneySelectionStore(),
     );
 
-    const result = await resolver.resolve("journey-homepage-journey-001", context());
+    const result = await resolver.resolve("owner-a", "journey-homepage-journey-001", context());
     expect(result.status).toBe("RESOLVED");
     expect(result.journey?.accommodation[0]?.accommodationId).toBe(CAPE_WINELANDS_STELLENBOSCH_PROPERTIES[1]?.hotelCode);
     expect(calls).toHaveLength(2);
@@ -192,6 +192,6 @@ describe("CapeWinelandsJourneyResolver", () => {
       new JourneySelectionStore(),
     );
 
-    await expect(resolver.resolve("journey-homepage-journey-001", context())).resolves.toEqual({ status: "UNAVAILABLE" });
+    await expect(resolver.resolve("owner-a", "journey-homepage-journey-001", context())).resolves.toEqual({ status: "UNAVAILABLE" });
   });
 });

@@ -8,11 +8,11 @@ export interface DynamicHomepageJourneySelectionResult {
     readonly continuationHref?: string;
 }
 export interface DynamicHomepageJourneySelector {
-    selectJourney(journeyId: string, selection?: JourneyBookingContext): Promise<DynamicHomepageJourneySelectionResult>;
+    selectJourney(ownerId: string, journeyId: string, selection?: JourneyBookingContext): Promise<DynamicHomepageJourneySelectionResult>;
 }
 export declare class DefaultDynamicHomepageJourneySelector implements DynamicHomepageJourneySelector {
     private readonly resolver;
     constructor(resolver?: DynamicHomepageJourneyResolver);
-    selectJourney(journeyId: string, selection?: JourneyBookingContext): Promise<DynamicHomepageJourneySelectionResult>;
+    selectJourney(ownerId: string, journeyId: string, selection?: JourneyBookingContext): Promise<DynamicHomepageJourneySelectionResult>;
 }
 //# sourceMappingURL=dynamic-homepage-journey-selection.d.ts.map

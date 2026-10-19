@@ -1,10 +1,11 @@
 import { GuestInformationInput, DefaultGuestInformationService } from "./guest-information-service";
+import { GuestInformationStore } from "./guest-information-store";
 import { DynamicHomepageJourneyResolver } from "./dynamic-homepage-journey-resolver";
 import { DefaultJourneyQuoteService, JourneyQuoteResult } from "./journey-quote-service";
 export type ReservationReviewStatus = "READY" | "INVALID" | "RECHECK_REQUIRED" | "UNAVAILABLE";
 export interface ReservationReviewRequest {
+    readonly ownerId: string;
     readonly journeyId: string;
-    readonly guestInformation: GuestInformationInput;
     readonly confirmed?: boolean;
 }
 export interface ReservationReviewResult {
@@ -23,7 +24,8 @@ export declare class DefaultReservationReviewService implements ReservationRevie
     private readonly resolver;
     private readonly guestService;
     private readonly quoteService;
-    constructor(resolver?: DynamicHomepageJourneyResolver, guestService?: DefaultGuestInformationService, quoteService?: DefaultJourneyQuoteService);
+    private readonly guestStore;
+    constructor(resolver?: DynamicHomepageJourneyResolver, guestService?: DefaultGuestInformationService, quoteService?: DefaultJourneyQuoteService, guestStore?: GuestInformationStore);
     review(request: ReservationReviewRequest): Promise<ReservationReviewResult>;
 }
 //# sourceMappingURL=reservation-review-service.d.ts.map

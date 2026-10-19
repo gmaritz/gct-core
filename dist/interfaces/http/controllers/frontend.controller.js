@@ -28,6 +28,7 @@ const reservation_confirmation_factory_1 = require("../../../infrastructure/pers
 const customer_journey_reservation_factory_1 = require("../../../infrastructure/persistence/customer-journey-reservation-factory");
 const frontend_journey_resolver_1 = require("../../../infrastructure/merchandising/frontend-journey-resolver");
 const logging_1 = require("../../../bootstrap/logging");
+const anonymous_session_middleware_1 = require("../middleware/anonymous-session.middleware");
 function diagnostic(request, operation, outcome) {
     return {
         requestId: request.requestId ?? "unknown",
@@ -65,11 +66,12 @@ async function renderNotFoundPage(_request, response) {
     });
 }
 async function renderJourneyDetailPage(request, response) {
-    let resolution = await (0, frontend_journey_resolver_1.createFrontendJourneyResolver)().resolve(request.params.journeyId);
+    const ownerId = (0, anonymous_session_middleware_1.requireAnonymousSession)(request).ownerId;
+    let resolution = await (0, frontend_journey_resolver_1.createFrontendJourneyResolver)().resolve(ownerId, request.params.journeyId);
     if (resolution.status === "UNAVAILABLE"
         && request.params.journeyId === merchandising_1.CAPE_WINELANDS_JOURNEY_ID
-        && !merchandising_1.journeySelectionStore.context(request.params.journeyId)) {
-        resolution = await new merchandising_1.DefaultDynamicHomepageJourneyResolver().resolve(request.params.journeyId);
+        && !merchandising_1.journeySelectionStore.context(ownerId, request.params.journeyId)) {
+        resolution = await new merchandising_1.DefaultDynamicHomepageJourneyResolver().resolve(ownerId, request.params.journeyId);
     }
     if (resolution.status === "INVALID" || resolution.status === "NOT_FOUND") {
         response.status(404);
@@ -94,13 +96,14 @@ async function renderJourneyDetailPage(request, response) {
     });
 }
 async function selectJourney(request, response) {
+    const ownerId = (0, anonymous_session_middleware_1.requireAnonymousSession)(request).ownerId;
     const journeyId = request.params.journeyId;
     const resolver = (0, frontend_journey_resolver_1.createFrontendJourneyResolver)();
     const context = journeyId === merchandising_1.CAPE_WINELANDS_JOURNEY_ID ? parseJourneyBookingContext(request.body) : undefined;
     if (journeyId === merchandising_1.CAPE_WINELANDS_JOURNEY_ID) {
         const validationError = context ? (0, merchandising_1.validateBookingContext)(context) : "Select a valid journey start date and room allocation.";
         if (validationError) {
-            const resolution = await new merchandising_1.DefaultDynamicHomepageJourneyResolver().resolve(journeyId);
+            const resolution = await new merchandising_1.DefaultDynamicHomepageJourneyResolver().resolve(ownerId, journeyId);
             if (resolution.status === "RESOLVED" && resolution.journey) {
                 response.status(422);
                 await renderView(response, "pages/journey-detail", {
@@ -115,9 +118,9 @@ async function selectJourney(request, response) {
                 return;
             }
         }
-        merchandising_1.guestInformationStore.clear(journeyId);
+        merchandising_1.guestInformationStore.clear(ownerId, journeyId);
     }
-    const result = await new merchandising_1.DefaultDynamicHomepageJourneySelector(resolver).selectJourney(journeyId, context);
+    const result = await new merchandising_1.DefaultDynamicHomepageJourneySelector(resolver).selectJourney(ownerId, journeyId, context);
     if (result.status === "INVALID" || result.status === "NOT_FOUND") {
         response.status(404);
         await renderNotFoundPage(request, response);
@@ -158,7 +161,8 @@ function parseJourneyBookingContext(body) {
     };
 }
 async function renderAccommodationSelectionPage(request, response) {
-    const resolution = await (0, frontend_journey_resolver_1.createFrontendJourneyResolver)().resolve(request.params.journeyId);
+    const ownerId = (0, anonymous_session_middleware_1.requireAnonymousSession)(request).ownerId;
+    const resolution = await (0, frontend_journey_resolver_1.createFrontendJourneyResolver)().resolve(ownerId, request.params.journeyId);
     if (resolution.status !== "RESOLVED" || !resolution.journey) {
         if (resolution.status === "UNAVAILABLE") {
             response.status(410);
@@ -179,10 +183,11 @@ async function renderAccommodationSelectionPage(request, response) {
     });
 }
 async function selectAccommodation(request, response) {
+    const ownerId = (0, anonymous_session_middleware_1.requireAnonymousSession)(request).ownerId;
     const body = request.body;
     const selections = Array.isArray(body?.selections) ? body.selections : [];
     const result = await new merchandising_1.DefaultAccommodationSelectionService((0, frontend_journey_resolver_1.createFrontendJourneyResolver)())
-        .selectAccommodation(request.params.journeyId, selections);
+        .selectAccommodation(ownerId, request.params.journeyId, selections);
     if (result.status === "INVALID" || result.status === "NOT_FOUND") {
         response.status(404);
         await renderNotFoundPage(request, response);
@@ -198,7 +203,7 @@ async function selectAccommodation(request, response) {
         return;
     }
     if (result.status !== "COMPLETE") {
-        const resolution = await new merchandising_1.DefaultDynamicHomepageJourneyResolver().resolve(request.params.journeyId);
+        const resolution = await new merchandising_1.DefaultDynamicHomepageJourneyResolver().resolve(ownerId, request.params.journeyId);
         if (resolution.status !== "RESOLVED" || !resolution.journey) {
             response.status(404);
             await renderNotFoundPage(request, response);
@@ -214,7 +219,7 @@ async function selectAccommodation(request, response) {
         });
         return;
     }
-    merchandising_1.guestInformationStore.clear(request.params.journeyId);
+    merchandising_1.guestInformationStore.clear(ownerId, request.params.journeyId);
     await renderView(response, "pages/accommodation-selected", {
         title: "Accommodation selected",
         pageTitle: "Accommodation selected",
@@ -224,7 +229,8 @@ async function selectAccommodation(request, response) {
     });
 }
 async function renderJourneyQuotePage(request, response) {
-    const result = await new merchandising_1.DefaultJourneyQuoteService((0, frontend_journey_resolver_1.createFrontendJourneyResolver)(), (0, merchandising_1.createDefaultPricingEngine)()).priceCurrentJourney(request.params.journeyId);
+    const ownerId = (0, anonymous_session_middleware_1.requireAnonymousSession)(request).ownerId;
+    const result = await new merchandising_1.DefaultJourneyQuoteService((0, frontend_journey_resolver_1.createFrontendJourneyResolver)(), (0, merchandising_1.createDefaultPricingEngine)()).priceCurrentJourney(ownerId, request.params.journeyId);
     const quoteViewModel = new view_models_2.JourneyQuoteViewModelProvider().provide(result);
     if (result.status === "INVALID" || result.status === "NOT_FOUND") {
         response.status(404);
@@ -258,8 +264,9 @@ function renderGuestInformation(request, response, viewModel, status = 200) {
     });
 }
 async function renderGuestInformationPage(request, response) {
+    const ownerId = (0, anonymous_session_middleware_1.requireAnonymousSession)(request).ownerId;
     const resolver = (0, frontend_journey_resolver_1.createFrontendJourneyResolver)();
-    const resolution = await resolver.resolve(request.params.journeyId);
+    const resolution = await resolver.resolve(ownerId, request.params.journeyId);
     if (resolution.status !== "RESOLVED" || !resolution.journey) {
         if (resolution.status === "UNAVAILABLE") {
             response.status(410);
@@ -280,9 +287,10 @@ async function renderGuestInformationPage(request, response) {
     await renderGuestInformation(request, response, viewModel);
 }
 async function submitGuestInformation(request, response) {
+    const ownerId = (0, anonymous_session_middleware_1.requireAnonymousSession)(request).ownerId;
     const input = toGuestInformationInput(request.body);
     const result = await new merchandising_1.DefaultGuestInformationService((0, frontend_journey_resolver_1.createFrontendJourneyResolver)())
-        .captureGuestInformation(request.params.journeyId, input);
+        .captureGuestInformation(ownerId, request.params.journeyId, input);
     if (result.status === "INVALID") {
         await renderGuestInformation(request, response, new view_models_2.GuestInformationViewModelProvider().provide(result), 422);
         return;
@@ -297,7 +305,7 @@ async function submitGuestInformation(request, response) {
         await renderView(response, "errors/unavailable", { title: "Journey unavailable", pageTitle: "Journey unavailable", currentPath: request.path });
         return;
     }
-    merchandising_1.guestInformationStore.save(request.params.journeyId, input);
+    merchandising_1.guestInformationStore.save(ownerId, request.params.journeyId, input);
     response.redirect(`/ui/journeys/${request.params.journeyId}/review`);
     return;
 }
@@ -322,8 +330,9 @@ function renderReservationReview(request, response, viewModel, status = 200) {
     });
 }
 async function renderReservationReviewPage(request, response) {
+    const ownerId = (0, anonymous_session_middleware_1.requireAnonymousSession)(request).ownerId;
     const resolver = (0, frontend_journey_resolver_1.createFrontendJourneyResolver)();
-    const resolution = await resolver.resolve(request.params.journeyId);
+    const resolution = await resolver.resolve(ownerId, request.params.journeyId);
     if (resolution.status !== "RESOLVED" || !resolution.journey) {
         if (resolution.status === "UNAVAILABLE") {
             response.status(410);
@@ -335,25 +344,24 @@ async function renderReservationReviewPage(request, response) {
         }
         return;
     }
-    const guestInformation = merchandising_1.guestInformationStore.find(request.params.journeyId);
-    if (!guestInformation) {
+    if (!merchandising_1.guestInformationStore.find(ownerId, request.params.journeyId)) {
         const review = new view_models_2.ReservationReviewViewModelProvider().provide({ status: "INVALID", journeyId: request.params.journeyId, journey: resolution.journey, errors: ["Complete guest information before reviewing the reservation."], confirmed: false });
         await renderReservationReview(request, response, review, 422);
         return;
     }
-    const reviewed = await new merchandising_1.DefaultReservationReviewService(resolver).review({ journeyId: request.params.journeyId, guestInformation });
-    await renderReservationReview(request, response, new view_models_2.ReservationReviewViewModelProvider().provide(reviewed), reviewed.status === "READY" ? 200 : 409);
+    const reviewed = await new merchandising_1.DefaultReservationReviewService(resolver).review({ ownerId, journeyId: request.params.journeyId });
+    await renderReservationReview(request, response, new view_models_2.ReservationReviewViewModelProvider().provide(reviewed), reviewed.status === "READY" ? 200 : reviewed.status === "INVALID" ? 422 : 409);
 }
 async function confirmReservationReview(request, response) {
-    const input = merchandising_1.guestInformationStore.find(request.params.journeyId);
-    if (!input) {
+    const ownerId = (0, anonymous_session_middleware_1.requireAnonymousSession)(request).ownerId;
+    if (!merchandising_1.guestInformationStore.find(ownerId, request.params.journeyId)) {
         response.status(422);
         await renderReservationReview(request, response, new view_models_2.ReservationReviewViewModelProvider().provide({ status: "INVALID", journeyId: request.params.journeyId, errors: ["Complete guest information before reviewing the reservation."], confirmed: false }), 422);
         return;
     }
     const review = await new merchandising_1.DefaultReservationReviewService((0, frontend_journey_resolver_1.createFrontendJourneyResolver)()).review({
+        ownerId,
         journeyId: request.params.journeyId,
-        guestInformation: input,
         confirmed: request.body?.confirmed === "on" || request.body?.confirmed === true,
     });
     if (review.status !== "READY" || !review.confirmed) {
@@ -400,7 +408,8 @@ async function resolvePaymentContext(journeyId) {
     }
 }
 async function resolvePaymentJourney(request, response) {
-    const resolution = await new merchandising_1.DefaultDynamicHomepageJourneyResolver().resolve(request.params.journeyId);
+    const ownerId = (0, anonymous_session_middleware_1.requireAnonymousSession)(request).ownerId;
+    const resolution = await new merchandising_1.DefaultDynamicHomepageJourneyResolver().resolve(ownerId, request.params.journeyId);
     if (resolution.status === "INVALID" || resolution.status === "NOT_FOUND") {
         response.status(404);
         await renderNotFoundPage(request, response);

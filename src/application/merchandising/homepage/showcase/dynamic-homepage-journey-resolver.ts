@@ -6,6 +6,7 @@ import {
   JourneyCompositionExecutor,
 } from "./homepage-journey-showcase-service";
 import { JourneyBookingContext } from "./journey-selection-store";
+import { assertJourneyStateOwner } from "./journey-state-ownership";
 
 export type DynamicHomepageJourneyResolutionStatus = "RESOLVED" | "INVALID" | "NOT_FOUND" | "UNAVAILABLE";
 
@@ -15,7 +16,7 @@ export interface DynamicHomepageJourneyResolution {
 }
 
 export interface DynamicHomepageJourneyResolver {
-  resolve(publicJourneyId: string, selection?: JourneyBookingContext): Promise<DynamicHomepageJourneyResolution>;
+  resolve(ownerId: string, publicJourneyId: string, selection?: JourneyBookingContext): Promise<DynamicHomepageJourneyResolution>;
 }
 
 export class DefaultDynamicHomepageJourneyResolver implements DynamicHomepageJourneyResolver {
@@ -23,7 +24,8 @@ export class DefaultDynamicHomepageJourneyResolver implements DynamicHomepageJou
     private readonly compositionService: JourneyCompositionExecutor = createDefaultJourneyCompositionService(),
   ) {}
 
-  public async resolve(publicJourneyId: string): Promise<DynamicHomepageJourneyResolution> {
+  public async resolve(ownerId: string, publicJourneyId: string): Promise<DynamicHomepageJourneyResolution> {
+    assertJourneyStateOwner(ownerId);
     if (typeof publicJourneyId !== "string" || !/^journey-homepage-journey-\d{3}$/.test(publicJourneyId)) {
       return { status: "INVALID" };
     }

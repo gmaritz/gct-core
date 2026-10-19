@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DefaultAccommodationSelectionService = void 0;
 const journeys_1 = require("../../../journeys");
 const journey_selection_store_1 = require("./journey-selection-store");
+const journey_state_ownership_1 = require("./journey-state-ownership");
 function isValidReference(reference) {
     return typeof reference === "object" && reference !== null
         && typeof reference.provider === "string"
@@ -20,8 +21,9 @@ class DefaultAccommodationSelectionService {
         this.resolver = resolver;
         this.selectionStore = selectionStore;
     }
-    async selectAccommodation(journeyId, selections) {
-        const resolution = await this.resolver.resolve(journeyId);
+    async selectAccommodation(ownerId, journeyId, selections) {
+        (0, journey_state_ownership_1.assertJourneyStateOwner)(ownerId);
+        const resolution = await this.resolver.resolve(ownerId, journeyId);
         if (resolution.status === "INVALID" || resolution.status === "NOT_FOUND" || resolution.status === "UNAVAILABLE") {
             return { status: resolution.status, journeyId, selectedStops: [] };
         }
@@ -78,7 +80,7 @@ class DefaultAccommodationSelectionService {
                 return { status: "STALE", journeyId, selectedStops: [] };
             }
         }
-        this.selectionStore.save(journeyId, selections);
+        this.selectionStore.save(ownerId, journeyId, selections);
         return { status: "COMPLETE", journeyId, selectedStops };
     }
 }

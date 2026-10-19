@@ -2,6 +2,7 @@ import { DefaultDynamicHomepageJourneyResolver } from "./dynamic-homepage-journe
 import { DefaultReservationReviewService } from "./reservation-review-service";
 import { GuestInformationInput } from "./guest-information-service";
 import { DefaultAccommodationSelectionService } from "./accommodation-selection-service";
+import { GuestInformationStore } from "./guest-information-store";
 
 const guestInformation: GuestInformationInput = {
   contact: { email: "contact@example.com" },
@@ -15,26 +16,38 @@ const guestInformation: GuestInformationInput = {
 describe("DefaultReservationReviewService", () => {
   it("revalidates the journey, quote and guest information", async (): Promise<void> => {
     const resolver = new DefaultDynamicHomepageJourneyResolver();
-    await new DefaultAccommodationSelectionService(resolver).selectAccommodation("journey-homepage-journey-001", [{
+    const guestStore = new GuestInformationStore();
+    guestStore.save("owner-a", "journey-homepage-journey-001", guestInformation);
+    await new DefaultAccommodationSelectionService(resolver).selectAccommodation("owner-a", "journey-homepage-journey-001", [{
       accommodationId: "cape-winelands",
       roomReference: { provider: "curated", opaqueReference: "cape-winelands-room-1" },
       rateReference: { provider: "curated", opaqueReference: "cape-winelands-rate-1" },
     }]);
-    const result = await new DefaultReservationReviewService(resolver).review({
+    const result = await new DefaultReservationReviewService(
+      resolver,
+      undefined,
+      undefined,
+      guestStore,
+    ).review({
+      ownerId: "owner-a",
       journeyId: "journey-homepage-journey-001",
-      guestInformation,
     });
 
     expect(result.status).toBe("READY");
     expect(result.confirmed).toBe(false);
     expect(result.quote?.status).toBe("PRICED");
-    expect(result.guestInformation).toBe(guestInformation);
+    expect(result.guestInformation).toEqual(guestInformation);
   });
 
   it("does not confirm invalid guest information", async (): Promise<void> => {
-    const result = await new DefaultReservationReviewService().review({
+    const result = await new DefaultReservationReviewService(
+      undefined,
+      undefined,
+      undefined,
+      new GuestInformationStore(),
+    ).review({
+      ownerId: "owner-a",
       journeyId: "journey-homepage-journey-001",
-      guestInformation: { ...guestInformation, travellers: [] },
       confirmed: true,
     });
 
@@ -50,9 +63,14 @@ describe("DefaultReservationReviewService", () => {
         metadata: { generatedAt: new Date(), version: "1.0.0" },
       }),
     });
-    const result = await new DefaultReservationReviewService(resolver).review({
+    const result = await new DefaultReservationReviewService(
+      resolver,
+      undefined,
+      undefined,
+      new GuestInformationStore(),
+    ).review({
+      ownerId: "owner-a",
       journeyId: "journey-homepage-journey-001",
-      guestInformation,
     });
 
     expect(result.status).toBe("UNAVAILABLE");

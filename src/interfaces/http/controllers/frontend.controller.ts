@@ -39,6 +39,7 @@ import { createReservationConfirmationService } from "../../../infrastructure/pe
 import { createCustomerJourneyReservationService } from "../../../infrastructure/persistence/customer-journey-reservation-factory";
 import { createFrontendJourneyResolver } from "../../../infrastructure/merchandising/frontend-journey-resolver";
 import { getLogger } from "../../../bootstrap/logging";
+import { requireAnonymousSession } from "../middleware/anonymous-session.middleware";
 
 type RequestWithId = Request & { requestId?: string };
 
@@ -84,11 +85,12 @@ export async function renderNotFoundPage(_request: Request, response: Response):
 }
 
 export async function renderJourneyDetailPage(request: Request, response: Response): Promise<void> {
-	let resolution = await createFrontendJourneyResolver().resolve(request.params.journeyId);
+	const ownerId = requireAnonymousSession(request).ownerId;
+	let resolution = await createFrontendJourneyResolver().resolve(ownerId, request.params.journeyId);
 	if (resolution.status === "UNAVAILABLE"
 		&& request.params.journeyId === CAPE_WINELANDS_JOURNEY_ID
-		&& !journeySelectionStore.context(request.params.journeyId)) {
-		resolution = await new DefaultDynamicHomepageJourneyResolver().resolve(request.params.journeyId);
+		&& !journeySelectionStore.context(ownerId, request.params.journeyId)) {
+		resolution = await new DefaultDynamicHomepageJourneyResolver().resolve(ownerId, request.params.journeyId);
 	}
 
 	if (resolution.status === "INVALID" || resolution.status === "NOT_FOUND") {
@@ -117,13 +119,14 @@ export async function renderJourneyDetailPage(request: Request, response: Respon
 }
 
 export async function selectJourney(request: Request, response: Response): Promise<void> {
+	const ownerId = requireAnonymousSession(request).ownerId;
 	const journeyId = request.params.journeyId;
 	const resolver = createFrontendJourneyResolver();
 	const context = journeyId === CAPE_WINELANDS_JOURNEY_ID ? parseJourneyBookingContext(request.body) : undefined;
 	if (journeyId === CAPE_WINELANDS_JOURNEY_ID) {
 		const validationError = context ? validateBookingContext(context) : "Select a valid journey start date and room allocation.";
 		if (validationError) {
-			const resolution = await new DefaultDynamicHomepageJourneyResolver().resolve(journeyId);
+			const resolution = await new DefaultDynamicHomepageJourneyResolver().resolve(ownerId, journeyId);
 			if (resolution.status === "RESOLVED" && resolution.journey) {
 				response.status(422);
 				await renderView(response, "pages/journey-detail", {
@@ -138,9 +141,9 @@ export async function selectJourney(request: Request, response: Response): Promi
 				return;
 			}
 		}
-		guestInformationStore.clear(journeyId);
+		guestInformationStore.clear(ownerId, journeyId);
 	}
-	const result = await new DefaultDynamicHomepageJourneySelector(resolver).selectJourney(journeyId, context);
+	const result = await new DefaultDynamicHomepageJourneySelector(resolver).selectJourney(ownerId, journeyId, context);
 
 	if (result.status === "INVALID" || result.status === "NOT_FOUND") {
 		response.status(404);
@@ -184,7 +187,8 @@ function parseJourneyBookingContext(body: unknown): JourneyBookingContext | unde
 }
 
 export async function renderAccommodationSelectionPage(request: Request, response: Response): Promise<void> {
-	const resolution = await createFrontendJourneyResolver().resolve(request.params.journeyId);
+	const ownerId = requireAnonymousSession(request).ownerId;
+	const resolution = await createFrontendJourneyResolver().resolve(ownerId, request.params.journeyId);
 
 	if (resolution.status !== "RESOLVED" || !resolution.journey) {
 		if (resolution.status === "UNAVAILABLE") {
@@ -207,10 +211,11 @@ export async function renderAccommodationSelectionPage(request: Request, respons
 }
 
 export async function selectAccommodation(request: Request, response: Response): Promise<void> {
+	const ownerId = requireAnonymousSession(request).ownerId;
 	const body = request.body as { selections?: unknown };
 	const selections = Array.isArray(body?.selections) ? body.selections : [];
 	const result = await new DefaultAccommodationSelectionService(createFrontendJourneyResolver())
-		.selectAccommodation(request.params.journeyId, selections as never);
+		.selectAccommodation(ownerId, request.params.journeyId, selections as never);
 
 	if (result.status === "INVALID" || result.status === "NOT_FOUND") {
 		response.status(404);
@@ -229,7 +234,7 @@ export async function selectAccommodation(request: Request, response: Response):
 	}
 
 	if (result.status !== "COMPLETE") {
-		const resolution = await new DefaultDynamicHomepageJourneyResolver().resolve(request.params.journeyId);
+		const resolution = await new DefaultDynamicHomepageJourneyResolver().resolve(ownerId, request.params.journeyId);
 		if (resolution.status !== "RESOLVED" || !resolution.journey) {
 			response.status(404);
 			await renderNotFoundPage(request, response);
@@ -245,7 +250,7 @@ export async function selectAccommodation(request: Request, response: Response):
 		});
 		return;
 	}
-	guestInformationStore.clear(request.params.journeyId);
+	guestInformationStore.clear(ownerId, request.params.journeyId);
 
 	await renderView(response, "pages/accommodation-selected", {
 		title: "Accommodation selected",
@@ -257,10 +262,11 @@ export async function selectAccommodation(request: Request, response: Response):
 }
 
 export async function renderJourneyQuotePage(request: Request, response: Response): Promise<void> {
+	const ownerId = requireAnonymousSession(request).ownerId;
 	const result = await new DefaultJourneyQuoteService(
 		createFrontendJourneyResolver(),
 		createDefaultPricingEngine(),
-	).priceCurrentJourney(request.params.journeyId);
+	).priceCurrentJourney(ownerId, request.params.journeyId);
 	const quoteViewModel = new JourneyQuoteViewModelProvider().provide(result);
 
 	if (result.status === "INVALID" || result.status === "NOT_FOUND") {
@@ -304,8 +310,9 @@ function renderGuestInformation(
 }
 
 export async function renderGuestInformationPage(request: Request, response: Response): Promise<void> {
+	const ownerId = requireAnonymousSession(request).ownerId;
 	const resolver = createFrontendJourneyResolver();
-	const resolution = await resolver.resolve(request.params.journeyId);
+	const resolution = await resolver.resolve(ownerId, request.params.journeyId);
 	if (resolution.status !== "RESOLVED" || !resolution.journey) {
 		if (resolution.status === "UNAVAILABLE") {
 			response.status(410);
@@ -327,9 +334,10 @@ export async function renderGuestInformationPage(request: Request, response: Res
 }
 
 export async function submitGuestInformation(request: Request, response: Response): Promise<void> {
+	const ownerId = requireAnonymousSession(request).ownerId;
 	const input = toGuestInformationInput(request.body);
 	const result = await new DefaultGuestInformationService(createFrontendJourneyResolver())
-		.captureGuestInformation(request.params.journeyId, input);
+		.captureGuestInformation(ownerId, request.params.journeyId, input);
 
 	if (result.status === "INVALID") {
 		await renderGuestInformation(request, response, new GuestInformationViewModelProvider().provide(result), 422);
@@ -345,7 +353,7 @@ export async function submitGuestInformation(request: Request, response: Respons
 		await renderView(response, "errors/unavailable", { title: "Journey unavailable", pageTitle: "Journey unavailable", currentPath: request.path });
 		return;
 	}
-	guestInformationStore.save(request.params.journeyId, input);
+	guestInformationStore.save(ownerId, request.params.journeyId, input);
 	response.redirect(`/ui/journeys/${request.params.journeyId}/review`);
 	return;
 }
@@ -378,8 +386,9 @@ function renderReservationReview(
 }
 
 export async function renderReservationReviewPage(request: Request, response: Response): Promise<void> {
+	const ownerId = requireAnonymousSession(request).ownerId;
 	const resolver = createFrontendJourneyResolver();
-	const resolution = await resolver.resolve(request.params.journeyId);
+	const resolution = await resolver.resolve(ownerId, request.params.journeyId);
 	if (resolution.status !== "RESOLVED" || !resolution.journey) {
 		if (resolution.status === "UNAVAILABLE") {
 			response.status(410);
@@ -390,27 +399,26 @@ export async function renderReservationReviewPage(request: Request, response: Re
 		}
 		return;
 	}
-	const guestInformation = guestInformationStore.find(request.params.journeyId);
-	if (!guestInformation) {
+	if (!guestInformationStore.find(ownerId, request.params.journeyId)) {
 		const review = new ReservationReviewViewModelProvider().provide({ status: "INVALID", journeyId: request.params.journeyId, journey: resolution.journey, errors: ["Complete guest information before reviewing the reservation."], confirmed: false });
 		await renderReservationReview(request, response, review, 422);
 		return;
 	}
 
-	const reviewed = await new DefaultReservationReviewService(resolver).review({ journeyId: request.params.journeyId, guestInformation });
-	await renderReservationReview(request, response, new ReservationReviewViewModelProvider().provide(reviewed), reviewed.status === "READY" ? 200 : 409);
+	const reviewed = await new DefaultReservationReviewService(resolver).review({ ownerId, journeyId: request.params.journeyId });
+	await renderReservationReview(request, response, new ReservationReviewViewModelProvider().provide(reviewed), reviewed.status === "READY" ? 200 : reviewed.status === "INVALID" ? 422 : 409);
 }
 
 export async function confirmReservationReview(request: Request, response: Response): Promise<void> {
-	const input = guestInformationStore.find(request.params.journeyId);
-	if (!input) {
+	const ownerId = requireAnonymousSession(request).ownerId;
+	if (!guestInformationStore.find(ownerId, request.params.journeyId)) {
 		response.status(422);
 		await renderReservationReview(request, response, new ReservationReviewViewModelProvider().provide({ status: "INVALID", journeyId: request.params.journeyId, errors: ["Complete guest information before reviewing the reservation."], confirmed: false }), 422);
 		return;
 	}
 	const review = await new DefaultReservationReviewService(createFrontendJourneyResolver()).review({
+		ownerId,
 		journeyId: request.params.journeyId,
-		guestInformation: input,
 		confirmed: request.body?.confirmed === "on" || request.body?.confirmed === true,
 	});
 
@@ -462,7 +470,8 @@ async function resolvePaymentContext(journeyId: string): Promise<import("../../.
 }
 
 async function resolvePaymentJourney(request: Request, response: Response): Promise<boolean> {
-	const resolution = await new DefaultDynamicHomepageJourneyResolver().resolve(request.params.journeyId);
+	const ownerId = requireAnonymousSession(request).ownerId;
+	const resolution = await new DefaultDynamicHomepageJourneyResolver().resolve(ownerId, request.params.journeyId);
 	if (resolution.status === "INVALID" || resolution.status === "NOT_FOUND") {
 		response.status(404);
 		await renderNotFoundPage(request, response);

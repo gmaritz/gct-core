@@ -34,12 +34,12 @@ export interface AccommodationSelectionResult {
     }>;
 }
 export interface AccommodationSelectionService {
-    selectAccommodation(journeyId: string, selections: ReadonlyArray<AccommodationSelectionInput>): Promise<AccommodationSelectionResult>;
+    selectAccommodation(ownerId: string, journeyId: string, selections: ReadonlyArray<AccommodationSelectionInput>): Promise<AccommodationSelectionResult>;
 }
 export declare class DefaultAccommodationSelectionService implements AccommodationSelectionService {
     private readonly resolver;
     private readonly selectionStore;
     constructor(resolver: DynamicHomepageJourneyResolver, selectionStore?: JourneySelectionStore);
-    selectAccommodation(journeyId: string, selections: ReadonlyArray<AccommodationSelectionInput>): Promise<AccommodationSelectionResult>;
+    selectAccommodation(ownerId: string, journeyId: string, selections: ReadonlyArray<AccommodationSelectionInput>): Promise<AccommodationSelectionResult>;
 }
 //# sourceMappingURL=accommodation-selection-service.d.ts.map

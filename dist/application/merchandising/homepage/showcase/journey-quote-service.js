@@ -5,6 +5,7 @@ exports.createDefaultPricingEngine = createDefaultPricingEngine;
 const journeys_1 = require("../../../journeys");
 const pricing_1 = require("../../../pricing");
 const journey_selection_store_1 = require("./journey-selection-store");
+const journey_state_ownership_1 = require("./journey-state-ownership");
 const cape_winelands_journey_resolver_1 = require("./cape-winelands-journey-resolver");
 const pricing_2 = require("../../../pricing");
 function createDefaultPricingEngine() {
@@ -103,8 +104,9 @@ class DefaultJourneyQuoteService {
         this.pricingEngine = pricingEngine;
         this.selectionStore = selectionStore;
     }
-    async priceJourney(journeyId, selections) {
-        const resolution = await this.resolver.resolve(journeyId);
+    async priceJourney(ownerId, journeyId, selections) {
+        (0, journey_state_ownership_1.assertJourneyStateOwner)(ownerId);
+        const resolution = await this.resolver.resolve(ownerId, journeyId);
         if (resolution.status !== "RESOLVED" || !resolution.journey) {
             return { status: resolution.status === "RESOLVED" ? "UNAVAILABLE" : resolution.status, journeyId, selections };
         }
@@ -191,8 +193,8 @@ class DefaultJourneyQuoteService {
             selections,
         };
     }
-    async priceCurrentJourney(journeyId) {
-        return this.priceJourney(journeyId, this.selectionStore.find(journeyId));
+    async priceCurrentJourney(ownerId, journeyId) {
+        return this.priceJourney(ownerId, journeyId, this.selectionStore.find(ownerId, journeyId));
     }
 }
 exports.DefaultJourneyQuoteService = DefaultJourneyQuoteService;

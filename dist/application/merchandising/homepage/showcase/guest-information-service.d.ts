@@ -26,11 +26,11 @@ export interface GuestInformationResult {
     readonly errors: ReadonlyArray<string>;
 }
 export interface GuestInformationService {
-    captureGuestInformation(journeyId: string, information: GuestInformationInput): Promise<GuestInformationResult>;
+    captureGuestInformation(ownerId: string, journeyId: string, information: GuestInformationInput): Promise<GuestInformationResult>;
 }
 export declare class DefaultGuestInformationService implements GuestInformationService {
     private readonly resolver;
     constructor(resolver: DynamicHomepageJourneyResolver);
-    captureGuestInformation(journeyId: string, information: GuestInformationInput): Promise<GuestInformationResult>;
+    captureGuestInformation(ownerId: string, journeyId: string, information: GuestInformationInput): Promise<GuestInformationResult>;
 }
 //# sourceMappingURL=guest-information-service.d.ts.map

@@ -25,7 +25,7 @@ describe("DefaultJourneyQuoteService", () => {
       }),
     };
     const service = new DefaultJourneyQuoteService(new DefaultDynamicHomepageJourneyResolver(), pricingEngine as never);
-    const result = await service.priceJourney("journey-homepage-journey-001", [selection]);
+    const result = await service.priceJourney("owner-a", "journey-homepage-journey-001", [selection]);
 
     expect(result.status).toBe("UNAVAILABLE");
     expect(result.journeyId).toBe("journey-homepage-journey-001");
@@ -34,7 +34,7 @@ describe("DefaultJourneyQuoteService", () => {
   it("rejects invalid selection references before pricing", async (): Promise<void> => {
     const execute = jest.fn();
     const service = new DefaultJourneyQuoteService(new DefaultDynamicHomepageJourneyResolver(), { execute } as never);
-    const result = await service.priceJourney("journey-homepage-journey-001", [{ ...selection, rateReference: { provider: "curated", opaqueReference: "forged" } }]);
+    const result = await service.priceJourney("owner-a", "journey-homepage-journey-001", [{ ...selection, rateReference: { provider: "curated", opaqueReference: "forged" } }]);
 
     expect(result.status).toBe("INVALID");
     expect(execute).not.toHaveBeenCalled();
@@ -52,8 +52,8 @@ describe("DefaultJourneyQuoteService", () => {
         stages: [],
       },
     }));
-    await new DefaultAccommodationSelectionService(resolver).selectAccommodation("journey-homepage-journey-001", [selection]);
-    await new DefaultJourneyQuoteService(resolver, { execute } as never).priceCurrentJourney("journey-homepage-journey-001");
+    await new DefaultAccommodationSelectionService(resolver).selectAccommodation("owner-a", "journey-homepage-journey-001", [selection]);
+    await new DefaultJourneyQuoteService(resolver, { execute } as never).priceCurrentJourney("owner-a", "journey-homepage-journey-001");
 
     const request = execute.mock.calls[0]?.[0] as PricingEngineRequest;
     const accommodationItems = request.pricingRequest.breakdown?.lineItems.filter((item) => item.code.startsWith("ACCOMMODATION:")) ?? [];
@@ -66,11 +66,11 @@ describe("DefaultJourneyQuoteService", () => {
 
   it("returns the current deterministic quote from the application journey", async (): Promise<void> => {
     const resolver = new DefaultDynamicHomepageJourneyResolver();
-    await new DefaultAccommodationSelectionService(resolver).selectAccommodation("journey-homepage-journey-001", [selection]);
+    await new DefaultAccommodationSelectionService(resolver).selectAccommodation("owner-a", "journey-homepage-journey-001", [selection]);
     const result = await new DefaultJourneyQuoteService(
       resolver,
       (await import("./journey-quote-service")).createDefaultPricingEngine(),
-    ).priceCurrentJourney("journey-homepage-journey-001");
+    ).priceCurrentJourney("owner-a", "journey-homepage-journey-001");
 
     expect(result.status).toBe("PRICED");
     expect(result.pricing?.pricing?.currency).toBe("ZAR");
@@ -133,6 +133,7 @@ describe("DefaultJourneyQuoteService", () => {
     };
 
     await new DefaultJourneyQuoteService(resolver, { execute } as never).priceJourney(
+      "owner-a",
       journey.identity.id,
       ["stop-1", "stop-2"].map((stopId) => ({
         stopId,
@@ -211,7 +212,7 @@ describe("INT-004.2 accommodation currency handling", () => {
     const journey = createSupplierJourney(currencies);
 
     const result = await new DefaultJourneyQuoteService(resolverFor(() => journey), { execute } as never)
-      .priceJourney(journey.identity.id, supplierSelections);
+      .priceJourney("owner-a", journey.identity.id, supplierSelections);
 
     expect(result.status).toBe("CURRENCY_UNCONFIRMED");
     expect(result.pricing).toBeUndefined();
@@ -254,7 +255,7 @@ describe("INT-004.2 accommodation currency handling", () => {
     const execute = jest.fn();
 
     const result = await new DefaultJourneyQuoteService(resolverFor(() => mixed), { execute } as never)
-      .priceJourney(mixed.identity.id, selections);
+      .priceJourney("owner-a", mixed.identity.id, selections);
 
     expect(result.status).toBe("CURRENCY_UNCONFIRMED");
     expect(execute).not.toHaveBeenCalled();
@@ -269,7 +270,7 @@ describe("INT-004.2 accommodation currency handling", () => {
     const journey = createSupplierJourney(["ZAR", "ZAR"]);
 
     await new DefaultJourneyQuoteService(resolverFor(() => journey), { execute } as never)
-      .priceJourney(journey.identity.id, supplierSelections);
+      .priceJourney("owner-a", journey.identity.id, supplierSelections);
 
     const request = execute.mock.calls[0]?.[0] as PricingEngineRequest;
     expect(request.pricingRequest.totals?.grandTotal.amount).toBe(53376);
@@ -279,12 +280,12 @@ describe("INT-004.2 accommodation currency handling", () => {
     let current = createSupplierJourney(["ZAR", "ZAR"]);
     const service = new DefaultJourneyQuoteService(resolverFor(() => current), createDefaultPricingEngine());
 
-    const valid = await service.priceJourney(current.identity.id, supplierSelections);
+    const valid = await service.priceJourney("owner-a", current.identity.id, supplierSelections);
     expect(valid.status).toBe("PRICED");
     expect(valid.pricing?.pricing?.totals.grandTotal.amount).toBe(53376);
 
     current = createSupplierJourney(["EUR", "EUR"]);
-    const changed = await service.priceJourney(current.identity.id, supplierSelections);
+    const changed = await service.priceJourney("owner-a", current.identity.id, supplierSelections);
     expect(changed.status).toBe("CURRENCY_UNCONFIRMED");
     expect(changed.pricing).toBeUndefined();
   });

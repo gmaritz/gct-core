@@ -1,37 +1,40 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.journeySelectionStore = exports.JourneySelectionStore = void 0;
+const journey_state_ownership_1 = require("./journey-state-ownership");
 class JourneySelectionStore {
     constructor() {
         this.selections = new Map();
         this.contexts = new Map();
         this.offeredJourneys = new Map();
     }
-    configure(journeyId, context) {
-        this.contexts.set(journeyId, Object.freeze({
+    configure(ownerId, journeyId, context) {
+        const key = (0, journey_state_ownership_1.createJourneyStateKey)(ownerId, journeyId);
+        this.contexts.set(key, Object.freeze({
             startDate: context.startDate,
             participants: context.participants,
             roomAdults: Object.freeze([...context.roomAdults]),
         }));
-        this.selections.delete(journeyId);
-        this.offeredJourneys.delete(journeyId);
+        this.selections.delete(key);
+        this.offeredJourneys.delete(key);
     }
-    context(journeyId) {
-        return this.contexts.get(journeyId);
+    context(ownerId, journeyId) {
+        return this.contexts.get((0, journey_state_ownership_1.createJourneyStateKey)(ownerId, journeyId));
     }
-    saveOfferedJourney(journeyId, journey) {
-        this.offeredJourneys.set(journeyId, journey);
+    saveOfferedJourney(ownerId, journeyId, journey) {
+        this.offeredJourneys.set((0, journey_state_ownership_1.createJourneyStateKey)(ownerId, journeyId), journey);
     }
-    offeredJourney(journeyId) {
-        return this.offeredJourneys.get(journeyId);
+    offeredJourney(ownerId, journeyId) {
+        return this.offeredJourneys.get((0, journey_state_ownership_1.createJourneyStateKey)(ownerId, journeyId));
     }
-    clear(journeyId) {
-        this.selections.delete(journeyId);
-        this.contexts.delete(journeyId);
-        this.offeredJourneys.delete(journeyId);
+    clear(ownerId, journeyId) {
+        const key = (0, journey_state_ownership_1.createJourneyStateKey)(ownerId, journeyId);
+        this.selections.delete(key);
+        this.contexts.delete(key);
+        this.offeredJourneys.delete(key);
     }
-    save(journeyId, selections) {
-        this.selections.set(journeyId, Object.freeze(selections.map((selection) => Object.freeze({
+    save(ownerId, journeyId, selections) {
+        this.selections.set((0, journey_state_ownership_1.createJourneyStateKey)(ownerId, journeyId), Object.freeze(selections.map((selection) => Object.freeze({
             ...selection,
             roomReference: selection.roomReference ? Object.freeze({ ...selection.roomReference }) : undefined,
             rateReference: selection.rateReference ? Object.freeze({ ...selection.rateReference }) : undefined,
@@ -43,8 +46,8 @@ class JourneySelectionStore {
                 : undefined,
         }))));
     }
-    find(journeyId) {
-        return this.selections.get(journeyId) ?? Object.freeze([]);
+    find(ownerId, journeyId) {
+        return this.selections.get((0, journey_state_ownership_1.createJourneyStateKey)(ownerId, journeyId)) ?? Object.freeze([]);
     }
 }
 exports.JourneySelectionStore = JourneySelectionStore;

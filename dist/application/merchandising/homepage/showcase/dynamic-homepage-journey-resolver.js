@@ -2,11 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DefaultDynamicHomepageJourneyResolver = void 0;
 const homepage_journey_showcase_service_1 = require("./homepage-journey-showcase-service");
+const journey_state_ownership_1 = require("./journey-state-ownership");
 class DefaultDynamicHomepageJourneyResolver {
     constructor(compositionService = (0, homepage_journey_showcase_service_1.createDefaultJourneyCompositionService)()) {
         this.compositionService = compositionService;
     }
-    async resolve(publicJourneyId) {
+    async resolve(ownerId, publicJourneyId) {
+        (0, journey_state_ownership_1.assertJourneyStateOwner)(ownerId);
         if (typeof publicJourneyId !== "string" || !/^journey-homepage-journey-\d{3}$/.test(publicJourneyId)) {
             return { status: "INVALID" };
         }

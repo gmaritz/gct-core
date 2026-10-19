@@ -4,6 +4,7 @@ import {
   DynamicHomepageJourneyResolver,
 } from "./dynamic-homepage-journey-resolver";
 import { JourneyBookingContext } from "./journey-selection-store";
+import { assertJourneyStateOwner } from "./journey-state-ownership";
 
 export type DynamicHomepageJourneySelectionStatus = "SELECTED" | "INVALID" | "NOT_FOUND" | "UNAVAILABLE";
 
@@ -15,7 +16,7 @@ export interface DynamicHomepageJourneySelectionResult {
 }
 
 export interface DynamicHomepageJourneySelector {
-  selectJourney(journeyId: string, selection?: JourneyBookingContext): Promise<DynamicHomepageJourneySelectionResult>;
+  selectJourney(ownerId: string, journeyId: string, selection?: JourneyBookingContext): Promise<DynamicHomepageJourneySelectionResult>;
 }
 
 function toSelectionResult(
@@ -43,9 +44,11 @@ export class DefaultDynamicHomepageJourneySelector implements DynamicHomepageJou
   ) {}
 
   public async selectJourney(
+    ownerId: string,
     journeyId: string,
     selection?: JourneyBookingContext,
   ): Promise<DynamicHomepageJourneySelectionResult> {
-    return toSelectionResult(journeyId, await this.resolver.resolve(journeyId, selection));
+    assertJourneyStateOwner(ownerId);
+    return toSelectionResult(journeyId, await this.resolver.resolve(ownerId, journeyId, selection));
   }
 }

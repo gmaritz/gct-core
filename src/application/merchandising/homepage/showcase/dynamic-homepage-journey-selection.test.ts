@@ -9,7 +9,7 @@ describe("DefaultDynamicHomepageJourneySelector", () => {
     const resolver = new DefaultDynamicHomepageJourneyResolver();
     const selector = new DefaultDynamicHomepageJourneySelector(resolver);
 
-    await expect(selector.selectJourney("journey-homepage-journey-001")).resolves.toEqual({
+    await expect(selector.selectJourney("owner-a", "journey-homepage-journey-001")).resolves.toEqual({
       status: "SELECTED",
       journeyId: "journey-homepage-journey-001",
       title: "SIGNATURE Cape Winelands Journey",
@@ -23,10 +23,10 @@ describe("DefaultDynamicHomepageJourneySelector", () => {
     };
     const selector = new DefaultDynamicHomepageJourneySelector(unavailableResolver);
 
-    await expect(selector.selectJourney("bad-id")).resolves.toEqual({ status: "UNAVAILABLE", journeyId: "bad-id" });
-    await expect(new DefaultDynamicHomepageJourneySelector({ resolve: async (): Promise<{ status: "INVALID" }> => ({ status: "INVALID" }) }).selectJourney("bad-id"))
+    await expect(selector.selectJourney("owner-a", "bad-id")).resolves.toEqual({ status: "UNAVAILABLE", journeyId: "bad-id" });
+    await expect(new DefaultDynamicHomepageJourneySelector({ resolve: async (): Promise<{ status: "INVALID" }> => ({ status: "INVALID" }) }).selectJourney("owner-a", "bad-id"))
       .resolves.toEqual({ status: "INVALID", journeyId: "bad-id" });
-    await expect(new DefaultDynamicHomepageJourneySelector({ resolve: async (): Promise<{ status: "NOT_FOUND" }> => ({ status: "NOT_FOUND" }) }).selectJourney("unknown"))
+    await expect(new DefaultDynamicHomepageJourneySelector({ resolve: async (): Promise<{ status: "NOT_FOUND" }> => ({ status: "NOT_FOUND" }) }).selectJourney("owner-a", "unknown"))
       .resolves.toEqual({ status: "NOT_FOUND", journeyId: "unknown" });
   });
 });

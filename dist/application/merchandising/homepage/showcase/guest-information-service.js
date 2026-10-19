@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DefaultGuestInformationService = void 0;
+const journey_state_ownership_1 = require("./journey-state-ownership");
 function isValidEmail(value) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
@@ -53,8 +54,9 @@ class DefaultGuestInformationService {
     constructor(resolver) {
         this.resolver = resolver;
     }
-    async captureGuestInformation(journeyId, information) {
-        const resolution = await this.resolver.resolve(journeyId);
+    async captureGuestInformation(ownerId, journeyId, information) {
+        (0, journey_state_ownership_1.assertJourneyStateOwner)(ownerId);
+        const resolution = await this.resolver.resolve(ownerId, journeyId);
         if (resolution.status !== "RESOLVED" || !resolution.journey) {
             return { status: resolution.status === "RESOLVED" ? "UNAVAILABLE" : resolution.status, journeyId, errors: [] };
         }

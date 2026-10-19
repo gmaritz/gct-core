@@ -8,6 +8,7 @@ const accommodation_1 = require("../../../accommodation");
 const journeys_1 = require("../../../journeys");
 const journeys_2 = require("../../../journeys");
 const journey_selection_store_1 = require("./journey-selection-store");
+const journey_state_ownership_1 = require("./journey-state-ownership");
 const cape_winelands_property_configuration_1 = require("./cape-winelands-property-configuration");
 const dynamic_homepage_journey_resolver_1 = require("./dynamic-homepage-journey-resolver");
 exports.CAPE_WINELANDS_JOURNEY_ID = "journey-homepage-journey-001";
@@ -104,26 +105,27 @@ class CapeWinelandsJourneyResolver {
         this.fallbackResolver = fallbackResolver;
         this.selectionStore = selectionStore;
     }
-    async resolve(journeyId, selection) {
+    async resolve(ownerId, journeyId, selection) {
+        (0, journey_state_ownership_1.assertJourneyStateOwner)(ownerId);
         if (journeyId !== exports.CAPE_WINELANDS_JOURNEY_ID) {
-            return this.fallbackResolver.resolve(journeyId);
+            return this.fallbackResolver.resolve(ownerId, journeyId);
         }
         if (selection) {
             const error = validateBookingContext(selection);
             if (error)
                 return { status: "INVALID" };
-            this.selectionStore.configure(journeyId, selection);
+            this.selectionStore.configure(ownerId, journeyId, selection);
         }
-        const context = this.selectionStore.context(journeyId);
+        const context = this.selectionStore.context(ownerId, journeyId);
         if (!context)
             return { status: "UNAVAILABLE" };
-        const offeredJourney = this.selectionStore.offeredJourney(journeyId);
+        const offeredJourney = this.selectionStore.offeredJourney(ownerId, journeyId);
         if (offeredJourney)
             return { status: "RESOLVED", journey: offeredJourney };
         const journey = await this.composeJourney(context);
         if (!journey)
             return { status: "UNAVAILABLE" };
-        this.selectionStore.saveOfferedJourney(journeyId, journey);
+        this.selectionStore.saveOfferedJourney(ownerId, journeyId, journey);
         return { status: "RESOLVED", journey };
     }
     async activeProperties(configured) {

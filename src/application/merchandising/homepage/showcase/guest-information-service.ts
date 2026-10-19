@@ -1,5 +1,6 @@
 import { Journey } from "../../../journeys";
 import { DynamicHomepageJourneyResolver } from "./dynamic-homepage-journey-resolver";
+import { assertJourneyStateOwner } from "./journey-state-ownership";
 
 export interface GuestContactInput {
   readonly email: string;
@@ -32,7 +33,7 @@ export interface GuestInformationResult {
 }
 
 export interface GuestInformationService {
-  captureGuestInformation(journeyId: string, information: GuestInformationInput): Promise<GuestInformationResult>;
+  captureGuestInformation(ownerId: string, journeyId: string, information: GuestInformationInput): Promise<GuestInformationResult>;
 }
 
 function isValidEmail(value: string): boolean {
@@ -85,8 +86,9 @@ function validateInformation(journey: Journey, information: GuestInformationInpu
 export class DefaultGuestInformationService implements GuestInformationService {
   public constructor(private readonly resolver: DynamicHomepageJourneyResolver) {}
 
-  public async captureGuestInformation(journeyId: string, information: GuestInformationInput): Promise<GuestInformationResult> {
-    const resolution = await this.resolver.resolve(journeyId);
+  public async captureGuestInformation(ownerId: string, journeyId: string, information: GuestInformationInput): Promise<GuestInformationResult> {
+    assertJourneyStateOwner(ownerId);
+    const resolution = await this.resolver.resolve(ownerId, journeyId);
     if (resolution.status !== "RESOLVED" || !resolution.journey) {
       return { status: resolution.status === "RESOLVED" ? "UNAVAILABLE" : resolution.status, journeyId, errors: [] };
     }

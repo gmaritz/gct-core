@@ -14,6 +14,7 @@ import {
 } from "../../../journeys";
 import { JourneyLifecycle, JourneyStatus } from "../../../journeys";
 import { JourneyBookingContext, JourneySelectionStore, journeySelectionStore } from "./journey-selection-store";
+import { assertJourneyStateOwner } from "./journey-state-ownership";
 import {
   CAPE_WINELANDS_DESTINATION_CODE,
   CAPE_WINELANDS_FRANSCHHOEK_PROPERTIES,
@@ -151,28 +152,30 @@ export class CapeWinelandsJourneyResolver implements DynamicHomepageJourneyResol
   ) {}
 
   public async resolve(
+    ownerId: string,
     journeyId: string,
     selection?: JourneyBookingContext,
   ): Promise<DynamicHomepageJourneyResolution> {
+    assertJourneyStateOwner(ownerId);
     if (journeyId !== CAPE_WINELANDS_JOURNEY_ID) {
-      return this.fallbackResolver.resolve(journeyId);
+      return this.fallbackResolver.resolve(ownerId, journeyId);
     }
 
     if (selection) {
       const error = validateBookingContext(selection);
       if (error) return { status: "INVALID" };
-      this.selectionStore.configure(journeyId, selection);
+      this.selectionStore.configure(ownerId, journeyId, selection);
     }
 
-    const context = this.selectionStore.context(journeyId);
+    const context = this.selectionStore.context(ownerId, journeyId);
     if (!context) return { status: "UNAVAILABLE" };
 
-    const offeredJourney = this.selectionStore.offeredJourney(journeyId);
+    const offeredJourney = this.selectionStore.offeredJourney(ownerId, journeyId);
     if (offeredJourney) return { status: "RESOLVED", journey: offeredJourney };
 
     const journey = await this.composeJourney(context);
     if (!journey) return { status: "UNAVAILABLE" };
-    this.selectionStore.saveOfferedJourney(journeyId, journey);
+    this.selectionStore.saveOfferedJourney(ownerId, journeyId, journey);
     return { status: "RESOLVED", journey };
   }
 

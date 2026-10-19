@@ -16,8 +16,8 @@ export interface JourneyQuoteResult {
     readonly selections: ReadonlyArray<AccommodationSelectionInput>;
 }
 export interface JourneyQuoteService {
-    priceJourney(journeyId: string, selections: ReadonlyArray<AccommodationSelectionInput>): Promise<JourneyQuoteResult>;
-    priceCurrentJourney(journeyId: string): Promise<JourneyQuoteResult>;
+    priceJourney(ownerId: string, journeyId: string, selections: ReadonlyArray<AccommodationSelectionInput>): Promise<JourneyQuoteResult>;
+    priceCurrentJourney(ownerId: string, journeyId: string): Promise<JourneyQuoteResult>;
 }
 export declare function createDefaultPricingEngine(): PricingEngine;
 export declare class DefaultJourneyQuoteService implements JourneyQuoteService {
@@ -25,7 +25,7 @@ export declare class DefaultJourneyQuoteService implements JourneyQuoteService {
     private readonly pricingEngine;
     private readonly selectionStore;
     constructor(resolver: DynamicHomepageJourneyResolver, pricingEngine: PricingEngine, selectionStore?: JourneySelectionStore);
-    priceJourney(journeyId: string, selections: ReadonlyArray<AccommodationSelectionInput>): Promise<JourneyQuoteResult>;
-    priceCurrentJourney(journeyId: string): Promise<JourneyQuoteResult>;
+    priceJourney(ownerId: string, journeyId: string, selections: ReadonlyArray<AccommodationSelectionInput>): Promise<JourneyQuoteResult>;
+    priceCurrentJourney(ownerId: string, journeyId: string): Promise<JourneyQuoteResult>;
 }
 //# sourceMappingURL=journey-quote-service.d.ts.map
