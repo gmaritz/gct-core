@@ -198,7 +198,10 @@ function mapRate(
   room: HotelbedsRoom,
   rate: HotelbedsRate,
   index: number,
-): AccommodationRateOption {
+): AccommodationRateOption | undefined {
+  const currency = hotel.currency;
+  if (!currency || !/^[A-Z]{3}$/.test(currency)) return undefined;
+
   const hotelCode = String(hotel.code ?? "unknown");
   const roomCode = room.code ?? room.roomCode ?? room.PMSRoomCode ?? `room-${index}`;
   const opaqueReference = rate.rateKey ?? `${hotelCode}:${roomCode}:rate-${index}`;
@@ -208,7 +211,7 @@ function mapRate(
     status: mapStatus(rate),
     pricing: Object.freeze({
       amount: parseNumber(rate.sellingRate ?? rate.net) ?? 0,
-      currency: hotel.currency ?? "UNKNOWN",
+      currency,
       basis: "TOTAL_STAY",
     }),
     occupancy: mapOfferedOccupancy(rate),
@@ -228,7 +231,11 @@ function mapRoomOptions(hotel: HotelbedsHotel): AccommodationAvailabilityOptions
 
   (hotel.rooms ?? []).forEach((room, roomIndex) => {
     const roomCode = room.code ?? room.roomCode ?? room.PMSRoomCode ?? `room-${roomIndex}`;
-    const rates = (room.rates ?? []).map((rate, rateIndex) => mapRate(hotel, room, rate, rateIndex));
+    const rates = (room.rates ?? []).flatMap((rate, rateIndex) => {
+      const mapped = mapRate(hotel, room, rate, rateIndex);
+      return mapped ? [mapped] : [];
+    });
+    if (rates.length === 0) return;
     roomOptions.push(Object.freeze({
       reference: toReference("hotelbeds", room.supplierReference ?? roomCode),
       name: room.name ?? room.roomType ?? roomCode,

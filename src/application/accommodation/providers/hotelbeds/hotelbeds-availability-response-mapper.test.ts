@@ -45,6 +45,7 @@ describe("Hotelbeds availability response mapper", () => {
               {
                 code: 26996,
                 name: "Cape Milner",
+                currency: "ZAR",
                 rooms: [{
                   code: "DBL.LX",
                   rates: [{
@@ -107,6 +108,7 @@ describe("Hotelbeds availability response mapper", () => {
             {
               code: 123,
               name: "Cape View Hotel",
+              currency: "ZAR",
               rooms: [
                 {
                   code: "DBL.ST",
@@ -173,6 +175,7 @@ describe("Hotelbeds availability response mapper", () => {
             {
               code: 100,
               name: "Batch A",
+              currency: "ZAR",
               rooms: [{ code: "DBL.ST", rates: [{ rateType: "BOOKABLE", allotment: 0 }] }],
             },
           ],
@@ -185,6 +188,7 @@ describe("Hotelbeds availability response mapper", () => {
             {
               code: 200,
               name: "Batch B",
+              currency: "ZAR",
               rooms: [{ code: "DBL.ST", rates: [{ rateType: "BOOKABLE", allotment: 2 }] }],
             },
           ],
@@ -232,6 +236,54 @@ describe("Hotelbeds availability response mapper", () => {
     expect(rate?.reference).toEqual({ provider: "hotelbeds", opaqueReference: "opaque-rate" });
     expect(rate?.pricing).toEqual({ amount: 100, currency: "ZAR", basis: "TOTAL_STAY" });
     expect(rate?.occupancy.rooms[0]).toEqual({ adults: 2, children: 1, childAges: [7] });
+  });
+
+  function mapSingleRate(
+    hotel: { readonly currency?: string },
+    rate: Record<string, unknown>,
+  ): ReturnType<HotelbedsAvailabilityResponseMapper["mapAvailabilityResponse"]> {
+    return new HotelbedsAvailabilityResponseMapper().mapAvailabilityResponse([
+      createRawResponse({
+        body: {
+          hotels: [{
+            code: 888,
+            name: "Currency Hotel",
+            ...hotel,
+            rooms: [{ code: "DBL.ST", name: "Double", rates: [{ rateKey: "currency-rate", rateType: "BOOKABLE", allotment: 3, rooms: 1, adults: 2, children: 0, ...rate }] }],
+          }],
+        },
+      }),
+    ]);
+  }
+
+  function firstRate(result: ReturnType<typeof mapSingleRate>): { readonly pricing: { readonly amount: number; readonly currency: string; readonly basis?: string } } | undefined {
+    if (result.kind !== "ACCOMMODATION" || result.result.kind !== "ACCOMMODATION") throw new Error("Expected accommodation result.");
+    return result.result.availabilityOptions?.roomOptions[0]?.rateOptions[0];
+  }
+
+  it("CUR-001 preserves the original EUR supplier amount and currency without conversion", () => {
+    const rate = firstRate(mapSingleRate({ currency: "EUR" }, { sellingRate: "863.49", net: "700.00" }));
+
+    expect(rate?.pricing).toEqual({ amount: 863.49, currency: "EUR", basis: "TOTAL_STAY" });
+  });
+
+  it("CUR-001 maps the same amount unchanged for EUR and ZAR responses", () => {
+    const eur = firstRate(mapSingleRate({ currency: "EUR" }, { net: "500.00" }));
+    const zar = firstRate(mapSingleRate({ currency: "ZAR" }, { net: "500.00" }));
+
+    expect(eur?.pricing).toEqual({ amount: 500, currency: "EUR", basis: "TOTAL_STAY" });
+    expect(zar?.pricing).toEqual({ amount: 500, currency: "ZAR", basis: "TOTAL_STAY" });
+  });
+
+  it.each([
+    ["missing", undefined],
+    ["empty", ""],
+    ["lower-case", "eur"],
+    ["non-ISO", "EURO"],
+  ])("CUR-001 never substitutes ZAR for a %s supplier currency", (_label, currency) => {
+    const result = mapSingleRate({ currency }, { net: "500.00" });
+
+    expect(firstRate(result)).toBeUndefined();
   });
 
   it("preserves supplier, HTTP, and transport failures as failures instead of false availability", () => {
