@@ -5,7 +5,7 @@ import {
 } from "@application/reservations";
 import { JourneyAccommodationPricingInput, JourneyAccommodationReservationInput } from "@application/journeys/models";
 
-function createInput(stopId: string, rateStatus: "BOOKABLE" | "RECHECK_REQUIRED", amount: number): {
+function createInput(stopId: string, rateStatus: "BOOKABLE" | "RECHECK_REQUIRED", amount: number, currency = "ZAR"): {
   pricing: JourneyAccommodationPricingInput;
   reservation: JourneyAccommodationReservationInput;
 } {
@@ -20,7 +20,7 @@ function createInput(stopId: string, rateStatus: "BOOKABLE" | "RECHECK_REQUIRED"
   const rate = {
     reference: { provider: "hotelbeds", opaqueReference: `rate-${stopId}` },
     status: rateStatus,
-    pricing: { amount, currency: "ZAR", basis: "TOTAL_STAY" },
+    pricing: { amount, currency, basis: "TOTAL_STAY" },
     occupancy: { rooms: [{ adults: 2, children: 1, childAges: [8] }, { adults: 2, children: 0, childAges: [] }] },
     cancellationPolicies: [], taxes: [],
   };
@@ -142,6 +142,19 @@ describe("APP-004 pricing-to-reservation accommodation handoff", () => {
     ]);
     expect(snapshots[0]?.supplierPrice?.amount).toBe(550);
     expect(snapshots[0]?.selectedRooms?.map((room) => room.supplierPrice.amount)).toEqual([250, 300]);
+  });
+
+  it("CUR-001 preserves EUR supplier amounts and currency beside the ZAR final package price", () => {
+    const handoff = createHandoff([createInput("stop-1", "BOOKABLE", 250, "EUR")]);
+    const [snapshot] = createAccommodationReservationSnapshots(handoff);
+    const bookings = createAccommodationBookingRequests(handoff);
+
+    expect(handoff.finalPackagePrice).toEqual({ amount: 12000, currency: "ZAR" });
+    expect(snapshot?.supplierPrice).toEqual({ amount: 250, currency: "EUR", basis: "TOTAL_STAY" });
+    expect(snapshot?.selectedRooms?.map((room) => room.supplierPrice)).toEqual([
+      { amount: 250, currency: "EUR", basis: "TOTAL_STAY" },
+    ]);
+    expect(bookings.map((booking) => booking.rate.pricing.currency)).toEqual(["EUR"]);
   });
 
   it("preserves RECHECK continuity for downstream revalidation", () => {

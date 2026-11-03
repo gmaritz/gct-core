@@ -46,6 +46,15 @@ function componentFromInput(input: JourneyAccommodationPricingInput): Accommodat
     throw new Error("Accommodation pricing input requires a positive supplier price.");
   }
   if (!input.rate.pricing.currency.trim()) throw new AccommodationCurrencyError("Accommodation pricing input requires a currency.");
+  const currency = toCurrency(input.rate.pricing.currency);
+  input.roomRates?.forEach((roomRate) => {
+    if (!roomRate.rate.pricing.currency?.trim()) {
+      throw new AccommodationCurrencyError("Accommodation room rate requires a currency.");
+    }
+    if (toCurrency(roomRate.rate.pricing.currency) !== currency) {
+      throw new AccommodationCurrencyError("Accommodation room rates must use the aggregate accommodation currency.");
+    }
+  });
 
   return Object.freeze({
     packageStopId: stopId,
@@ -55,7 +64,7 @@ function componentFromInput(input: JourneyAccommodationPricingInput): Accommodat
     provider: input.rate.reference.provider,
     amount: input.roomRates?.reduce((total, roomRate) => total + roomRate.rate.pricing.amount, 0)
       ?? input.rate.pricing.amount,
-    currency: toCurrency(input.rate.pricing.currency),
+    currency,
     pricingBasis: input.rate.pricing.basis ?? "UNSPECIFIED",
     occupancyRoomCount: input.occupancy?.rooms.length ?? input.rate.occupancy.rooms.length,
     childAges: Object.freeze(

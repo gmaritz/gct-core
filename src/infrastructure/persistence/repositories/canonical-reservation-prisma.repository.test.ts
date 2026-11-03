@@ -37,7 +37,7 @@ type StoredBooking = {
   cancelledAt?: Date | null;
 };
 
-function createReservation(status: ReservationStatus = ReservationStatus.CREATED, id = "reservation-001", number = "RES-123456-ABCD"): Reservation {
+function createReservation(status: ReservationStatus = ReservationStatus.CREATED, id = "reservation-001", number = "RES-123456-ABCD", supplierCurrency = "ZAR"): Reservation {
   return Reservation.create({
     identity: { id },
     reservationNumber: number,
@@ -95,7 +95,21 @@ function createReservation(status: ReservationStatus = ReservationStatus.CREATED
             { adults: 2, children: 0, childAges: [] },
           ],
         },
-        supplierPrice: { amount: 23000, currency: "ZAR", basis: "TOTAL_STAY" },
+        supplierPrice: { amount: 23000, currency: supplierCurrency, basis: "TOTAL_STAY" },
+        selectedRooms: [
+          {
+            roomType: "Suite",
+            roomReference: { provider: "supplier-a", opaqueReference: "room-1" },
+            rateReference: { provider: "supplier-a", opaqueReference: "rate-1" },
+            supplierPrice: { amount: 12000, currency: supplierCurrency, basis: "TOTAL_STAY" },
+          },
+          {
+            roomType: "Twin",
+            roomReference: { provider: "supplier-a", opaqueReference: "room-2" },
+            rateReference: { provider: "supplier-a", opaqueReference: "rate-2" },
+            supplierPrice: { amount: 11000, currency: supplierCurrency, basis: "TOTAL_STAY" },
+          },
+        ],
       },
     ],
     pricingSnapshot: {
@@ -341,6 +355,24 @@ describe("CanonicalReservationPrismaRepository", () => {
     expect(restored?.pricingSnapshot?.currency).toBe("ZAR");
     expect(restored?.timeline[0]?.milestone).toBe(ReservationTimelineMilestone.CREATED);
     expect(restored?.metadata.version).toBe("1.0.0");
+  });
+
+  it("CUR-001 preserves EUR supplier amounts independently of the ZAR commercial pricing snapshot", async () => {
+    const mock = createPrismaMock();
+    const repository = new CanonicalReservationPrismaRepository(mock.prisma as unknown as PrismaClient);
+
+    const reservation = createReservation(ReservationStatus.CREATED, "reservation-eur", "RES-EUR-0001", "EUR");
+    await repository.save(reservation, createContext());
+    const restored = await repository.findById(reservation.identity.id);
+
+    const accommodation = restored?.accommodationSnapshots[0];
+    expect(accommodation?.supplierPrice).toEqual({ amount: 23000, currency: "EUR", basis: "TOTAL_STAY" });
+    expect(accommodation?.selectedRooms?.map((room) => room.supplierPrice)).toEqual([
+      { amount: 12000, currency: "EUR", basis: "TOTAL_STAY" },
+      { amount: 11000, currency: "EUR", basis: "TOTAL_STAY" },
+    ]);
+    expect(restored?.pricingSnapshot?.currency).toBe("ZAR");
+    expect(restored?.pricingSnapshot?.totalPrice).toBe(46000);
   });
 
   it("reads legacy Booking state only when no canonical Reservation exists", async () => {
