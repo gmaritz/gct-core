@@ -230,6 +230,7 @@ function toDomain(booking) {
             occupancy: isObject(item.occupancy) && Array.isArray(item.occupancy.rooms)
                 ? {
                     rooms: item.occupancy.rooms.filter(isObject).map((room) => ({
+                        slotId: typeof room.slotId === "string" ? room.slotId : undefined,
                         adults: Number(room.adults ?? 0),
                         children: Number(room.children ?? 0),
                         childAges: Array.isArray(room.childAges) ? room.childAges.filter((age) => typeof age === "number") : [],
@@ -245,6 +246,7 @@ function toDomain(booking) {
                 : undefined,
             selectedRooms: Array.isArray(item.selectedRooms)
                 ? item.selectedRooms.filter(isObject).map((room) => ({
+                    roomSlotId: typeof room.roomSlotId === "string" ? room.roomSlotId : undefined,
                     roomType: String(room.roomType ?? ""),
                     roomReference: isObject(room.roomReference)
                         ? { provider: String(room.roomReference.provider ?? ""), opaqueReference: String(room.roomReference.opaqueReference ?? "") }
@@ -259,6 +261,15 @@ function toDomain(booking) {
                             basis: typeof room.supplierPrice.basis === "string" ? room.supplierPrice.basis : undefined,
                         }
                         : { amount: 0, currency: "" },
+                    occupancy: isObject(room.occupancy)
+                        ? {
+                            adults: Number(room.occupancy.adults ?? 0),
+                            children: Number(room.occupancy.children ?? 0),
+                            childAges: Array.isArray(room.occupancy.childAges)
+                                ? room.occupancy.childAges.filter((age) => typeof age === "number")
+                                : [],
+                        }
+                        : undefined,
                 }))
                 : undefined,
         })),

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CapeWinelandsJourneyResolver = exports.CAPE_WINELANDS_JOURNEY_ID = void 0;
+exports.CapeWinelandsJourneyResolver = exports.CAPE_WINELANDS_STOPS = exports.CAPE_WINELANDS_OCCUPANCY_POLICY = exports.CAPE_WINELANDS_JOURNEY_ID = void 0;
 exports.parseDateOnly = parseDateOnly;
 exports.calculateCapeWinelandsStays = calculateCapeWinelandsStays;
 exports.validateBookingContext = validateBookingContext;
@@ -12,6 +12,11 @@ const journey_state_ownership_1 = require("./journey-state-ownership");
 const cape_winelands_property_configuration_1 = require("./cape-winelands-property-configuration");
 const dynamic_homepage_journey_resolver_1 = require("./dynamic-homepage-journey-resolver");
 exports.CAPE_WINELANDS_JOURNEY_ID = "journey-homepage-journey-001";
+exports.CAPE_WINELANDS_OCCUPANCY_POLICY = Object.freeze({ childrenAllowed: false });
+exports.CAPE_WINELANDS_STOPS = Object.freeze([
+    Object.freeze({ stopId: "cape-winelands-stellenbosch", stopOrder: 1, destination: "Stellenbosch", nights: 2 }),
+    Object.freeze({ stopId: "cape-winelands-hermanus", stopOrder: 2, destination: "Hermanus", nights: 1 }),
+]);
 function parseDateOnly(value) {
     if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value))
         return undefined;
@@ -29,67 +34,130 @@ function calculateCapeWinelandsStays(startDate) {
     const start = parseDateOnly(startDate);
     if (!start)
         throw new Error("A valid journey start date is required.");
-    const firstCheckout = addUtcDays(start, 2);
+    let checkInDate = start;
     return Object.freeze([
-        Object.freeze({
-            stopId: "cape-winelands-stellenbosch",
-            stopOrder: 1,
-            destination: "Stellenbosch",
-            checkInDate: start,
-            checkOutDate: firstCheckout,
-            nights: 2,
-        }),
-        Object.freeze({
-            stopId: "cape-winelands-hermanus",
-            stopOrder: 2,
-            destination: "Hermanus",
-            checkInDate: firstCheckout,
-            checkOutDate: addUtcDays(firstCheckout, 1),
-            nights: 1,
+        ...exports.CAPE_WINELANDS_STOPS.map((stop) => {
+            const checkOutDate = addUtcDays(checkInDate, stop.nights);
+            const stay = Object.freeze({ ...stop, checkInDate, checkOutDate });
+            checkInDate = checkOutDate;
+            return stay;
         }),
     ]);
 }
-function sameOccupancy(offered, requestedAdults) {
-    return offered.rooms.length === 1
-        && offered.rooms[0]?.adults === requestedAdults
-        && offered.rooms[0]?.children === 0
-        && offered.rooms[0]?.childAges.length === 0;
+function sameRoomOccupancy(offered, requested) {
+    return offered.adults === requested.adults
+        && offered.children === requested.children
+        && offered.childAges.length === requested.childAges.length
+        && offered.childAges.every((age, index) => age === requested.childAges[index]);
+}
+function sameRequestedOccupancy(offered, requested) {
+    return Boolean(offered
+        && offered.rooms.length === requested.length
+        && offered.rooms.every((room, index) => {
+            const requestedRoom = requested[index];
+            return requestedRoom !== undefined
+                && room.adults === requestedRoom.adults
+                && room.children === requestedRoom.children
+                && room.childAges.length === requestedRoom.childAges.length
+                && room.childAges.every((age, ageIndex) => age === requestedRoom.childAges[ageIndex]);
+        }));
 }
 function normalizePropertyName(value) {
     return value.toLocaleLowerCase("en").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
 }
-function isSuitableResult(result, configuration, requestedAdults) {
+function isSuitableResult(result, configuration, requestedRooms) {
     if (result.kind !== "ACCOMMODATION" || !result.available)
         return false;
     if (result.accommodation.identity.id !== configuration.hotelCode)
         return false;
     if (normalizePropertyName(result.accommodation.identity.name) !== normalizePropertyName(configuration.name))
         return false;
-    return Boolean(result.availabilityOptions?.roomOptions.some((room) => room.rateOptions.some((rate) => (rate.status === "BOOKABLE" || rate.status === "RECHECK_REQUIRED")
-        && sameOccupancy(rate.occupancy, requestedAdults))));
+    if (!sameRequestedOccupancy(result.requestedOccupancy, requestedRooms))
+        return false;
+    // Each rateKey is one supplier offer. Identical repeated entries are one offer; a rateKey
+    // described inconsistently is ambiguous and the property is not offered.
+    const offersByRateKey = new Map();
+    const ratesByOccupancy = new Map();
+    let ambiguous = false;
+    result.availabilityOptions?.roomOptions.forEach((room) => {
+        if (!isValidSupplierReference(room.reference))
+            return;
+        room.rateOptions.forEach((rate) => {
+            const offered = rate.occupancy.rooms[0];
+            if (!offered
+                || rate.occupancy.rooms.length !== 1
+                || !requestedRooms.some((requested) => sameRoomOccupancy(offered, requested))
+                || (rate.status !== "BOOKABLE" && rate.status !== "RECHECK_REQUIRED")
+                || !isValidSupplierReference(rate.reference)
+                || room.reference.provider !== rate.reference.provider
+                || !Number.isFinite(rate.pricing.amount)
+                || !/^[A-Z]{3}$/.test(rate.pricing.currency)
+                || rate.pricing.basis !== "TOTAL_STAY")
+                return;
+            const occupancyKey = occupancyKeyFor(offered);
+            const rateIdentity = JSON.stringify([rate.reference.provider, rate.reference.opaqueReference]);
+            const description = JSON.stringify([
+                room.reference.provider,
+                room.reference.opaqueReference,
+                occupancyKey,
+                rate.pricing.amount,
+                rate.pricing.currency,
+                rate.status,
+            ]);
+            const known = offersByRateKey.get(rateIdentity);
+            if (known !== undefined) {
+                if (known !== description)
+                    ambiguous = true;
+                return;
+            }
+            offersByRateKey.set(rateIdentity, description);
+            ratesByOccupancy.set(occupancyKey, (ratesByOccupancy.get(occupancyKey) ?? 0) + 1);
+        });
+    });
+    if (ambiguous)
+        return false;
+    // Offers are matched to room slots by exact occupancy, so a complete allocation with a distinct
+    // rateKey per slot exists exactly when every occupancy has at least as many distinct offers as slots.
+    const requiredCounts = new Map();
+    requestedRooms.forEach((room) => {
+        const key = occupancyKeyFor(room);
+        requiredCounts.set(key, (requiredCounts.get(key) ?? 0) + 1);
+    });
+    return [...requiredCounts].every(([key, count]) => (ratesByOccupancy.get(key) ?? 0) >= count);
 }
-function createQuery(context, stay, propertyCodes, roomAdults) {
-    const occupancies = [Object.freeze({
-            rooms: 1,
-            adults: roomAdults,
-            children: 0,
-            childAges: Object.freeze([]),
-        })];
+function occupancyKeyFor(occupancy) {
+    return JSON.stringify([occupancy.adults, occupancy.children, occupancy.childAges]);
+}
+function isValidSupplierReference(reference) {
+    return typeof reference === "object" && reference !== null
+        && typeof reference.provider === "string"
+        && reference.provider.trim().length > 0
+        && typeof reference.opaqueReference === "string"
+        && reference.opaqueReference.trim().length > 0;
+}
+function createQuery(stay, propertyCodes, roomOccupancies) {
+    const occupancies = Object.freeze(roomOccupancies.map((room) => Object.freeze({
+        slotId: room.slotId,
+        rooms: 1,
+        adults: room.adults,
+        children: room.children,
+        childAges: Object.freeze([...room.childAges]),
+    })));
     return Object.freeze({
         criteria: Object.freeze({
             destination: stay.destination,
             checkInDate: stay.checkInDate,
             checkOutDate: stay.checkOutDate,
             sourceMarket: "ZA",
-            occupancies: Object.freeze(occupancies),
-            adults: context.participants,
-            children: 0,
-            rooms: 1,
+            occupancies,
+            adults: roomOccupancies.reduce((total, room) => total + room.adults, 0),
+            children: roomOccupancies.reduce((total, room) => total + room.children, 0),
+            rooms: roomOccupancies.length,
             hotelCodes: Object.freeze([...propertyCodes]),
             destinationCode: cape_winelands_property_configuration_1.CAPE_WINELANDS_DESTINATION_CODE,
         }),
         context: Object.freeze({
-            requestId: `${exports.CAPE_WINELANDS_JOURNEY_ID}-${stay.stopId}-adults-${roomAdults}`,
+            requestId: `${exports.CAPE_WINELANDS_JOURNEY_ID}-${stay.stopId}-${JSON.stringify(roomOccupancies.map((room) => [room.adults, room.children, room.childAges]))}`,
             source: accommodation_1.AccommodationSearchSource.PACKAGE_DETAILS,
             channel: "WEB",
             locale: "EN",
@@ -148,18 +216,12 @@ class CapeWinelandsJourneyResolver {
         const active = await this.activeProperties(configured);
         if (active.length === 0)
             return Object.freeze([]);
-        const resultsByCode = new Map();
-        for (const adults of new Set(context.roomAdults)) {
-            const result = await this.availabilityService.execute(createQuery(context, stay, active.map((property) => property.hotelCode), adults));
-            const results = result.kind === "ACCOMMODATION" ? result.results ?? [result] : [];
-            for (const candidate of results) {
-                if (candidate.kind !== "ACCOMMODATION")
-                    continue;
-                const current = resultsByCode.get(candidate.accommodation.identity.id) ?? [];
-                current.push(candidate);
-                resultsByCode.set(candidate.accommodation.identity.id, current);
-            }
-        }
+        const roomOccupancies = context.stopOccupancies.find((allocation) => allocation.stopId === stay.stopId)?.rooms ?? [];
+        const result = await this.availabilityService.execute(createQuery(stay, active.map((property) => property.hotelCode), roomOccupancies));
+        const results = result.kind === "ACCOMMODATION" ? result.results ?? [result] : [];
+        const resultsByCode = new Map(results.flatMap((candidate) => candidate.kind === "ACCOMMODATION"
+            ? [[candidate.accommodation.identity.id, candidate]]
+            : []));
         const stop = Object.freeze({
             packageId: exports.CAPE_WINELANDS_JOURNEY_ID,
             stopId: stay.stopId,
@@ -170,52 +232,67 @@ class CapeWinelandsJourneyResolver {
             approvedAccommodationIds: Object.freeze(active.map((property) => property.hotelCode)),
         });
         return Object.freeze(active.flatMap((property) => {
-            const occupancies = resultsByCode.get(property.hotelCode) ?? [];
-            const matchingResults = occupancies.filter((availability) => context.roomAdults.some((adults) => isSuitableResult(availability, property, adults)));
-            const firstAvailability = matchingResults[0];
-            const allocatedAdults = context.roomAdults;
+            const availability = resultsByCode.get(property.hotelCode);
+            if (!availability || !isSuitableResult(availability, property, roomOccupancies))
+                return [];
             const roomOptionsByReference = new Map();
-            matchingResults.forEach((availability) => {
-                availability.availabilityOptions?.roomOptions.forEach((room) => {
-                    const rates = room.rateOptions.filter((rate) => (rate.status === "BOOKABLE" || rate.status === "RECHECK_REQUIRED")
-                        && allocatedAdults.some((adults) => sameOccupancy(rate.occupancy, adults)));
-                    if (rates.length === 0)
-                        return;
-                    const existing = roomOptionsByReference.get(room.reference.opaqueReference);
-                    if (existing) {
-                        const knownRates = new Set(existing.rateOptions.map((rate) => rate.reference.opaqueReference));
-                        existing.rateOptions.push(...rates.filter((rate) => !knownRates.has(rate.reference.opaqueReference)));
-                    }
-                    else {
-                        roomOptionsByReference.set(room.reference.opaqueReference, {
-                            reference: room.reference,
-                            name: room.name,
-                            rateOptions: [...rates],
-                        });
-                    }
+            availability.availabilityOptions?.roomOptions.forEach((room) => {
+                if (!isValidSupplierReference(room.reference))
+                    return;
+                const rates = room.rateOptions.filter((rate) => {
+                    const offered = rate.occupancy.rooms[0];
+                    return Boolean(offered
+                        && rate.occupancy.rooms.length === 1
+                        && roomOccupancies.some((requested) => sameRoomOccupancy(offered, requested))
+                        && (rate.status === "BOOKABLE" || rate.status === "RECHECK_REQUIRED")
+                        && isValidSupplierReference(rate.reference)
+                        && room.reference.provider === rate.reference.provider
+                        && Number.isFinite(rate.pricing.amount)
+                        && /^[A-Z]{3}$/.test(rate.pricing.currency)
+                        && rate.pricing.basis === "TOTAL_STAY");
                 });
+                if (rates.length === 0)
+                    return;
+                const existing = roomOptionsByReference.get(room.reference.opaqueReference);
+                if (existing) {
+                    const knownRates = new Set(existing.rateOptions.map((rate) => rate.reference.opaqueReference));
+                    existing.rateOptions.push(...rates.filter((rate) => !knownRates.has(rate.reference.opaqueReference)));
+                }
+                else {
+                    roomOptionsByReference.set(room.reference.opaqueReference, {
+                        reference: room.reference,
+                        name: room.name,
+                        rateOptions: [...rates],
+                    });
+                }
             });
+            const seenRateReferences = new Set();
             const roomOptions = [...roomOptionsByReference.values()]
-                .filter((room) => allocatedAdults.some((adults) => room.rateOptions.some((rate) => sameOccupancy(rate.occupancy, adults))))
                 .map((room) => Object.freeze({
                 ...room,
-                rateOptions: Object.freeze(room.rateOptions),
+                rateOptions: Object.freeze(room.rateOptions.filter((rate) => {
+                    const identity = JSON.stringify([rate.reference.provider, rate.reference.opaqueReference]);
+                    if (seenRateReferences.has(identity))
+                        return false;
+                    seenRateReferences.add(identity);
+                    return true;
+                })),
             }));
-            const matchesEveryRoom = allocatedAdults.every((adults) => roomOptions.some((room) => room.rateOptions.some((rate) => sameOccupancy(rate.occupancy, adults))));
-            if (!firstAvailability || !matchesEveryRoom || roomOptions.length === 0)
+            if (roomOptions.length === 0)
                 return [];
             return [Object.freeze({
                     accommodationId: property.hotelCode,
-                    name: firstAvailability.accommodation.identity.name,
-                    accommodation: firstAvailability.accommodation,
+                    name: availability.accommodation.identity.name,
+                    accommodation: availability.accommodation,
                     packageStop: stop,
                     provider: "hotelbeds",
                     roomOptions: Object.freeze(roomOptions),
                     requestedOccupancy: {
-                        rooms: Object.freeze(context.roomAdults.map((adults) => Object.freeze({
-                            adults,
-                            children: 0,
-                            childAges: Object.freeze([]),
+                        rooms: Object.freeze(roomOccupancies.map((room) => Object.freeze({
+                            slotId: room.slotId,
+                            adults: room.adults,
+                            children: room.children,
+                            childAges: Object.freeze([...room.childAges]),
                         }))),
                     },
                 })];
@@ -246,24 +323,57 @@ class CapeWinelandsJourneyResolver {
                 { experienceId: "cape-winelands-day-3", name: "Elgin and Botriver wine tour", sequence: { day: 3, order: 1, itineraryLabel: "Elgin and Botriver wine tour" } },
                 { experienceId: "cape-winelands-day-4", name: "Hemel-en-Aarde wine tour", sequence: { day: 4, order: 1, itineraryLabel: "Hemel-en-Aarde wine tour" } },
             ]),
-            travellerRules: { minimumTravellers: 2, maximumTravellers: 8, privateOnly: true },
+            travellerRules: { minimumTravellers: 2, maximumTravellers: 8, privateOnly: true, childrenAllowed: exports.CAPE_WINELANDS_OCCUPANCY_POLICY.childrenAllowed },
             tags: [],
         });
     }
 }
 exports.CapeWinelandsJourneyResolver = CapeWinelandsJourneyResolver;
-function validateBookingContext(context) {
+function validateBookingContext(context, policy = exports.CAPE_WINELANDS_OCCUPANCY_POLICY) {
     if (!parseDateOnly(context.startDate))
         return "A valid journey start date is required.";
     if (!Number.isInteger(context.participants) || context.participants < 2 || context.participants > 8) {
         return "The journey supports 2 to 8 adult participants.";
     }
-    if (!Array.isArray(context.roomAdults) || context.roomAdults.length === 0
-        || context.roomAdults.some((adults) => !Number.isInteger(adults) || adults < 1)) {
-        return "Every room must have at least one adult.";
+    const expectedStops = calculateCapeWinelandsStays(context.startDate);
+    if (!Array.isArray(context.stopOccupancies)
+        || context.stopOccupancies.length !== expectedStops.length
+        || context.stopOccupancies.some((allocation) => !allocation || typeof allocation.stopId !== "string" || !Array.isArray(allocation.rooms))
+        || expectedStops.some((stay) => context.stopOccupancies.filter((allocation) => allocation?.stopId === stay.stopId).length !== 1)) {
+        return "Every package stop requires its own room allocation.";
     }
-    if (context.roomAdults.reduce((total, adults) => total + adults, 0) !== context.participants) {
-        return "Room adult allocations must equal the participant count.";
+    let expectedTravellerCount;
+    for (const stay of expectedStops) {
+        const allocation = context.stopOccupancies.find((item) => item.stopId === stay.stopId);
+        if (!allocation || !Array.isArray(allocation.rooms) || allocation.rooms.length === 0)
+            return "Every package stop requires at least one room.";
+        if (allocation.rooms.some((room) => !room || typeof room !== "object"))
+            return "Every room requires a valid occupancy allocation.";
+        let adultCount = 0;
+        let childCount = 0;
+        for (const [index, room] of allocation.rooms.entries()) {
+            if (room.slotId !== `${stay.stopId}-room-${index + 1}`)
+                return "Room slots must have unique, valid identities.";
+            if (!Number.isSafeInteger(room.adults) || room.adults < 1)
+                return "Every room must have at least one adult.";
+            if (!Number.isSafeInteger(room.children) || room.children < 0)
+                return "Child count must be a non-negative whole number.";
+            if (!Array.isArray(room.childAges) || room.childAges.length !== room.children
+                || room.childAges.some((age) => !Number.isSafeInteger(age) || age < 0)) {
+                return "Enter one valid non-negative whole-number age for every child.";
+            }
+            if (!policy.childrenAllowed && room.children > 0)
+                return "Children are not permitted on this journey.";
+            adultCount += room.adults;
+            childCount += room.children;
+        }
+        if (adultCount !== context.participants)
+            return "Room adult allocations must equal the participant count at every stop.";
+        const travellerCount = adultCount + childCount;
+        if (expectedTravellerCount !== undefined && expectedTravellerCount !== travellerCount) {
+            return "Every package stop must preserve the same travelling party.";
+        }
+        expectedTravellerCount = travellerCount;
     }
     return undefined;
 }

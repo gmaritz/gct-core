@@ -20,6 +20,7 @@ export interface AccommodationSnapshot extends ReservationSnapshot {
         readonly basis?: string;
     };
     readonly selectedRooms?: ReadonlyArray<{
+        readonly roomSlotId?: string;
         readonly roomType: string;
         readonly roomReference: AccommodationSupplierReference;
         readonly rateReference: AccommodationSupplierReference;
@@ -28,6 +29,7 @@ export interface AccommodationSnapshot extends ReservationSnapshot {
             readonly currency: string;
             readonly basis?: string;
         };
+        readonly occupancy?: AccommodationAvailabilityOccupancy["rooms"][number];
     }>;
 }
 //# sourceMappingURL=accommodation-snapshot.d.ts.map

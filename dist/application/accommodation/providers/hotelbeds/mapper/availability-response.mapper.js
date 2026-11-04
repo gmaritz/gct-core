@@ -76,13 +76,15 @@ function toReference(provider, opaqueReference) {
     return Object.freeze({ provider, opaqueReference });
 }
 function parseChildAges(value) {
-    if (!value) {
+    if (value === undefined || value === "")
         return Object.freeze([]);
-    }
-    return Object.freeze(value
-        .split(/[,|~]/)
-        .map((age) => Number.parseInt(age.trim(), 10))
-        .filter((age) => Number.isInteger(age) && age >= 0));
+    const ages = value.split(/[,|~]/).map((age) => age.trim());
+    if (ages.some((age) => !/^\d+$/.test(age)))
+        return undefined;
+    const parsed = ages.map(Number);
+    if (parsed.some((age) => !Number.isSafeInteger(age) || age < 0))
+        return undefined;
+    return Object.freeze(parsed);
 }
 function mapRequestedOccupancy(response) {
     const occupancies = response.request.body?.occupancies;
@@ -100,11 +102,19 @@ function mapRequestedOccupancy(response) {
     });
 }
 function mapOfferedOccupancy(rate) {
-    const rooms = Math.max(1, rate.rooms ?? 1);
+    const invalid = Object.freeze({ rooms: Object.freeze([]) });
+    if (!Number.isSafeInteger(rate.rooms) || (rate.rooms ?? 0) < 1
+        || !Number.isSafeInteger(rate.adults) || (rate.adults ?? 0) < 1
+        || !Number.isSafeInteger(rate.children) || (rate.children ?? -1) < 0)
+        return invalid;
+    const childAges = parseChildAges(rate.childrenAges);
+    if (!childAges || childAges.length !== rate.children)
+        return invalid;
+    const rooms = rate.rooms;
     const roomOccupancy = Object.freeze({
-        adults: rate.adults ?? 0,
-        children: rate.children ?? 0,
-        childAges: parseChildAges(rate.childrenAges),
+        adults: rate.adults,
+        children: rate.children,
+        childAges,
     });
     return Object.freeze({ rooms: Object.freeze(Array.from({ length: rooms }, () => roomOccupancy)) });
 }
@@ -137,19 +147,27 @@ function mapTaxes(rate) {
         included: tax.included,
     })));
 }
-function mapRate(hotel, room, rate, index) {
-    const hotelCode = String(hotel.code ?? "unknown");
-    const roomCode = room.code ?? room.roomCode ?? room.PMSRoomCode ?? `room-${index}`;
-    const opaqueReference = rate.rateKey ?? `${hotelCode}:${roomCode}:rate-${index}`;
+function mapRate(hotel, room, rate) {
+    const amount = parseNumber(rate.sellingRate ?? rate.net);
+    const currency = hotel.currency;
+    const occupancy = mapOfferedOccupancy(rate);
+    const roomCode = room.code ?? room.roomCode ?? room.PMSRoomCode;
+    if (!rate.rateKey?.trim()
+        || !roomCode?.trim()
+        || amount === undefined
+        || !currency
+        || !/^[A-Z]{3}$/.test(currency)
+        || occupancy.rooms.length === 0)
+        return undefined;
     return Object.freeze({
-        reference: toReference("hotelbeds", opaqueReference),
+        reference: toReference("hotelbeds", rate.rateKey),
         status: mapStatus(rate),
         pricing: Object.freeze({
-            amount: parseNumber(rate.sellingRate ?? rate.net) ?? 0,
-            currency: hotel.currency ?? "UNKNOWN",
+            amount,
+            currency,
             basis: "TOTAL_STAY",
         }),
-        occupancy: mapOfferedOccupancy(rate),
+        occupancy,
         board: rate.boardCode || rate.boardName
             ? Object.freeze({ code: rate.boardCode, name: rate.boardName })
             : undefined,
@@ -162,11 +180,18 @@ function mapRate(hotel, room, rate, index) {
 }
 function mapRoomOptions(hotel) {
     const roomOptions = [];
-    (hotel.rooms ?? []).forEach((room, roomIndex) => {
-        const roomCode = room.code ?? room.roomCode ?? room.PMSRoomCode ?? `room-${roomIndex}`;
-        const rates = (room.rates ?? []).map((rate, rateIndex) => mapRate(hotel, room, rate, rateIndex));
+    (hotel.rooms ?? []).forEach((room) => {
+        const roomCode = room.supplierReference ?? room.code ?? room.roomCode ?? room.PMSRoomCode;
+        if (!roomCode?.trim())
+            return;
+        const rates = (room.rates ?? []).flatMap((rate) => {
+            const mapped = mapRate(hotel, room, rate);
+            return mapped ? [mapped] : [];
+        });
+        if (rates.length === 0)
+            return;
         roomOptions.push(Object.freeze({
-            reference: toReference("hotelbeds", room.supplierReference ?? roomCode),
+            reference: toReference("hotelbeds", roomCode),
             name: room.name ?? room.roomType ?? roomCode,
             rateOptions: Object.freeze(rates),
         }));

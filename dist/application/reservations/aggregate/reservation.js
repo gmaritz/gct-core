@@ -66,6 +66,7 @@ function freezeAccommodationSnapshot(snapshot) {
         occupancy: snapshot.occupancy
             ? Object.freeze({
                 rooms: Object.freeze(snapshot.occupancy.rooms.map((room) => Object.freeze({
+                    slotId: room.slotId,
                     adults: room.adults,
                     children: room.children,
                     childAges: Object.freeze([...room.childAges]),
@@ -79,6 +80,9 @@ function freezeAccommodationSnapshot(snapshot) {
                 roomReference: Object.freeze({ ...room.roomReference }),
                 rateReference: Object.freeze({ ...room.rateReference }),
                 supplierPrice: Object.freeze({ ...room.supplierPrice }),
+                occupancy: room.occupancy
+                    ? Object.freeze({ ...room.occupancy, childAges: Object.freeze([...room.occupancy.childAges]) })
+                    : undefined,
             })))
             : undefined,
     });

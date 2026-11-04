@@ -31,6 +31,9 @@ function assertNonNegativeInteger(value, field) {
 function createRoomFromOccupancyGroup(group, index) {
     const rooms = group.rooms ?? 1;
     assertPositiveInteger(rooms, `occupancies[${index}].rooms`);
+    if (rooms !== 1) {
+        throw new Error(`Invalid occupancies[${index}].rooms: each occupancy group must represent one room.`);
+    }
     assertPositiveInteger(group.adults, `occupancies[${index}].adults`);
     assertNonNegativeInteger(group.children, `occupancies[${index}].children`);
     const childAges = [...group.childAges];
@@ -38,7 +41,9 @@ function createRoomFromOccupancyGroup(group, index) {
         throw new Error(`Invalid occupancies[${index}].childAges.`);
     }
     const childPaxes = childAges.map((age, ageIndex) => {
-        assertNonNegativeInteger(age, `occupancies[${index}].childAges[${ageIndex}]`);
+        if (!Number.isSafeInteger(age) || age < 0) {
+            throw new Error(`Invalid occupancies[${index}].childAges[${ageIndex}].`);
+        }
         return Object.freeze({
             type: "CH",
             age,

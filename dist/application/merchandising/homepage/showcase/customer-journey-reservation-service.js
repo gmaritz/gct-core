@@ -12,9 +12,10 @@ function createReservationRequestId(review, stays, totalPrice) {
             checkIn: accommodation.packageStop?.checkInDate.toISOString(),
             checkOut: accommodation.packageStop?.checkOutDate.toISOString(),
             accommodationId: accommodation.accommodationId,
-            roomRates: roomRates.map(({ room, rate }) => ({
+            roomRates: roomRates.map(({ room, rate, roomSlotId }) => ({
                 roomReference: room.reference,
                 rateReference: rate.reference,
+                roomSlotId,
                 amount: rate.pricing.amount,
                 currency: rate.pricing.currency,
             })),
@@ -50,15 +51,34 @@ class CustomerJourneyReservationService {
             const roomSelections = selection.roomSelections ?? (selection.roomReference && selection.rateReference
                 ? [{ roomReference: selection.roomReference, rateReference: selection.rateReference }]
                 : []);
-            const roomRates = roomSelections.map((roomSelection) => {
+            const seenRateReferences = new Set();
+            const roomRates = roomSelections.map((roomSelection, index) => {
                 const room = accommodation?.roomOptions?.find((candidate) => candidate.reference.provider === roomSelection.roomReference.provider
                     && candidate.reference.opaqueReference === roomSelection.roomReference.opaqueReference);
                 const rate = room?.rateOptions.find((candidate) => candidate.reference.provider === roomSelection.rateReference.provider
                     && candidate.reference.opaqueReference === roomSelection.rateReference.opaqueReference);
-                return room && rate ? { room, rate } : undefined;
+                const requested = accommodation?.requestedOccupancy?.rooms[index];
+                const offered = rate?.occupancy.rooms[0];
+                const rateIdentity = JSON.stringify([roomSelection.rateReference.provider, roomSelection.rateReference.opaqueReference]);
+                if (seenRateReferences.has(rateIdentity))
+                    return undefined;
+                seenRateReferences.add(rateIdentity);
+                const roomSlotId = roomSelection.roomSlotId ?? requested?.slotId;
+                if (!room || !rate || rate.occupancy.rooms.length !== 1
+                    || (requested?.slotId && roomSlotId !== requested.slotId)
+                    || (requested && (!offered
+                        || offered.adults !== requested.adults
+                        || offered.children !== requested.children
+                        || offered.childAges.length !== requested.childAges.length
+                        || offered.childAges.some((age, ageIndex) => age !== requested.childAges[ageIndex]))))
+                    return undefined;
+                return { roomSlotId, room, rate };
             });
             const validRoomRates = roomRates.filter((roomRate) => roomRate !== undefined);
-            return accommodation && validRoomRates.length > 0 && validRoomRates.length === roomSelections.length
+            return accommodation
+                && validRoomRates.length > 0
+                && validRoomRates.length === roomSelections.length
+                && (!accommodation.requestedOccupancy || validRoomRates.length === accommodation.requestedOccupancy.rooms.length)
                 ? { accommodation, roomRates: validRoomRates }
                 : undefined;
         });
@@ -138,11 +158,13 @@ class CustomerJourneyReservationService {
                         currency: roomRates[0]?.rate.pricing.currency ?? "UNKNOWN",
                         basis: roomRates[0]?.rate.pricing.basis,
                     },
-                    selectedRooms: roomRates.map(({ room, rate }) => ({
+                    selectedRooms: roomRates.map(({ room, rate, roomSlotId }) => ({
+                        roomSlotId,
                         roomType: room.name,
                         roomReference: room.reference,
                         rateReference: rate.reference,
                         supplierPrice: rate.pricing,
+                        occupancy: rate.occupancy.rooms[0],
                     })),
                 })),
                 pricingSnapshot: {
@@ -181,7 +203,8 @@ class CustomerJourneyReservationService {
                 packageStopId: accommodation.packageStop?.stopId,
                 roomReference: firstRoomRate.room.reference,
                 rateReference: firstRoomRate.rate.reference,
-                roomSelections: roomRates.map(({ room, rate }) => ({
+                roomSelections: roomRates.map(({ room, rate, roomSlotId }) => ({
+                    roomSlotId,
                     roomReference: room.reference,
                     rateReference: rate.reference,
                 })),
@@ -214,7 +237,9 @@ class CustomerJourneyReservationService {
                 email: review.guestInformation.contact.email,
                 phone: review.guestInformation.contact.phone,
             },
-            guests: assignGuestsToRooms(review.guestInformation.travellers, pricingInputs[0]?.occupancy?.rooms ?? []),
+            guests: pricingInputs.flatMap((input) => input.packageStopId
+                ? assignGuestsToRooms(review.guestInformation.travellers, input.occupancy?.rooms ?? [], input.packageStopId)
+                : []),
             idempotencyKey: reservationRequestId,
         };
         const result = await this.reservationService.executeIfAbsent(request);
@@ -233,27 +258,37 @@ class CustomerJourneyReservationService {
     }
 }
 exports.CustomerJourneyReservationService = CustomerJourneyReservationService;
-function assignGuestsToRooms(travellers, occupancies) {
+function assignGuestsToRooms(travellers, occupancies, packageStopId) {
     const usedAdults = occupancies.map(() => 0);
     const usedChildren = occupancies.map(() => 0);
-    return travellers.map((traveller) => {
+    const assigned = travellers.map((traveller) => {
         const isChild = traveller.travellerType === "CHILD";
         const roomIndex = occupancies.findIndex((occupancy, index) => isChild
             ? usedChildren[index] < occupancy.children
             : usedAdults[index] < occupancy.adults);
         if (roomIndex < 0)
             throw new Error("Selected room allocation does not match the guest list.");
-        if (isChild)
-            usedChildren[roomIndex] += 1;
-        else
+        let childAge;
+        if (isChild) {
+            childAge = occupancies[roomIndex].childAges[usedChildren[roomIndex]++];
+            if (childAge === undefined)
+                throw new Error("Selected room allocation does not match the child ages.");
+        }
+        else {
             usedAdults[roomIndex] += 1;
+        }
         return Object.freeze({
+            packageStopId,
             roomIndex,
             type: traveller.travellerType,
             firstName: traveller.firstName,
             lastName: traveller.lastName,
-            age: traveller.dateOfBirth ? Math.max(0, new Date().getFullYear() - new Date(traveller.dateOfBirth).getFullYear()) : undefined,
+            age: isChild ? childAge : traveller.dateOfBirth ? Math.max(0, new Date().getFullYear() - new Date(traveller.dateOfBirth).getFullYear()) : undefined,
         });
     });
+    if (occupancies.some((occupancy, index) => usedAdults[index] !== occupancy.adults || usedChildren[index] !== occupancy.children)) {
+        throw new Error("Selected room allocation does not match the guest list.");
+    }
+    return assigned;
 }
 //# sourceMappingURL=customer-journey-reservation-service.js.map

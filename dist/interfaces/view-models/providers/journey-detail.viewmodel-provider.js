@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.JourneyDetailViewModelProvider = void 0;
+const cape_winelands_journey_resolver_1 = require("../../../application/merchandising/homepage/showcase/cape-winelands-journey-resolver");
 function createJourneyHeroImage(title, destination) {
     const destLower = destination.toLowerCase();
     let src = "/images/hero/hero-cape-town-1600x900.webp";
@@ -25,10 +26,16 @@ class JourneyDetailViewModelProvider {
         const destination = journey.destinations.map((item) => item.name).join(" + ");
         const title = `${journey.classification.category} ${destination} Journey`;
         const duration = journey.duration.description || `${journey.duration.days} Days / ${journey.duration.nights} Nights`;
-        const requiresBookingDetails = journey.identity.id === "journey-homepage-journey-001";
+        const requiresBookingDetails = journey.identity.id === cape_winelands_journey_resolver_1.CAPE_WINELANDS_JOURNEY_ID;
         return Object.freeze({
             id: journey.identity.id,
             requiresBookingDetails,
+            childrenAllowed: journey.identity.id === cape_winelands_journey_resolver_1.CAPE_WINELANDS_JOURNEY_ID
+                ? cape_winelands_journey_resolver_1.CAPE_WINELANDS_OCCUPANCY_POLICY.childrenAllowed
+                : journey.travellerRules.childrenAllowed !== false,
+            bookingStops: Object.freeze(requiresBookingDetails
+                ? cape_winelands_journey_resolver_1.CAPE_WINELANDS_STOPS.map((stop) => Object.freeze({ id: stop.stopId, destination: stop.destination }))
+                : []),
             title,
             subtitle: `${journey.classification.type} experience for curated travel`,
             destination,

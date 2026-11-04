@@ -3,7 +3,15 @@ import { Journey } from "../../../journeys";
 export interface JourneyBookingContext {
     readonly startDate: string;
     readonly participants: number;
-    readonly roomAdults: ReadonlyArray<number>;
+    readonly stopOccupancies: ReadonlyArray<{
+        readonly stopId: string;
+        readonly rooms: ReadonlyArray<{
+            readonly slotId: string;
+            readonly adults: number;
+            readonly children: number;
+            readonly childAges: ReadonlyArray<number>;
+        }>;
+    }>;
 }
 export declare class JourneySelectionStore {
     private readonly selections;

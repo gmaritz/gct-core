@@ -1,6 +1,6 @@
 import { DynamicHomepageJourneyResolver } from "./dynamic-homepage-journey-resolver";
 import { JourneySelectionStore } from "./journey-selection-store";
-export type AccommodationSelectionStatus = "COMPLETE" | "INVALID" | "NOT_FOUND" | "UNAVAILABLE" | "INCOMPLETE" | "STALE";
+export type AccommodationSelectionStatus = "COMPLETE" | "INVALID" | "NOT_FOUND" | "UNAVAILABLE" | "INCOMPLETE" | "STALE" | "CURRENCY_UNCONFIRMED";
 export interface AccommodationSelectionInput {
     readonly stopId?: string;
     readonly accommodationId: string;
@@ -13,6 +13,7 @@ export interface AccommodationSelectionInput {
         readonly opaqueReference: string;
     };
     readonly roomSelections?: ReadonlyArray<{
+        readonly roomSlotId?: string;
         readonly roomReference: {
             readonly provider: string;
             readonly opaqueReference: string;

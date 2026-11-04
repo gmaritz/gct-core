@@ -8,6 +8,9 @@ export interface AccommodationRateOptionViewModel {
     readonly amount: number;
     readonly currency: string;
     readonly adults?: number;
+    readonly children?: number;
+    readonly childAges?: ReadonlyArray<number>;
+    readonly occupancyKey?: string;
 }
 export interface AccommodationRoomOptionViewModel {
     readonly id: string;
@@ -33,9 +36,11 @@ export interface AccommodationSelectionStopViewModel {
     readonly checkOut?: string;
     readonly nights?: number;
     readonly occupancy?: ReadonlyArray<{
+        readonly slotId: string;
         readonly adults: number;
         readonly children: number;
         readonly childAges: ReadonlyArray<number>;
+        readonly occupancyKey: string;
     }>;
     readonly properties: ReadonlyArray<AccommodationPropertyOptionViewModel>;
     readonly state: AccommodationStopSelectionState;

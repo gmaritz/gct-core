@@ -11,7 +11,9 @@ export interface AccommodationReservationHandoffInput {
         readonly currency: string;
     };
     readonly holder: AccommodationBookingHolder;
-    readonly guests: ReadonlyArray<AccommodationBookingGuest>;
+    readonly guests: ReadonlyArray<AccommodationBookingGuest & {
+        readonly packageStopId?: string;
+    }>;
     readonly idempotencyKey: string;
 }
 export interface AccommodationReservationHandoff {

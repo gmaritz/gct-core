@@ -17,6 +17,7 @@ export interface JourneyAccommodationSelection {
     readonly roomSelections?: ReadonlyArray<JourneyRoomRateSelection>;
 }
 export interface JourneyRoomRateSelection {
+    readonly roomSlotId?: string;
     readonly roomReference: AccommodationSupplierReference;
     readonly rateReference: AccommodationSupplierReference;
 }
@@ -33,6 +34,7 @@ export interface JourneyAccommodationPricingInput {
     readonly room: AccommodationRoomOption;
     readonly rate: AccommodationRateOption;
     readonly roomRates?: ReadonlyArray<{
+        readonly roomSlotId?: string;
         readonly room: AccommodationRoomOption;
         readonly rate: AccommodationRateOption;
     }>;
