@@ -3,4 +3,5 @@ export interface JourneyTravellerRules {
   readonly maximumTravellers?: number;
   readonly privateOnly?: boolean;
   readonly ageRestriction?: string;
+  readonly childrenAllowed?: boolean;
 }

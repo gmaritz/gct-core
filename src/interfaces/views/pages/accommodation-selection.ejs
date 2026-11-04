@@ -20,7 +20,7 @@
       <div class="accommodation-selection__layout">
         <div class="accommodation-selection__main">
           <% accommodationSelectionViewModel.stops.forEach((stop, stopIndex) => { %>
-            <fieldset class="accommodation-selection__stop">
+            <fieldset class="accommodation-selection__stop" data-stop-selection data-stop-index="<%= stopIndex %>">
               <legend class="accommodation-selection__stop-legend">
                 Stop <%= stop.order %> of <%= accommodationSelectionViewModel.stops.length %> · <%= stop.destination %>
               </legend>
@@ -63,13 +63,14 @@
                       <% } else { %>
                         <fieldset class="accommodation-selection__options-grid" data-property-options="<%= stopIndex %>" data-property-id="<%= property.id %>"<% if (propertyIndex > 0) { %> disabled<% } %>>
                           <input type="hidden" name="selections[<%= stopIndex %>][stopId]" value="<%= stop.id || '' %>">
-                          <% (stop.occupancy || [{ adults: 2 }]).forEach((occupancy, roomIndex) => { %>
-                            <div class="accommodation-selection__options-grid">
-                              <h3>Room <%= roomIndex + 1 %> · <%= occupancy.adults %> adult<%= occupancy.adults === 1 ? '' : 's' %></h3>
+                          <% (stop.occupancy || []).forEach((occupancy, roomIndex) => { %>
+                            <div class="accommodation-selection__options-grid" data-room-slot="<%= occupancy.slotId %>">
+                              <h3>Room <%= roomIndex + 1 %> · <%= occupancy.adults %> adult<%= occupancy.adults === 1 ? '' : 's' %><% if (occupancy.children > 0) { %>, <%= occupancy.children %> child<%= occupancy.children === 1 ? '' : 'ren' %> (ages <%= occupancy.childAges.join(", ") %>)<% } %></h3>
+                              <input type="hidden" name="selections[<%= stopIndex %>][roomSelections][<%= roomIndex %>][roomSlotId]" value="<%= occupancy.slotId %>">
                               <div class="form-group">
                                 <label class="form-label" for="room-<%= stopIndex %>-<%= propertyIndex %>-<%= roomIndex %>">Select Room</label>
                                 <select class="form-select" id="room-<%= stopIndex %>-<%= propertyIndex %>-<%= roomIndex %>" name="selections[<%= stopIndex %>][roomSelections][<%= roomIndex %>][roomReference][opaqueReference]" data-room-choice required>
-                                  <% property.rooms.forEach((room) => { if (room.rates.some((rate) => rate.adults === occupancy.adults)) { %>
+                                  <% property.rooms.forEach((room) => { if (room.rates.some((rate) => rate.occupancyKey === occupancy.occupancyKey)) { %>
                                     <option value="<%= room.id %>"><%= room.name %></option>
                                   <% } }); %>
                                 </select>
@@ -79,7 +80,7 @@
                               <div class="form-group">
                                 <label class="form-label" for="rate-<%= stopIndex %>-<%= propertyIndex %>-<%= roomIndex %>">Select Rate & Board</label>
                                 <select class="form-select" id="rate-<%= stopIndex %>-<%= propertyIndex %>-<%= roomIndex %>" name="selections[<%= stopIndex %>][roomSelections][<%= roomIndex %>][rateReference][opaqueReference]" data-rate-choice required>
-                                  <% property.rooms.forEach((room) => { room.rates.forEach((rate) => { if (rate.adults === occupancy.adults) { %>
+                                  <% property.rooms.forEach((room) => { room.rates.forEach((rate) => { if (rate.occupancyKey === occupancy.occupancyKey) { %>
                                     <option value="<%= rate.id %>" data-room-id="<%= room.id %>"><%= rate.name || "Available rate" %> · <%= rate.currency %> <%= rate.amount.toLocaleString() %></option>
                                   <% } }); }); %>
                                 </select>

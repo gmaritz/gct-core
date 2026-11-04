@@ -3,7 +3,7 @@ import { DynamicHomepageJourneyResolver } from "./dynamic-homepage-journey-resol
 import { JourneySelectionStore, journeySelectionStore } from "./journey-selection-store";
 import { assertJourneyStateOwner } from "./journey-state-ownership";
 
-export type AccommodationSelectionStatus = "COMPLETE" | "INVALID" | "NOT_FOUND" | "UNAVAILABLE" | "INCOMPLETE" | "STALE";
+export type AccommodationSelectionStatus = "COMPLETE" | "INVALID" | "NOT_FOUND" | "UNAVAILABLE" | "INCOMPLETE" | "STALE" | "CURRENCY_UNCONFIRMED";
 
 export interface AccommodationSelectionInput {
   readonly stopId?: string;
@@ -11,6 +11,7 @@ export interface AccommodationSelectionInput {
   readonly roomReference?: { readonly provider: string; readonly opaqueReference: string };
   readonly rateReference?: { readonly provider: string; readonly opaqueReference: string };
   readonly roomSelections?: ReadonlyArray<{
+    readonly roomSlotId?: string;
     readonly roomReference: { readonly provider: string; readonly opaqueReference: string };
     readonly rateReference: { readonly provider: string; readonly opaqueReference: string };
   }>;
@@ -67,6 +68,7 @@ export class DefaultAccommodationSelectionService implements AccommodationSelect
     }
 
     const selectedStops: Array<{ stopId?: string; accommodationId: string; roomReference: string; rateReference: string }> = [];
+    const normalizedSelections: AccommodationSelectionInput[] = [];
     const selectedStopIds = new Set<string>();
     for (const input of selections) {
       const roomSelections: NonNullable<AccommodationSelectionInput["roomSelections"]> = input.roomSelections ?? (input.roomReference && input.rateReference
@@ -82,6 +84,57 @@ export class DefaultAccommodationSelectionService implements AccommodationSelect
       if (!option) {
         return { status: "INVALID", journeyId, selectedStops: [] };
       }
+      const requestedOccupancy = option.requestedOccupancy?.rooms;
+      if (requestedOccupancy && requestedOccupancy.length !== roomSelections.length) {
+        return { status: "INVALID", journeyId, selectedStops: [] };
+      }
+      const normalizedRoomSelections = roomSelections.map((roomSelection, index) => ({
+        ...roomSelection,
+        roomSlotId: roomSelection.roomSlotId ?? requestedOccupancy?.[index]?.slotId,
+      }));
+      const seenRoomRateReferences = new Set<string>();
+      const seenRateReferences = new Set<string>();
+      if (normalizedRoomSelections.some((roomSelection, index) => {
+        const slot = requestedOccupancy?.[index];
+        const roomRateIdentity = JSON.stringify([
+          roomSelection.roomReference.provider,
+          roomSelection.roomReference.opaqueReference,
+          roomSelection.rateReference.provider,
+          roomSelection.rateReference.opaqueReference,
+        ]);
+        const rateIdentity = JSON.stringify([roomSelection.rateReference.provider, roomSelection.rateReference.opaqueReference]);
+        if (seenRoomRateReferences.has(roomRateIdentity) || seenRateReferences.has(rateIdentity)) return true;
+        seenRoomRateReferences.add(roomRateIdentity);
+        seenRateReferences.add(rateIdentity);
+        return Boolean(slot?.slotId && roomSelection.roomSlotId !== slot.slotId);
+      })) {
+        return { status: "INVALID", journeyId, selectedStops: [] };
+      }
+      const selectedRates = normalizedRoomSelections.map((roomSelection) => {
+        const room = option.roomOptions?.find((candidate) =>
+          candidate.reference.provider === roomSelection.roomReference.provider
+          && candidate.reference.opaqueReference === roomSelection.roomReference.opaqueReference,
+        );
+        return room?.rateOptions.find((candidate) =>
+          candidate.reference.provider === roomSelection.rateReference.provider
+          && candidate.reference.opaqueReference === roomSelection.rateReference.opaqueReference,
+        );
+      });
+      if (selectedRates.some((rate) => !rate)) return { status: "INVALID", journeyId, selectedStops: [] };
+      if (selectedRates.some((rate) => rate!.pricing.currency !== selectedRates[0]!.pricing.currency)) {
+        return { status: "CURRENCY_UNCONFIRMED", journeyId, selectedStops: [] };
+      }
+      if (requestedOccupancy?.some((occupancy, index) => {
+        const offered = selectedRates[index]?.occupancy.rooms[0];
+        return selectedRates[index]?.occupancy.rooms.length !== 1
+          || !offered
+          || offered.adults !== occupancy.adults
+          || offered.children !== occupancy.children
+          || offered.childAges.length !== occupancy.childAges.length
+          || offered.childAges.some((age, ageIndex) => age !== occupancy.childAges[ageIndex]);
+      })) {
+        return { status: "INVALID", journeyId, selectedStops: [] };
+      }
       const stopId = option.packageStop?.stopId ?? input.stopId ?? option.accommodationId;
       if (selectedStopIds.has(stopId)) {
         return { status: "INVALID", journeyId, selectedStops: [] };
@@ -91,21 +144,24 @@ export class DefaultAccommodationSelectionService implements AccommodationSelect
         const selected = selectJourneyAccommodation(option, {
           accommodationId: input.accommodationId,
           packageStopId: input.stopId,
-          roomReference: firstRoomSelection.roomReference,
-          rateReference: firstRoomSelection.rateReference,
-          roomSelections,
+          roomReference: normalizedRoomSelections[0]!.roomReference,
+          rateReference: normalizedRoomSelections[0]!.rateReference,
+          roomSelections: normalizedRoomSelections,
         });
-        const requestedOccupancy = option.requestedOccupancy?.rooms;
-        if (requestedOccupancy && requestedOccupancy.length !== roomSelections.length) {
-          return { status: "INVALID", journeyId, selectedStops: [] };
-        }
         if (requestedOccupancy?.some((occupancy, index) => {
           const selectedRate = selected.pricingInput?.roomRates?.[index]?.rate;
-          return !selectedRate || selectedRate.occupancy.rooms.length !== 1
-            || selectedRate.occupancy.rooms[0]?.adults !== occupancy.adults
-            || selectedRate.occupancy.rooms[0]?.children !== 0;
+          const offered = selectedRate?.occupancy.rooms[0];
+          return !selectedRate || !offered || selectedRate.occupancy.rooms.length !== 1
+            || offered.adults !== occupancy.adults
+            || offered.children !== occupancy.children
+            || offered.childAges.length !== occupancy.childAges.length
+            || offered.childAges.some((age, ageIndex) => age !== occupancy.childAges[ageIndex]);
         })) {
-          return { status: "STALE", journeyId, selectedStops: [] };
+          return { status: "INVALID", journeyId, selectedStops: [] };
+        }
+        const roomRates = selected.pricingInput?.roomRates ?? [];
+        if (roomRates.some((roomRate, index) => index > 0 && roomRate.rate.pricing.currency !== roomRates[0]?.rate.pricing.currency)) {
+          return { status: "CURRENCY_UNCONFIRMED", journeyId, selectedStops: [] };
         }
         selectedStops.push({
           stopId: selected.packageStop?.stopId ?? input.stopId,
@@ -113,12 +169,19 @@ export class DefaultAccommodationSelectionService implements AccommodationSelect
           roomReference: firstRoomSelection.roomReference.opaqueReference,
           rateReference: firstRoomSelection.rateReference.opaqueReference,
         });
+        normalizedSelections.push({
+          ...input,
+          stopId: selected.packageStop?.stopId ?? input.stopId,
+          roomReference: firstRoomSelection.roomReference,
+          rateReference: firstRoomSelection.rateReference,
+          roomSelections: normalizedRoomSelections,
+        });
       } catch {
         return { status: "STALE", journeyId, selectedStops: [] };
       }
     }
 
-    this.selectionStore.save(ownerId, journeyId, selections);
+    this.selectionStore.save(ownerId, journeyId, normalizedSelections);
     return { status: "COMPLETE", journeyId, selectedStops };
   }
 }

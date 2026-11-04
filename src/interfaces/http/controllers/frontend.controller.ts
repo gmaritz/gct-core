@@ -172,18 +172,45 @@ export async function selectJourney(request: Request, response: Response): Promi
 
 function parseJourneyBookingContext(body: unknown): JourneyBookingContext | undefined {
 	if (!body || typeof body !== "object") return undefined;
-	const submitted = body as { startDate?: unknown; participants?: unknown; roomAdults?: unknown };
-	const participants = Number(submitted.participants);
-	const rawRoomAdults = Array.isArray(submitted.roomAdults)
-		? submitted.roomAdults
-		: submitted.roomAdults === undefined ? [participants] : [submitted.roomAdults];
-	if (typeof submitted.startDate !== "string" || !Number.isInteger(participants)) return undefined;
-	const roomAdults = rawRoomAdults.map((value) => Number(value));
+	const submitted = body as { startDate?: unknown; participants?: unknown; stopOccupancies?: unknown };
+	const participants = parseIntegerField(submitted.participants);
+	if (typeof submitted.startDate !== "string" || !Number.isSafeInteger(participants) || !Array.isArray(submitted.stopOccupancies)) return undefined;
+	const stopOccupancies = submitted.stopOccupancies.map((rawStop) => {
+		const stop = isRecord(rawStop) ? rawStop : undefined;
+		const stopId = typeof stop?.stopId === "string" ? stop.stopId : "";
+		const rooms = Array.isArray(stop?.rooms) ? stop.rooms : [];
+		return {
+			stopId,
+			rooms: rooms.map((rawRoom, roomIndex) => {
+				const room = isRecord(rawRoom) ? rawRoom : undefined;
+				const rawChildAges = Array.isArray(room?.childAges)
+					? room.childAges
+					: room?.childAges === undefined ? [] : [room.childAges];
+				return {
+					slotId: `${stopId}-room-${roomIndex + 1}`,
+					adults: parseIntegerField(room?.adults),
+					children: parseIntegerField(room?.children),
+					childAges: rawChildAges.map((age) => parseIntegerField(age)),
+				};
+			}),
+		};
+	});
 	return {
 		startDate: submitted.startDate,
 		participants,
-		roomAdults,
+		stopOccupancies,
 	};
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function parseIntegerField(value: unknown): number {
+	if (typeof value === "number") return Number.isSafeInteger(value) ? value : Number.NaN;
+	if (typeof value !== "string" || !/^\d+$/.test(value.trim())) return Number.NaN;
+	const parsed = Number(value);
+	return Number.isSafeInteger(parsed) ? parsed : Number.NaN;
 }
 
 export async function renderAccommodationSelectionPage(request: Request, response: Response): Promise<void> {
@@ -221,6 +248,24 @@ export async function selectAccommodation(request: Request, response: Response):
 		response.status(404);
 		await renderNotFoundPage(request, response);
 		return;
+	}
+
+	if (result.status === "CURRENCY_UNCONFIRMED") {
+		const resolution = await new DefaultDynamicHomepageJourneyResolver().resolve(ownerId, request.params.journeyId);
+		if (resolution.status === "RESOLVED" && resolution.journey) {
+			const accommodationSelectionViewModel = new AccommodationSelectionViewModelProvider().provide(
+				resolution.journey,
+				"A final package price is unavailable until the accommodation currency is confirmed.",
+			);
+			response.status(409);
+			await renderView(response, "pages/accommodation-selection", {
+				title: "Select accommodation",
+				pageTitle: "Select accommodation",
+				currentPath: request.path,
+				accommodationSelectionViewModel,
+			});
+			return;
+		}
 	}
 
 	if (result.status === "UNAVAILABLE" || result.status === "STALE") {

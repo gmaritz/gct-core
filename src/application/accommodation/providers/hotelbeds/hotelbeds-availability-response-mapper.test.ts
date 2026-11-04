@@ -53,6 +53,9 @@ describe("Hotelbeds availability response mapper", () => {
                     rateType: "BOOKABLE",
                     allotment: 7,
                     net: "863.49",
+                    rooms: 1,
+                    adults: 2,
+                    children: 0,
                     boardCode: "BB",
                     boardName: "BED AND BREAKFAST",
                   }],
@@ -112,7 +115,15 @@ describe("Hotelbeds availability response mapper", () => {
               rooms: [
                 {
                   code: "DBL.ST",
-                  rates: [{ rateType: "BOOKABLE", allotment: 4, sellingRate: "330.00" }],
+                  rates: [{
+                    rateKey: "cape-view-rate",
+                    rateType: "BOOKABLE",
+                    allotment: 4,
+                    sellingRate: "330.00",
+                    rooms: 1,
+                    adults: 2,
+                    children: 0,
+                  }],
                 },
               ],
             },
@@ -176,7 +187,15 @@ describe("Hotelbeds availability response mapper", () => {
               code: 100,
               name: "Batch A",
               currency: "ZAR",
-              rooms: [{ code: "DBL.ST", rates: [{ rateType: "BOOKABLE", allotment: 0 }] }],
+              rooms: [{ code: "DBL.ST", rates: [{
+                rateKey: "batch-a",
+                rateType: "BOOKABLE",
+                allotment: 0,
+                net: "100.00",
+                rooms: 1,
+                adults: 2,
+                children: 0,
+              }] }],
             },
           ],
         },
@@ -189,7 +208,15 @@ describe("Hotelbeds availability response mapper", () => {
               code: 200,
               name: "Batch B",
               currency: "ZAR",
-              rooms: [{ code: "DBL.ST", rates: [{ rateType: "BOOKABLE", allotment: 2 }] }],
+              rooms: [{ code: "DBL.ST", rates: [{
+                rateKey: "batch-b",
+                rateType: "BOOKABLE",
+                allotment: 2,
+                net: "100.00",
+                rooms: 1,
+                adults: 2,
+                children: 0,
+              }] }],
             },
           ],
         },
@@ -284,6 +311,39 @@ describe("Hotelbeds availability response mapper", () => {
     const result = mapSingleRate({ currency }, { net: "500.00" });
 
     expect(firstRate(result)).toBeUndefined();
+  });
+
+  it("does not fabricate supplier references, occupancy, prices, or child ages", () => {
+    const mapper = new HotelbedsAvailabilityResponseMapper();
+    const result = mapper.mapAvailabilityResponse([
+      createRawResponse({
+        body: {
+          hotels: [{
+            code: 777,
+            name: "Incomplete Offer",
+            currency: "ZAR",
+            rooms: [{
+              code: "FAM",
+              rates: [{
+                rateType: "BOOKABLE",
+                rooms: 1,
+                adults: 2,
+                children: 1,
+                childrenAges: "7,not-an-age",
+                sellingRate: "200.00",
+              }],
+            }],
+          }],
+        },
+      }),
+    ]);
+
+    expect(result.kind).toBe("ACCOMMODATION");
+    if (result.kind !== "ACCOMMODATION") throw new Error("Expected accommodation result.");
+    expect(result.result.kind).toBe("ACCOMMODATION");
+    if (result.result.kind !== "ACCOMMODATION") throw new Error("Expected mapped accommodation result.");
+    expect(result.result.available).toBe(false);
+    expect(result.result.availabilityOptions?.roomOptions).toEqual([]);
   });
 
   it("preserves supplier, HTTP, and transport failures as failures instead of false availability", () => {

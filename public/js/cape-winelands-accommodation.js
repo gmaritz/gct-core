@@ -1,26 +1,56 @@
 (() => {
-  document.querySelectorAll("input[type='radio'][name$='[accommodationId]']").forEach((radio) => {
-    radio.addEventListener("change", () => {
-      const match = radio.name.match(/^selections\[(\d+)\]/);
-      if (!match) return;
-      document.querySelectorAll(`[data-property-options='${match[1]}']`).forEach((fields) => {
-        fields.disabled = fields.dataset.propertyId !== radio.value;
+  const form = document.querySelector(".accommodation-selection form");
+  if (!form) return;
+  const submit = form.querySelector("button[type='submit']");
+
+  const update = () => {
+    let valid = true;
+    form.querySelectorAll("[data-stop-selection]").forEach((stop) => {
+      const selectedProperty = stop.querySelector("input[type='radio'][name$='[accommodationId]']:checked");
+      if (!selectedProperty) {
+        valid = false;
+        return;
+      }
+
+      stop.querySelectorAll("[data-property-options]").forEach((fields) => {
+        fields.disabled = fields.dataset.propertyId !== selectedProperty.value;
+      });
+
+      const activeFields = [...stop.querySelectorAll("[data-property-options]:not(:disabled)")];
+      if (activeFields.length !== 1) {
+        valid = false;
+        return;
+      }
+
+      const fields = activeFields[0];
+      const rateChoices = [...fields.querySelectorAll("[data-rate-choice]")];
+      const usedRates = new Set();
+      rateChoices.forEach((rateChoice) => {
+        const suffix = rateChoice.id.slice("rate-".length);
+        const roomChoice = fields.querySelector(`#room-${suffix}`);
+        if (!roomChoice) {
+          valid = false;
+          return;
+        }
+        const available = [...rateChoice.options].filter((option) =>
+          option.dataset.roomId === roomChoice.value && !usedRates.has(option.value),
+        );
+        [...rateChoice.options].forEach((option) => {
+          option.hidden = !available.includes(option);
+        });
+        const current = available.find((option) => option.value === rateChoice.value);
+        const selected = current ?? available[0];
+        if (!selected) {
+          valid = false;
+          return;
+        }
+        rateChoice.value = selected.value;
+        usedRates.add(selected.value);
       });
     });
-  });
-  document.querySelectorAll("[data-room-choice]").forEach((roomChoice) => {
-    const match = roomChoice.id.match(/^(room-\d+-\d+-\d+)$/);
-    if (!match) return;
-    const rateChoice = document.querySelector(`#rate-${match[1].slice(5)}`);
-    if (!rateChoice) return;
-    const updateRates = () => {
-      [...rateChoice.options].forEach((option) => {
-        option.hidden = option.dataset.roomId !== roomChoice.value;
-      });
-      const available = [...rateChoice.options].find((option) => !option.hidden);
-      if (available) rateChoice.value = available.value;
-    };
-    roomChoice.addEventListener("change", updateRates);
-    updateRates();
-  });
+    submit.disabled = !valid;
+  };
+
+  form.addEventListener("change", update);
+  update();
 })();

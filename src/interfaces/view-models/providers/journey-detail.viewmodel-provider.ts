@@ -1,4 +1,9 @@
 import { Journey } from "../../../application/journeys";
+import {
+  CAPE_WINELANDS_JOURNEY_ID,
+  CAPE_WINELANDS_OCCUPANCY_POLICY,
+  CAPE_WINELANDS_STOPS,
+} from "../../../application/merchandising/homepage/showcase/cape-winelands-journey-resolver";
 import { JourneyDetailViewModel } from "../journeys/journey-detail.viewmodel";
 import { ImageViewModel } from "../shared/image.viewmodel";
 
@@ -26,11 +31,17 @@ export class JourneyDetailViewModelProvider {
     const destination = journey.destinations.map((item) => item.name).join(" + ");
     const title = `${journey.classification.category} ${destination} Journey`;
     const duration = journey.duration.description || `${journey.duration.days} Days / ${journey.duration.nights} Nights`;
-    const requiresBookingDetails = journey.identity.id === "journey-homepage-journey-001";
+    const requiresBookingDetails = journey.identity.id === CAPE_WINELANDS_JOURNEY_ID;
 
     return Object.freeze({
       id: journey.identity.id,
       requiresBookingDetails,
+      childrenAllowed: journey.identity.id === CAPE_WINELANDS_JOURNEY_ID
+        ? CAPE_WINELANDS_OCCUPANCY_POLICY.childrenAllowed
+        : journey.travellerRules.childrenAllowed !== false,
+      bookingStops: Object.freeze(requiresBookingDetails
+        ? CAPE_WINELANDS_STOPS.map((stop) => Object.freeze({ id: stop.stopId, destination: stop.destination }))
+        : []),
       title,
       subtitle: `${journey.classification.type} experience for curated travel`,
       destination,

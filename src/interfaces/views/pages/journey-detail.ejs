@@ -118,17 +118,33 @@
                 </select>
               </div>
               <fieldset class="form-group">
-                <legend class="form-label">Room allocation</legend>
+                <legend class="form-label">Room allocation by stop</legend>
                 <div id="room-allocation" data-participants="participants">
-                  <label class="form-label" for="room-adults-0">Room 1 adults</label>
-                  <select class="form-select" id="room-adults-0" name="roomAdults" required>
-                    <% for (let count = 1; count <= 8; count += 1) { %>
-                      <option value="<%= count %>"<% if (count === 2) { %> selected<% } %>><%= count %></option>
-                    <% } %>
-                  </select>
+                  <% journeyDetailViewModel.bookingStops.forEach((stop, stopIndex) => { %>
+                    <fieldset class="form-group" data-stop-allocation data-stop-index="<%= stopIndex %>">
+                      <legend class="form-label"><%= stop.destination %></legend>
+                      <input type="hidden" name="stopOccupancies[<%= stopIndex %>][stopId]" value="<%= stop.id %>">
+                      <div data-room-list>
+                        <div data-room-allocation>
+                          <label class="form-label" data-adults-label for="room-<%= stopIndex %>-0-adults">Room 1 adults</label>
+                          <select class="form-select" id="room-<%= stopIndex %>-0-adults" data-adults required>
+                            <% for (let count = 1; count <= 8; count += 1) { %>
+                              <option value="<%= count %>"<% if (count === 2) { %> selected<% } %>><%= count %></option>
+                            <% } %>
+                          </select>
+                          <% if (journeyDetailViewModel.childrenAllowed) { %>
+                            <label class="form-label" data-children-label for="room-<%= stopIndex %>-0-children">Room 1 children</label>
+                            <input class="form-input" id="room-<%= stopIndex %>-0-children" data-children type="number" min="0" step="1" value="0" required>
+                            <div data-child-ages></div>
+                          <% } %>
+                          <button class="button button--secondary" type="button" data-remove-room hidden>Remove room</button>
+                        </div>
+                      </div>
+                      <button class="button button--secondary" type="button" data-add-room>Add room at <%= stop.destination %></button>
+                      <p data-allocation-total role="status">Adults allocated: 2 of 2</p>
+                    </fieldset>
+                  <% }); %>
                 </div>
-                <button class="button button--secondary" id="add-room" type="button">Add room</button>
-                <p id="room-allocation-total" role="status">Adults allocated: 2 of 2</p>
                 <p id="group-size-guidance" role="status" hidden>Groups over 8 adults are not bookable online. <a href="/ui/placeholder#contact">Contact us</a>.</p>
               </fieldset>
               <% if (journeyDetailViewModel.selectionError) { %><p class="feedback feedback--warning" role="alert"><%= journeyDetailViewModel.selectionError %></p><% } %>

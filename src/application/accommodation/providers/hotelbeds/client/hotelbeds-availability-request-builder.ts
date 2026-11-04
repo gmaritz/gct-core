@@ -50,6 +50,9 @@ function createRoomFromOccupancyGroup(
 ): HotelbedsAvailabilityOccupancy {
   const rooms = group.rooms ?? 1;
   assertPositiveInteger(rooms, `occupancies[${index}].rooms`);
+  if (rooms !== 1) {
+    throw new Error(`Invalid occupancies[${index}].rooms: each occupancy group must represent one room.`);
+  }
 
   assertPositiveInteger(group.adults, `occupancies[${index}].adults`);
   assertNonNegativeInteger(group.children, `occupancies[${index}].children`);
@@ -60,7 +63,9 @@ function createRoomFromOccupancyGroup(
   }
 
   const childPaxes = childAges.map((age, ageIndex) => {
-    assertNonNegativeInteger(age, `occupancies[${index}].childAges[${ageIndex}]`);
+    if (!Number.isSafeInteger(age) || age < 0) {
+      throw new Error(`Invalid occupancies[${index}].childAges[${ageIndex}].`);
+    }
     return Object.freeze<HotelbedsAvailabilityPax>({
       type: "CH",
       age,

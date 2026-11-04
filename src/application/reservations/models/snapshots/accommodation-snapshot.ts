@@ -17,9 +17,11 @@ export interface AccommodationSnapshot extends ReservationSnapshot {
   readonly occupancy?: AccommodationAvailabilityOccupancy;
   readonly supplierPrice?: { readonly amount: number; readonly currency: string; readonly basis?: string };
   readonly selectedRooms?: ReadonlyArray<{
+    readonly roomSlotId?: string;
     readonly roomType: string;
     readonly roomReference: AccommodationSupplierReference;
     readonly rateReference: AccommodationSupplierReference;
     readonly supplierPrice: { readonly amount: number; readonly currency: string; readonly basis?: string };
+    readonly occupancy?: AccommodationAvailabilityOccupancy["rooms"][number];
   }>;
 }

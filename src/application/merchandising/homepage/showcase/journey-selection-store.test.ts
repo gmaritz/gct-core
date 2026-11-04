@@ -3,7 +3,14 @@ import { AccommodationSelectionInput } from "./accommodation-selection-service";
 import { JourneySelectionStore } from "./journey-selection-store";
 
 const journeyId = "journey-homepage-journey-001";
-const bookingContext = { startDate: "2026-11-01", participants: 2, roomAdults: [2] };
+const bookingContext = {
+  startDate: "2026-11-01",
+  participants: 2,
+  stopOccupancies: [
+    { stopId: "stop-a", rooms: [{ slotId: "stop-a-room-1", adults: 2, children: 0, childAges: [] }] },
+    { stopId: "stop-b", rooms: [{ slotId: "stop-b-room-1", adults: 2, children: 0, childAges: [] }] },
+  ],
+};
 const selection: AccommodationSelectionInput = {
   accommodationId: "hotel-a",
   roomReference: { provider: "test", opaqueReference: "room-a" },

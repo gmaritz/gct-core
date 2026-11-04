@@ -1,7 +1,7 @@
 import { Express } from "express";
 
 import { createTestApplication } from "../../helpers/application.helper";
-import { createRequest } from "../../helpers/request.helper";
+import { createRequest, getCsrfToken } from "../../helpers/request.helper";
 
 describe("Frontend dynamic journey detail page", () => {
   let app: Express;
@@ -22,8 +22,49 @@ describe("Frontend dynamic journey detail page", () => {
     expect(response.text).toContain("Itinerary");
     expect(response.text).toContain('name="startDate"');
     expect(response.text).toContain('name="participants"');
+    expect(response.text).toContain('name="stopOccupancies[0][stopId]"');
+    expect(response.text).toContain('name="stopOccupancies[1][stopId]"');
+    expect(response.text).not.toContain("data-children");
     expect(response.text).not.toContain("Cape Winelands Retreat");
     expect(response.text).toContain("Check live availability");
+  });
+
+  it("rejects a direct request that attempts to add children to the adults-only journey", async () => {
+    const csrfToken = await getCsrfToken(app);
+    const response = await createRequest(app, "post")("/ui/journeys/journey-homepage-journey-001/select")
+      .set("X-CSRF-Token", csrfToken)
+      .type("form")
+      .send({
+        startDate: "2026-11-01",
+        participants: "2",
+        "stopOccupancies[0][stopId]": "cape-winelands-stellenbosch",
+        "stopOccupancies[0][rooms][0][adults]": "2",
+        "stopOccupancies[0][rooms][0][children]": "1",
+        "stopOccupancies[0][rooms][0][childAges][0]": "8",
+        "stopOccupancies[1][stopId]": "cape-winelands-hermanus",
+        "stopOccupancies[1][rooms][0][adults]": "2",
+        "stopOccupancies[1][rooms][0][children]": "1",
+        "stopOccupancies[1][rooms][0][childAges][0]": "8",
+      });
+
+    expect(response.status).toBe(422);
+    expect(response.text).toContain("Children are not permitted on this journey");
+  });
+
+  it("returns validation for malformed nested occupancy instead of failing the request", async () => {
+    const csrfToken = await getCsrfToken(app);
+    const response = await createRequest(app, "post")("/ui/journeys/journey-homepage-journey-001/select")
+      .set("X-CSRF-Token", csrfToken)
+      .send({
+        startDate: "2026-11-01",
+        participants: 2,
+        stopOccupancies: [null, {
+          stopId: "cape-winelands-hermanus",
+          rooms: [null],
+        }],
+      });
+
+    expect(response.status).toBe(422);
   });
 
   it("renders the established not-found response for an invalid journey", async () => {

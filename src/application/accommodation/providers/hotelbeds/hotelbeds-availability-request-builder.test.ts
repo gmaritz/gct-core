@@ -74,7 +74,7 @@ describe("HotelbedsAvailabilityRequestBuilder", () => {
     const requests = builder.build(
       createCriteria({
         occupancies: createOccupancies([
-          { rooms: 2, adults: 2, children: 1, childAges: [7] },
+          { rooms: 1, adults: 2, children: 1, childAges: [7] },
           { adults: 1, children: 2, childAges: [4, 11] },
         ]),
         adults: 99,
@@ -86,7 +86,7 @@ describe("HotelbedsAvailabilityRequestBuilder", () => {
 
     expect(requests).toHaveLength(1);
     expect(requests[0]?.body.occupancies).toHaveLength(2);
-    expect(requests[0]?.body.occupancies[0]?.rooms).toBe(2);
+    expect(requests[0]?.body.occupancies[0]?.rooms).toBe(1);
     expect(requests[0]?.body.occupancies[0]?.children).toBe(1);
     expect(requests[0]?.body.occupancies[0]?.paxes.filter((pax) => pax.type === "CH").map((pax) => pax.age)).toEqual([7]);
     expect(requests[0]?.body.occupancies[1]?.children).toBe(2);
@@ -177,6 +177,17 @@ describe("HotelbedsAvailabilityRequestBuilder", () => {
         createCandidates(["1001"]),
       ),
     ).toThrow("Invalid occupancies[0].childAges.");
+  });
+
+  it("requires one explicit occupancy entry per room slot", () => {
+    const builder = new HotelbedsAvailabilityRequestBuilder();
+
+    expect(() => builder.build(
+      createCriteria({
+        occupancies: createOccupancies([{ rooms: 2, adults: 2, children: 0, childAges: [] }]),
+      }),
+      createCandidates(["1001"]),
+    )).toThrow("each occupancy group must represent one room");
   });
 
   it("rejects invalid candidate hotel codes", () => {

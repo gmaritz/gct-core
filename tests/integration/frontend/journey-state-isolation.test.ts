@@ -73,7 +73,10 @@ const journeyId = "journey-homepage-journey-001";
 const bookingContext: JourneyBookingContext = {
 	startDate: "2026-11-01",
 	participants: 2,
-	roomAdults: [2],
+	stopOccupancies: [
+		{ stopId: "cape-winelands-stellenbosch", rooms: [{ slotId: "cape-winelands-stellenbosch-room-1", adults: 2, children: 0, childAges: [] }] },
+		{ stopId: "cape-winelands-hermanus", rooms: [{ slotId: "cape-winelands-hermanus-room-1", adults: 2, children: 0, childAges: [] }] },
+	],
 };
 
 function journeyFor(ownerId: string): Journey {

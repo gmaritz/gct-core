@@ -148,6 +148,114 @@ describe("DefaultJourneyQuoteService", () => {
     expect(base?.totalAmount.amount).toBe(51376);
     expect(request.pricingRequest.totals?.grandTotal.amount).toBe(53376);
   });
+
+  it("passes distinct per-stop room allocations and child ages into pricing", async () => {
+    const occupancyByStop = {
+      "stop-1": [
+        { slotId: "stop-1-room-1", adults: 1, children: 1, childAges: [8] },
+        { slotId: "stop-1-room-2", adults: 1, children: 1, childAges: [11] },
+      ],
+      "stop-2": [
+        { slotId: "stop-2-room-1", adults: 2, children: 2, childAges: [8, 11] },
+      ],
+    } as const;
+    const journey = Journey.create({
+      identity: { id: "journey-child-permitted-test" },
+      classification: { type: "PACKAGE", category: "SIGNATURE" },
+      metadata: { created: new Date(), modified: new Date(), version: "1.0.0", source: "TEST" },
+      status: JourneyStatus.PUBLISHED,
+      lifecycle: JourneyLifecycle.BOOKABLE,
+      duration: { days: 4, nights: 3, description: "4 Days / 3 Nights" },
+      destinations: [{ name: "Test Journey" }],
+      accommodation: Object.entries(occupancyByStop).map(([stopId, occupancies], stopIndex) => ({
+        accommodationId: `hotel-${stopId}`,
+        name: `Hotel ${stopId}`,
+        provider: "hotelbeds",
+        packageStop: {
+          packageId: "journey-child-permitted-test",
+          stopId,
+          stopOrder: stopIndex + 1,
+          checkInDate: new Date(`2026-11-0${stopIndex + 1}T00:00:00.000Z`),
+          checkOutDate: new Date(`2026-11-0${stopIndex + 2}T00:00:00.000Z`),
+        },
+        requestedOccupancy: { rooms: occupancies },
+        roomOptions: occupancies.map((occupancy, roomIndex) => {
+          const suffix = `${stopId}-room-${roomIndex + 1}`;
+          return {
+            reference: { provider: "hotelbeds", opaqueReference: `room-${suffix}` },
+            name: `Room ${roomIndex + 1}`,
+            rateOptions: [{
+              reference: { provider: "hotelbeds", opaqueReference: `rate-${suffix}` },
+              status: "BOOKABLE" as const,
+              pricing: { amount: 250 + roomIndex * 50, currency: "ZAR", basis: "TOTAL_STAY" },
+              occupancy: { rooms: [{
+                adults: occupancy.adults,
+                children: occupancy.children,
+                childAges: [...occupancy.childAges],
+              }] },
+              cancellationPolicies: [],
+              taxes: [],
+            }],
+          };
+        }),
+      })),
+      experiences: [],
+      travellerRules: { minimumTravellers: 1, maximumTravellers: 8, privateOnly: true, childrenAllowed: true },
+      tags: [],
+    });
+    const execute = jest.fn(async (request: PricingEngineRequest): Promise<ReturnType<typeof createPricingEngineResult>> => createPricingEngineResult({
+      successful: true,
+      pricing: null,
+      metadata: {
+        completedAt: new Date(),
+        version: "1.0.0",
+        requestId: request.requestId ?? "quote",
+        stages: [],
+      },
+    }));
+    const resolver = {
+      resolve: async (): Promise<{ readonly status: "RESOLVED"; readonly journey: Journey }> => ({
+        status: "RESOLVED",
+        journey,
+      }),
+    };
+    const result = await new DefaultJourneyQuoteService(resolver, { execute } as never).priceJourney(
+      "owner-a",
+      journey.identity.id,
+      Object.entries(occupancyByStop).map(([stopId, occupancies]) => ({
+        stopId,
+        accommodationId: `hotel-${stopId}`,
+        roomSelections: occupancies.map((occupancy, roomIndex) => {
+          const suffix = `${stopId}-room-${roomIndex + 1}`;
+          return {
+            roomSlotId: occupancy.slotId,
+            roomReference: { provider: "hotelbeds", opaqueReference: `room-${suffix}` },
+            rateReference: { provider: "hotelbeds", opaqueReference: `rate-${suffix}` },
+          };
+        }),
+        roomReference: { provider: "hotelbeds", opaqueReference: `room-${stopId}-room-1` },
+        rateReference: { provider: "hotelbeds", opaqueReference: `rate-${stopId}-room-1` },
+      })),
+    );
+
+    expect(result.status).toBe("UNAVAILABLE");
+    const request = execute.mock.calls[0]?.[0] as PricingEngineRequest;
+    const accommodationItems = request.pricingRequest.breakdown?.lineItems
+      .filter((item) => item.code.startsWith("ACCOMMODATION:")) ?? [];
+    expect(accommodationItems.map((item) => item.metadata)).toEqual([
+      expect.objectContaining({
+        packageStopId: "stop-1",
+        occupancyRoomCount: "2",
+        childAges: "8,11",
+      }),
+      expect.objectContaining({
+        packageStopId: "stop-2",
+        occupancyRoomCount: "1",
+        childAges: "8,11",
+      }),
+    ]);
+    expect(accommodationItems.map((item) => item.totalAmount.amount)).toEqual([550, 250]);
+  });
 });
 
 function createSupplierJourney(currencies: ReadonlyArray<string>): Journey {

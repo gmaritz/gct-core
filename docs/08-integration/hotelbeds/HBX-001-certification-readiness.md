@@ -309,11 +309,86 @@ The content importer may use controlled batches of 50, while Availability should
 | HBX-AV-001 | Correct dates                                         | `IN_PROGRESS` |          |
 | HBX-AV-002 | Correct hotel candidates                              | `IN_PROGRESS` |          |
 | HBX-AV-003 | Occupancy represented correctly                       | `IN_PROGRESS` |          |
-| HBX-AV-004 | Multiple rooms supported where applicable             | `IN_PROGRESS` |          |
-| HBX-AV-005 | All required rooms included in same Availability call | `IN_PROGRESS` |          |
+| HBX-AV-004 | Multiple rooms supported where applicable             | `IN_PROGRESS` | Availability allocation implemented and architecturally accepted (INT-004.4 §5.2.2, regression 129 suites / 878 tests). Combined multi-room booking lifecycle not implemented. See 12.1. |
+| HBX-AV-005 | All required rooms included in same Availability call | `PASS` | Internally verified: for each stop, all requested room occupancies are sent together in one Availability request (request builder and resolver tests). Postman MR-02 and MR-03, 2026-11-03. Not a Hotelbeds certification result. |
 | HBX-AV-006 | Maximum 2,000 hotels/call respected                   | `IN_PROGRESS` |          |
 | HBX-AV-007 | Product information displayed correctly               | `IN_PROGRESS` |          |
 | HBX-AV-008 | Pagination correctly implemented where applicable     | `IN_PROGRESS` |          |
+| HBX-AV-009 | Multi-room allocation uses a distinct `rateKey` offer per requested room, matches each room's occupancy, and is presented only when complete | `CONDITIONAL` | Allocation implemented and accepted (INT-004.4 §5.2.2). Supplier transaction evidence: Postman booking `241-749700` confirmed two room offers selected from one Availability response (2026-11-03). Requires supplier confirmation or a certification test for the outstanding items in 12.1.3 to 12.1.5. |
+
+### 12.1 Multi-room allocation and fulfilment evidence
+
+**Status of `HBX-AV-009`: `CONDITIONAL`** ("works but requires documented commercial/certification explanation", section 9). It was previously `BLOCKED` because the original wording, that the Availability response itself proves concurrent fulfilment of all requested room occupancies, could not be established from the repository evidence. The requirement is now stated as the accepted allocation contract (a distinct `rateKey` offer per requested room, matched to each room's occupancy, presented only when complete). That contract is implemented and architecturally accepted, and the supplier accepted and confirmed a combined two-room booking built from one Availability response. The status is not `PASS`: the items in 12.1.3 to 12.1.5 still require supplier confirmation or a certification test, the combined booking lifecycle is not implemented, and no Hotelbeds certification result exists. This record does not claim that Hotelbeds certification is complete.
+
+For each accommodation stop, GCT Core sends all requested room occupancies for that stop together in one Availability request. Different stops are evaluated independently. That request shape does not, by itself, establish that the returned room/rate entries can be fulfilled concurrently, and the approved repository evidence does not define whether `rate.rooms` or `allotment` do. The accepted allocation therefore does not rely on them.
+
+The Cape Winelands resolver presents a multi-room stop only when a complete allocation exists: one offer per requested room, each with a distinct `rateKey`, matching that room's adults, children and child ages, from the same successful Availability response for that stop and stay dates. Identical repeated response entries count as one offer; entries sharing a `rateKey` but described inconsistently are rejected; a rate describing more than one room is not accepted for a single room slot. An incomplete, duplicate or ambiguous allocation is not presented, and the journey is then unavailable (fail-closed). GCT room-slot identity is application-owned and separate from the `rateKey`, which is preserved unchanged. The accepted rules are recorded in INT-004.4 section 5.2.2; the multi-room restriction that previously prevented presentation has been removed.
+
+#### 12.1.1 Postman evidence, 3 November 2026
+
+Tests were conducted through Postman against the Hotelbeds test services. The full narrative is in `docs/08-integration/INT-004.4-multi-room-availability-occupancy-allocation-correctness.md`, section 5.2.1.
+
+| Test | Request | Observed result |
+| ---- | ------- | --------------- |
+| MR-01 | One occupancy entry: one room, two adults | Room types and rate options with `rateKey` values returned. Some identical rate objects were repeated with identical `rateKey` values and prices. |
+| MR-02 | Two occupancy entries, each one room and two adults | Rates returned with `rooms: 1`, `adults: 2`, `children: 0`. No explicit GCT room-slot identifier. Identical rate objects and `rateKey` values repeated. `allotment` values returned; scope and concurrency semantics undocumented. |
+| MR-03 | Room 1: two adults. Room 2: two adults and one child aged seven | Request using `childrenAges` rejected: `INVALID_DATA: If children >= 1 it is mandatory that you specify a paxes element per child.` Corrected request with `paxes: [{ "type": "CH", "age": 7 }]` succeeded. Occupancy-specific variants returned (`rooms: 1`, `adults: 2`, `children: 0`; and `rooms: 1`, `adults: 2`, `children: 1`, `childrenAges: "7"`). At The Whale Coast All Suite Hotel the adult-only and child-occupancy offers had different `rateKey` values despite matching property, room type, dates and net amount. Not every room type supports every requested occupancy. |
+
+Combined booking, booking reference `241-749700`, The Whale Coast All Suite Hotel, check-in 18 November 2026, check-out 19 November 2026:
+
+* The booking request contained two entries in `rooms`, each with its own passenger list of two adults.
+* The first entry used the Availability `rateKey` for `APT.B2` (opaque identifier `917288786`). The second used the Availability `rateKey` for `APT.B3-C6` (opaque identifier `705047521`).
+* Both `rateKey` values were submitted unchanged from the matching Availability response, timestamped `2026-11-03 14:54:19.942`. The exact Availability-to-Booking match was verified for both.
+* The response returned overall status `CONFIRMED` and two room objects, each `CONFIRMED`: `APT.B2` (two adults, net EUR 272.24) and `APT.B3-C6` (two adults, net EUR 281.34). Total net: EUR 553.58.
+
+This is direct transaction evidence that Hotelbeds accepted two different room offers, selected from one Availability response, in one combined booking request and confirmed both rooms.
+
+#### 12.1.2 Demonstrated
+
+* Multi-occupancy Availability request, with each room as a separate occupancy entry with `rooms: 1`.
+* Occupancy-specific response offers distinguishing adult-only and child-occupancy rates.
+* Different room types selected in one booking.
+* Exact `rateKey` preservation from Availability to Booking.
+* Two room entries submitted in one booking request.
+* Two individually confirmed room records in one booking response.
+* When children are supplied, one `paxes` element per child with its age is mandatory.
+
+This evidence supports `HBX-AV-004` and `HBX-AV-005`. `HBX-AV-005` is `PASS` (internal verification only). `HBX-AV-004` stays `IN_PROGRESS` because the combined multi-room booking lifecycle is not implemented.
+
+The order of rates in a supplier response does not identify the requested room slot, and duplicate identical rate objects are not additional inventory. GCT room-slot identity remains an application-owned identity; no supplier room-slot identifier exists or may be invented.
+
+#### 12.1.3 Unresolved supplier questions
+
+The accepted allocation does not depend on the answers below, but they have not been confirmed by the supplier and remain open.
+* The exact semantics and inventory scope of `allotment`, including whether it is shared across rate variants or occupancy groups.
+* General guarantees of simultaneous availability beyond the successful demonstrated transaction.
+* Formal rate-to-requested-occupancy mapping rules across all possible supplier responses.
+* The meaning of `rate.rooms > 1`.
+* The semantics of duplicate response entries.
+* The formal meaning and scope of the passenger `roomId`. The booking request assigned `roomId: 1` to passengers in both room entries; the response returned room objects with IDs 1 and 2, but passengers in both still had `roomId: 1`. This is an observed behaviour requiring clarification. The request convention is not changed and the response is not asserted to be defective.
+* The explanation for the price difference between Availability and Booking (below).
+* Whether any supplier-specific booking or CheckRate conditions change these conclusions.
+
+#### 12.1.4 Supplier pricing reconciliation (unresolved)
+
+| Room | Availability net | Booking net | Difference |
+| ---- | ---------------- | ----------- | ---------- |
+| `APT.B2` | EUR 266.91 | EUR 272.24 | +EUR 5.33 |
+| `APT.B3-C6` | EUR 275.83 | EUR 281.34 | +EUR 5.51 |
+| Total | EUR 542.74 | EUR 553.58 | +EUR 10.84 |
+
+The booking returned higher net amounts than the matching Availability response. No explanation is recorded: it must not be assumed to be tax, commission, repricing or a currency issue. CUR-001 currency integrity is unchanged; no conversion or currency substitution is introduced.
+
+#### 12.1.5 Remaining requirements before `HBX-AV-009` can be `PASS`
+
+The following remain outstanding. None has been completed, and none is implied by the successful Postman transaction or by the accepted implementation:
+
+* Written Hotelbeds confirmation, or approved documentation, of the unresolved questions in 12.1.3: the scope of `allotment`, the meaning of `rate.rooms > 1`, the semantics of duplicate response entries, the meaning of the passenger `roomId`, the identity and reuse rules for `rateKey` and room references, and whether returned rates are concurrently available beyond the demonstrated transaction.
+* Reconciliation of the Availability-to-Booking price difference recorded in 12.1.4.
+* A deterministic approved certification fixture or an actual Hotelbeds certification test demonstrating a complete multi-occupancy response and an incomplete or insufficient one.
+* Implementation and internal verification of the combined multi-room booking lifecycle (`HBX-WF-006`, `HBX-WF-007` and the Booking and Multiple rooms items of the internal test pack, section 37). Passenger assignment per room and the `roomId` convention must be settled as part of it.
+
+Hotelbeds certification as a whole is not complete and no certification request has been made on the basis of this record.
 
 ---
 

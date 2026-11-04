@@ -25,6 +25,7 @@ export interface JourneyAccommodationSelection {
 }
 
 export interface JourneyRoomRateSelection {
+  readonly roomSlotId?: string;
   readonly roomReference: AccommodationSupplierReference;
   readonly rateReference: AccommodationSupplierReference;
 }
@@ -38,7 +39,11 @@ export interface JourneyAccommodationPricingInput {
   readonly accommodationId: string;
   readonly room: AccommodationRoomOption;
   readonly rate: AccommodationRateOption;
-  readonly roomRates?: ReadonlyArray<{ readonly room: AccommodationRoomOption; readonly rate: AccommodationRateOption }>;
+  readonly roomRates?: ReadonlyArray<{
+    readonly roomSlotId?: string;
+    readonly room: AccommodationRoomOption;
+    readonly rate: AccommodationRateOption;
+  }>;
   readonly occupancy?: AccommodationAvailabilityOccupancy;
 }
 
@@ -76,7 +81,28 @@ export function selectJourneyAccommodation(
     rateReference: selection.rateReference,
   }];
   if (requestedRoomSelections.length === 0) throw new Error("At least one room and rate selection is required.");
-  const roomRates = requestedRoomSelections.map((roomSelection) => {
+  const seenRoomRateReferences = new Set<string>();
+  const seenRateReferences = new Set<string>();
+  const roomRates = requestedRoomSelections.map((roomSelection, index) => {
+    const roomRateIdentity = JSON.stringify([
+      roomSelection.roomReference.provider,
+      roomSelection.roomReference.opaqueReference,
+      roomSelection.rateReference.provider,
+      roomSelection.rateReference.opaqueReference,
+    ]);
+    const rateIdentity = JSON.stringify([
+      roomSelection.rateReference.provider,
+      roomSelection.rateReference.opaqueReference,
+    ]);
+    if (seenRoomRateReferences.has(roomRateIdentity) || seenRateReferences.has(rateIdentity)) {
+      throw new Error("A room and rate selection cannot be reused for multiple room slots.");
+    }
+    seenRoomRateReferences.add(roomRateIdentity);
+    seenRateReferences.add(rateIdentity);
+    const expectedRoom = option.requestedOccupancy?.rooms[index];
+    if (expectedRoom?.slotId && roomSelection.roomSlotId !== expectedRoom.slotId) {
+      throw new Error("Selected room does not match the requested room slot.");
+    }
     const room = option.roomOptions?.find((candidate) =>
       candidate.reference.provider === roomSelection.roomReference.provider
       && candidate.reference.opaqueReference === roomSelection.roomReference.opaqueReference,
@@ -90,8 +116,24 @@ export function selectJourneyAccommodation(
     if (rate.status !== "BOOKABLE" && rate.status !== "RECHECK_REQUIRED") {
       throw new Error("Selected rate is not available.");
     }
+    if (rate.occupancy.rooms.length !== 1) {
+      throw new Error("Selected rate does not represent exactly one room slot.");
+    }
     return Object.freeze({ room, rate });
   });
+  if (option.requestedOccupancy && roomRates.length !== option.requestedOccupancy.rooms.length) {
+    throw new Error("Every requested room slot must have one selected room and rate.");
+  }
+  if (option.requestedOccupancy?.rooms.some((occupancy, index) => {
+    const offered = roomRates[index]?.rate.occupancy.rooms[0];
+    return !offered
+      || offered.adults !== occupancy.adults
+      || offered.children !== occupancy.children
+      || offered.childAges.length !== occupancy.childAges.length
+      || offered.childAges.some((age, ageIndex) => age !== occupancy.childAges[ageIndex]);
+  })) {
+    throw new Error("Selected rate occupancy does not match the requested room slot.");
+  }
   const firstRoomRate = roomRates[0]!;
   const currency = firstRoomRate.rate.pricing.currency;
   if (roomRates.some(({ rate }) => rate.pricing.currency !== currency)) {
@@ -121,7 +163,10 @@ export function selectJourneyAccommodation(
       accommodationId: option.accommodationId,
       room: firstRoomRate.room,
       rate,
-      roomRates: Object.freeze(roomRates),
+      roomRates: Object.freeze(roomRates.map((item, index) => Object.freeze({
+        ...item,
+        roomSlotId: requestedRoomSelections[index]?.roomSlotId ?? option.requestedOccupancy?.rooms[index]?.slotId,
+      }))),
       occupancy: option.requestedOccupancy,
     }),
     reservationInput: Object.freeze({
@@ -135,7 +180,10 @@ export function selectJourneyAccommodation(
       accommodationId: option.accommodationId,
       room: firstRoomRate.room,
       rate,
-      roomRates: Object.freeze(roomRates),
+      roomRates: Object.freeze(roomRates.map((item, index) => Object.freeze({
+        ...item,
+        roomSlotId: requestedRoomSelections[index]?.roomSlotId ?? option.requestedOccupancy?.rooms[index]?.slotId,
+      }))),
       occupancy: option.requestedOccupancy,
       provider,
       supplierReference: rate.reference,

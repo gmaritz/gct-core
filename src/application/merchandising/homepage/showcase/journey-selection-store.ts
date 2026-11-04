@@ -5,7 +5,15 @@ import { createJourneyStateKey } from "./journey-state-ownership";
 export interface JourneyBookingContext {
   readonly startDate: string;
   readonly participants: number;
-  readonly roomAdults: ReadonlyArray<number>;
+  readonly stopOccupancies: ReadonlyArray<{
+    readonly stopId: string;
+    readonly rooms: ReadonlyArray<{
+      readonly slotId: string;
+      readonly adults: number;
+      readonly children: number;
+      readonly childAges: ReadonlyArray<number>;
+    }>;
+  }>;
 }
 
 export class JourneySelectionStore {
@@ -18,7 +26,13 @@ export class JourneySelectionStore {
     this.contexts.set(key, Object.freeze({
       startDate: context.startDate,
       participants: context.participants,
-      roomAdults: Object.freeze([...context.roomAdults]),
+      stopOccupancies: Object.freeze(context.stopOccupancies.map((stop) => Object.freeze({
+        stopId: stop.stopId,
+        rooms: Object.freeze(stop.rooms.map((room) => Object.freeze({
+          ...room,
+          childAges: Object.freeze([...room.childAges]),
+        }))),
+      }))),
     }));
     this.selections.delete(key);
     this.offeredJourneys.delete(key);
@@ -50,6 +64,7 @@ export class JourneySelectionStore {
       rateReference: selection.rateReference ? Object.freeze({ ...selection.rateReference }) : undefined,
       roomSelections: selection.roomSelections
         ? Object.freeze(selection.roomSelections.map((roomSelection) => Object.freeze({
+            roomSlotId: roomSelection.roomSlotId,
             roomReference: Object.freeze({ ...roomSelection.roomReference }),
             rateReference: Object.freeze({ ...roomSelection.rateReference }),
           })))

@@ -191,10 +191,14 @@ export class DefaultJourneyQuoteService implements JourneyQuoteService {
       const roomSelections = selection.roomSelections ?? (selection.roomReference && selection.rateReference
         ? [{ roomReference: selection.roomReference, rateReference: selection.rateReference }]
         : []);
+      const normalizedRoomSelections = roomSelections.map((roomSelection, index) => ({
+        ...roomSelection,
+        roomSlotId: roomSelection.roomSlotId ?? option?.requestedOccupancy?.rooms[index]?.slotId,
+      }));
       if (roomSelections.length === 0) {
         return { status: "INVALID", journeyId, journey: resolution.journey, selections };
       }
-      const selectedRoomRates = roomSelections.map((roomSelection) => {
+      const selectedRoomRates = normalizedRoomSelections.map((roomSelection) => {
         const room = option?.roomOptions?.find((candidate) =>
           candidate.reference.provider === roomSelection.roomReference.provider
           && candidate.reference.opaqueReference === roomSelection.roomReference.opaqueReference,
@@ -209,6 +213,28 @@ export class DefaultJourneyQuoteService implements JourneyQuoteService {
       const rate = selectedRoomRates[0]?.rate;
 
       if (!option || !room || !rate || selectedRoomRates.some((item) => !item)) {
+        return { status: "INVALID", journeyId, journey: resolution.journey, selections };
+      }
+      if (option.requestedOccupancy
+        && option.requestedOccupancy.rooms.length !== roomSelections.length) {
+        return { status: "INVALID", journeyId, journey: resolution.journey, selections };
+      }
+      const seenRateReferences = new Set<string>();
+      if (selectedRoomRates.some((item, index) => {
+        const selectedRate = item!.rate;
+        const offered = selectedRate.occupancy.rooms[0];
+        const requested = option.requestedOccupancy?.rooms[index];
+        const rateIdentity = JSON.stringify([selectedRate.reference.provider, selectedRate.reference.opaqueReference]);
+        if (seenRateReferences.has(rateIdentity)) return true;
+        seenRateReferences.add(rateIdentity);
+        return selectedRate.occupancy.rooms.length !== 1
+          || Boolean(requested?.slotId && normalizedRoomSelections[index]?.roomSlotId !== requested.slotId)
+          || Boolean(requested && (!offered
+            || offered.adults !== requested.adults
+            || offered.children !== requested.children
+            || offered.childAges.length !== requested.childAges.length
+            || offered.childAges.some((age, ageIndex) => age !== requested.childAges[ageIndex])));
+      })) {
         return { status: "INVALID", journeyId, journey: resolution.journey, selections };
       }
       const stopId = option.packageStop?.stopId ?? selection.stopId ?? option.accommodationId;
@@ -232,7 +258,7 @@ export class DefaultJourneyQuoteService implements JourneyQuoteService {
         packageStopId: selection.stopId,
         roomReference: roomSelections[0]!.roomReference,
         rateReference: roomSelections[0]!.rateReference,
-        roomSelections,
+        roomSelections: normalizedRoomSelections,
       });
       const pricingInput = selected.pricingInput;
       if (!pricingInput) {

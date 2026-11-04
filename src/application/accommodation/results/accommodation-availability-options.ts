@@ -6,6 +6,7 @@ export interface AccommodationSupplierReference {
 }
 
 export interface AccommodationOccupancyRoom {
+  readonly slotId?: string;
   readonly adults: number;
   readonly children: number;
   readonly childAges: ReadonlyArray<number>;

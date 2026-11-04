@@ -1,5 +1,4 @@
 import { Journey } from "../../../application/journeys";
-import { AccommodationAvailabilityOccupancy } from "../../../application/accommodation";
 import { AccommodationSelectionViewModel } from "../journeys/accommodation-selection.viewmodel";
 import { ImageViewModel } from "../shared/image.viewmodel";
 
@@ -32,10 +31,11 @@ export class AccommodationSelectionViewModelProvider {
       checkIn?: string;
       checkOut?: string;
       nights?: number;
-      occupancy?: AccommodationAvailabilityOccupancy["rooms"];
+      occupancy?: Array<NonNullable<AccommodationSelectionViewModel["stops"][number]["occupancy"]>[number]>;
       properties: Array<AccommodationSelectionViewModel["stops"][number]["properties"][number]>;
     }>();
     journey.accommodation.forEach((option, index) => {
+      const stopId = option.packageStop?.stopId ?? `journey-stop-${index + 1}`;
       const rooms = option.roomOptions?.map((room) => ({
         id: room.reference.opaqueReference,
         name: room.name,
@@ -46,9 +46,17 @@ export class AccommodationSelectionViewModelProvider {
           amount: rate.pricing.amount,
           currency: rate.pricing.currency,
           adults: rate.occupancy.rooms.length === 1 ? rate.occupancy.rooms[0]?.adults : undefined,
+          children: rate.occupancy.rooms.length === 1 ? rate.occupancy.rooms[0]?.children : undefined,
+          childAges: rate.occupancy.rooms.length === 1 ? rate.occupancy.rooms[0]?.childAges : undefined,
+          occupancyKey: rate.occupancy.rooms.length === 1
+            ? JSON.stringify([
+              rate.occupancy.rooms[0]?.adults,
+              rate.occupancy.rooms[0]?.children,
+              rate.occupancy.rooms[0]?.childAges,
+            ])
+            : undefined,
         })),
       })) ?? [];
-      const stopId = option.packageStop?.stopId ?? `journey-stop-${index + 1}`;
       const existing = stopsById.get(stopId);
       const property = Object.freeze({
         id: option.accommodationId,
@@ -75,7 +83,11 @@ export class AccommodationSelectionViewModelProvider {
         checkIn: option.packageStop?.checkInDate.toISOString(),
         checkOut: option.packageStop?.checkOutDate.toISOString(),
         nights: option.packageStop ? Math.max(0, Math.round((option.packageStop.checkOutDate.getTime() - option.packageStop.checkInDate.getTime()) / 86400000)) : undefined,
-        occupancy: option.requestedOccupancy?.rooms,
+        occupancy: option.requestedOccupancy?.rooms.map((room, roomIndex) => Object.freeze({
+          ...room,
+          slotId: room.slotId ?? `${stopId}-room-${roomIndex + 1}`,
+          occupancyKey: JSON.stringify([room.adults, room.children, room.childAges]),
+        })),
         properties: [property],
       });
     });

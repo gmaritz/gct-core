@@ -1,4 +1,6 @@
 import { Reservation, ReservationStatus } from "@application/reservations/aggregate";
+import { createAccommodationReservationSnapshots } from "@application/reservations";
+import { JourneyAccommodationPricingInput, JourneyAccommodationReservationInput } from "@application/journeys/models";
 import { ReservationTimelineMilestone } from "@application/reservations/models";
 import { ReservationPersistenceContext } from "@application/reservations/repository";
 import { PrismaClient } from "@prisma/client";
@@ -37,7 +39,7 @@ type StoredBooking = {
   cancelledAt?: Date | null;
 };
 
-function createReservation(status: ReservationStatus = ReservationStatus.CREATED, id = "reservation-001", number = "RES-123456-ABCD", supplierCurrency = "ZAR"): Reservation {
+function createReservation(status: ReservationStatus = ReservationStatus.CREATED, id = "reservation-001", number = "RES-123456-ABCD", supplierCurrency = "ZAR", roomCount = 2, accommodationSnapshots?: Parameters<typeof Reservation.create>[0]["accommodationSnapshots"]): Reservation {
   return Reservation.create({
     identity: { id },
     reservationNumber: number,
@@ -73,7 +75,7 @@ function createReservation(status: ReservationStatus = ReservationStatus.CREATED
         fullName: "Mika Jacobs",
       },
     ],
-    accommodationSnapshots: [
+    accommodationSnapshots: accommodationSnapshots ?? [
       {
         snapshotId: "accommodation-snap-001",
         capturedAt: new Date("2026-08-22T10:00:00.000Z"),
@@ -91,25 +93,29 @@ function createReservation(status: ReservationStatus = ReservationStatus.CREATED
         provider: "supplier-a",
         occupancy: {
           rooms: [
-            { adults: 2, children: 1, childAges: [8] },
-            { adults: 2, children: 0, childAges: [] },
-          ],
+            { slotId: "stop-001-room-1", adults: 2, children: 1, childAges: [8] },
+            { slotId: "stop-001-room-2", adults: 2, children: 0, childAges: [] },
+          ].slice(0, roomCount),
         },
         supplierPrice: { amount: 23000, currency: supplierCurrency, basis: "TOTAL_STAY" },
         selectedRooms: [
           {
+            roomSlotId: "stop-001-room-1",
             roomType: "Suite",
             roomReference: { provider: "supplier-a", opaqueReference: "room-1" },
             rateReference: { provider: "supplier-a", opaqueReference: "rate-1" },
             supplierPrice: { amount: 12000, currency: supplierCurrency, basis: "TOTAL_STAY" },
+            occupancy: { adults: 2, children: 1, childAges: [8] },
           },
           {
+            roomSlotId: "stop-001-room-2",
             roomType: "Twin",
             roomReference: { provider: "supplier-a", opaqueReference: "room-2" },
             rateReference: { provider: "supplier-a", opaqueReference: "rate-2" },
             supplierPrice: { amount: 11000, currency: supplierCurrency, basis: "TOTAL_STAY" },
+            occupancy: { adults: 2, children: 0, childAges: [] },
           },
-        ],
+        ].slice(0, roomCount),
       },
     ],
     pricingSnapshot: {
@@ -345,6 +351,10 @@ describe("CanonicalReservationPrismaRepository", () => {
     expect(restored?.travellerSnapshots.map((item) => item.travellerId)).toEqual(["traveller-001", "traveller-002"]);
     expect(restored?.journeySnapshot.journeyId).toBe("journey-1001");
     expect(restored?.accommodationSnapshots[0]?.occupancy?.rooms[0]?.childAges).toEqual([8]);
+    expect(restored?.accommodationSnapshots[0]?.selectedRooms?.map((room) => room.roomSlotId))
+      .toEqual(["stop-001-room-1", "stop-001-room-2"]);
+    expect(restored?.accommodationSnapshots[0]?.selectedRooms?.map((room) => room.occupancy?.childAges))
+      .toEqual([[8], []]);
     expect(restored?.supplierReferences[0]?.providerId).toBe("supplier-a");
     expect(restored?.supplierReferences[0]?.bookingId).toBe("booking-001");
     expect(restored?.supplierReferences[0]?.bookingItemId).toBe("booking-item-001");
@@ -373,6 +383,141 @@ describe("CanonicalReservationPrismaRepository", () => {
     ]);
     expect(restored?.pricingSnapshot?.currency).toBe("ZAR");
     expect(restored?.pricingSnapshot?.totalPrice).toBe(46000);
+  });
+
+  it("INT-004.4-A1 restores the slot identity of a single-room occupancy", async () => {
+    const mock = createPrismaMock();
+    const repository = new CanonicalReservationPrismaRepository(mock.prisma as unknown as PrismaClient);
+
+    const reservation = createReservation(ReservationStatus.CREATED, "reservation-single", "RES-SINGLE-01", "ZAR", 1);
+    await repository.save(reservation, createContext());
+    const accommodation = (await repository.findById(reservation.identity.id))?.accommodationSnapshots[0];
+
+    expect(accommodation?.occupancy?.rooms).toEqual([
+      { slotId: "stop-001-room-1", adults: 2, children: 1, childAges: [8] },
+    ]);
+    expect(accommodation?.selectedRooms?.map((room) => room.roomSlotId)).toEqual(["stop-001-room-1"]);
+  });
+
+  it("INT-004.4-A1 restores every distinct occupancy slot identity in order and agrees with the selected rooms", async () => {
+    const mock = createPrismaMock();
+    const repository = new CanonicalReservationPrismaRepository(mock.prisma as unknown as PrismaClient);
+
+    const reservation = createReservation();
+    await repository.save(reservation, createContext());
+    const accommodation = (await repository.findById(reservation.identity.id))?.accommodationSnapshots[0];
+
+    expect(accommodation?.occupancy?.rooms).toEqual([
+      { slotId: "stop-001-room-1", adults: 2, children: 1, childAges: [8] },
+      { slotId: "stop-001-room-2", adults: 2, children: 0, childAges: [] },
+    ]);
+    expect(accommodation?.occupancy?.rooms.map((room) => room.slotId))
+      .toEqual(accommodation?.selectedRooms?.map((room) => room.roomSlotId));
+    expect(accommodation?.occupancy?.rooms.map((room) => room.childAges))
+      .toEqual(accommodation?.selectedRooms?.map((room) => room.occupancy?.childAges));
+  });
+
+  it("INT-004.4-A1 does not invent a slot identity for an existing record that persisted none", async () => {
+    const mock = createPrismaMock();
+    const repository = new CanonicalReservationPrismaRepository(mock.prisma as unknown as PrismaClient);
+
+    const reservation = createReservation();
+    await repository.save(reservation, createContext());
+    const persisted = mock.reservationStore.get(reservation.identity.id);
+    if (!persisted?.accommodationSnapshots) throw new Error("Missing canonical reservation in test setup");
+    persisted.accommodationSnapshots = persisted.accommodationSnapshots.map((snapshot) => {
+      const occupancy = snapshot.occupancy as { rooms: Array<JsonRecord> };
+      return {
+        ...snapshot,
+        occupancy: { rooms: occupancy.rooms.map(({ slotId: _slotId, ...room }) => room) },
+      };
+    });
+
+    const accommodation = (await repository.findById(reservation.identity.id))?.accommodationSnapshots[0];
+
+    expect(accommodation?.occupancy?.rooms.map((room) => room.slotId)).toEqual([undefined, undefined]);
+    expect(accommodation?.occupancy?.rooms.map((room) => [room.adults, room.children, room.childAges]))
+      .toEqual([[2, 1, [8]], [2, 0, []]]);
+    expect(accommodation?.selectedRooms?.map((room) => room.roomSlotId)).toEqual(["stop-001-room-1", "stop-001-room-2"]);
+  });
+
+  it("INT-004.4 preserves each rateKey and room slot from the handoff snapshot through persistence and reconstruction", async () => {
+    // Modelled on the Hotelbeds Postman reference transaction (booking 241-749700); the rateKeys are synthetic.
+    const accommodation = {
+      identity: { id: "hotel-1", name: "Reference Hotel" },
+      category: "Boutique Hotel" as const,
+      location: { country: "ZA", region: "WC", city: "Hermanus", suburb: "", latitude: 0, longitude: 0 },
+      rating: { stars: 4, classification: "Premium" },
+      images: [], amenities: [], policies: [], contacts: [],
+      providerReference: { provider: "hotelbeds", providerAccommodationId: "hotel-1" },
+    };
+    const rate = (rateKey: string, amount: number, child: boolean): JourneyAccommodationPricingInput["rate"] => ({
+      reference: { provider: "hotelbeds", opaqueReference: rateKey },
+      status: "BOOKABLE",
+      pricing: { amount, currency: "EUR", basis: "TOTAL_STAY" },
+      occupancy: { rooms: [child ? { adults: 2, children: 1, childAges: [7] } : { adults: 2, children: 0, childAges: [] }] },
+      cancellationPolicies: [],
+      taxes: [],
+    });
+    const room = (code: string, name: string, roomRate: JourneyAccommodationPricingInput["rate"]): JourneyAccommodationPricingInput["room"] => ({
+      reference: { provider: "hotelbeds", opaqueReference: code },
+      name,
+      rateOptions: [roomRate],
+    });
+    const firstRate = rate("synthetic-rate-apt-b2", 266.91, false);
+    const secondRate = rate("synthetic-rate-apt-b3-c6", 275.83, true);
+    const firstRoom = room("APT.B2", "Apartment B2", firstRate);
+    const secondRoom = room("APT.B3-C6", "Apartment B3-C6", secondRate);
+    const requested = {
+      rooms: [
+        { slotId: "stop-1-room-1", adults: 2, children: 0, childAges: [] },
+        { slotId: "stop-1-room-2", adults: 2, children: 1, childAges: [7] },
+      ],
+    };
+    const common = {
+      packageStopId: "stop-1",
+      accommodation,
+      stayPeriod: { checkIn: new Date("2026-11-18"), checkOut: new Date("2026-11-19") },
+      accommodationId: "hotel-1",
+      room: firstRoom,
+      rate: { ...firstRate, pricing: { amount: 542.74, currency: "EUR", basis: "TOTAL_STAY" }, occupancy: requested },
+      roomRates: [
+        { roomSlotId: "stop-1-room-1", room: firstRoom, rate: firstRate },
+        { roomSlotId: "stop-1-room-2", room: secondRoom, rate: secondRate },
+      ],
+      occupancy: requested,
+    };
+    const [snapshot] = createAccommodationReservationSnapshots({
+      packageId: "package-1",
+      pricingInputs: [common as JourneyAccommodationPricingInput],
+      reservationInputs: [{ ...common, provider: "hotelbeds", supplierReference: firstRate.reference } as JourneyAccommodationReservationInput],
+      finalPackagePrice: { amount: 20000, currency: "ZAR" },
+      holder: { firstName: "Ari", lastName: "Jacobs", email: "ari@example.com" },
+      guests: [],
+      idempotencyKey: "reservation-request-1",
+    });
+
+    const mock = createPrismaMock();
+    const repository = new CanonicalReservationPrismaRepository(mock.prisma as unknown as PrismaClient);
+    const reservation = createReservation(ReservationStatus.CREATED, "reservation-multi", "RES-MULTI-01", "EUR", 2, [snapshot!]);
+    await repository.save(reservation, createContext());
+    const restored = (await repository.findById(reservation.identity.id))?.accommodationSnapshots[0];
+
+    expect(restored?.selectedRooms?.map((selected) => [selected.roomSlotId, selected.roomReference.opaqueReference, selected.rateReference.opaqueReference]))
+      .toEqual([
+        ["stop-1-room-1", "APT.B2", "synthetic-rate-apt-b2"],
+        ["stop-1-room-2", "APT.B3-C6", "synthetic-rate-apt-b3-c6"],
+      ]);
+    expect(restored?.selectedRooms?.map((selected) => selected.supplierPrice))
+      .toEqual([
+        { amount: 266.91, currency: "EUR", basis: "TOTAL_STAY" },
+        { amount: 275.83, currency: "EUR", basis: "TOTAL_STAY" },
+      ]);
+    expect(restored?.occupancy?.rooms).toEqual(requested.rooms);
+    expect(restored?.occupancy?.rooms.map((slot) => slot.slotId))
+      .toEqual(restored?.selectedRooms?.map((selected) => selected.roomSlotId));
+    expect(restored?.selectedRooms?.map((selected) => selected.occupancy))
+      .toEqual([{ adults: 2, children: 0, childAges: [] }, { adults: 2, children: 1, childAges: [7] }]);
   });
 
   it("reads legacy Booking state only when no canonical Reservation exists", async () => {
