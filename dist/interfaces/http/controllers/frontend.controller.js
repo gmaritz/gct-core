@@ -164,7 +164,7 @@ function parseJourneyBookingContext(body) {
                 return {
                     slotId: `${stopId}-room-${roomIndex + 1}`,
                     adults: parseIntegerField(room?.adults),
-                    children: parseIntegerField(room?.children),
+                    children: room?.children === undefined ? 0 : parseIntegerField(room.children),
                     childAges: rawChildAges.map((age) => parseIntegerField(age)),
                 };
             }),
@@ -484,7 +484,7 @@ async function renderPaymentPage(request, response) {
         return;
     const context = await resolvePaymentContext(request.params.journeyId);
     const result = context ? paymentStateResult(context) : unavailablePaymentResult(request.params.journeyId);
-    const paymentViewModel = new view_models_2.PaymentExperienceViewModelProvider().provide(result, request.params.journeyId);
+    const paymentViewModel = new view_models_2.PaymentExperienceViewModelProvider().provide(result, request.params.journeyId, context?.simulatedSupplierFulfilment ?? false);
     await renderView(response, "pages/payment-experience", {
         title: "Payment",
         pageTitle: "Payment",
@@ -513,7 +513,7 @@ async function initiatePayment(request, response) {
     if (result.status === "FAILED") {
         (0, logging_1.getLogger)().error("payment_initiation_failed", diagnostic(request, "payment_initiation", "failed"));
     }
-    const paymentViewModel = new view_models_2.PaymentExperienceViewModelProvider().provide(result, request.params.journeyId);
+    const paymentViewModel = new view_models_2.PaymentExperienceViewModelProvider().provide(result, request.params.journeyId, context?.simulatedSupplierFulfilment ?? false);
     response.status(result.status === "UNAVAILABLE" ? 409 : 200);
     await renderView(response, "pages/payment-experience", {
         title: "Payment",
@@ -527,7 +527,7 @@ async function renderPaymentReturn(request, response) {
         return;
     const context = await resolvePaymentContext(request.params.journeyId);
     const result = context ? paymentStateResult(context) : unavailablePaymentResult(request.params.journeyId);
-    const paymentViewModel = new view_models_2.PaymentExperienceViewModelProvider().provide(result, request.params.journeyId);
+    const paymentViewModel = new view_models_2.PaymentExperienceViewModelProvider().provide(result, request.params.journeyId, context?.simulatedSupplierFulfilment ?? false);
     await renderView(response, "pages/payment-experience", {
         title: "Payment status",
         pageTitle: "Payment status",

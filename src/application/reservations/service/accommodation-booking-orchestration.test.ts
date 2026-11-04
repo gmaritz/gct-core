@@ -5,6 +5,7 @@ import { PricingEngine, PricingEngineRequest } from "@application/pricing";
 import { ReservationService } from "./reservation-service";
 import { Reservation, ReservationStatus } from "../aggregate";
 import { JourneyAccommodationPricingInput, JourneyAccommodationReservationInput } from "@application/journeys/models";
+import { AccommodationFulfilmentMode } from "./accommodation-fulfilment-mode";
 
 function input(status: "BOOKABLE" | "RECHECK_REQUIRED" = "BOOKABLE"): {
   pricing: JourneyAccommodationPricingInput;
@@ -98,5 +99,68 @@ describe("AccommodationBookingOrchestrationService", () => {
     expect(result.successful).toBe(true);
     expect(persisted?.supplierReferences[0]?.snapshotId).toContain("stop-1");
     expect(persisted?.supplierReferences[0]?.supplierBookingReference).toBe("SUP-BOOK-1");
+  });
+
+  it("simulates fulfilment without invoking rate revalidation or supplier booking", async () => {
+    const selected = input("RECHECK_REQUIRED");
+    const revalidate = jest.fn();
+    const book = jest.fn();
+    let persisted: Reservation | undefined;
+    const service = new AccommodationBookingOrchestrationService(
+      Object.assign(Object.create(PricingEngine.prototype), {}),
+      Object.assign(Object.create(ReservationService.prototype), {}),
+      Object.assign(Object.create(AccommodationRateRevalidationService.prototype), { execute: revalidate }),
+      Object.assign(Object.create(AccommodationBookingService.prototype), { execute: book }),
+      { save: async (reservation: Reservation): Promise<void> => { persisted = reservation; } } as never,
+      AccommodationFulfilmentMode.SIMULATED,
+    );
+    const existing = Reservation.create({
+      identity: { id: "reservation-simulated" },
+      reservationNumber: "RES-SIMULATED",
+      status: ReservationStatus.CREATED,
+      journeySnapshot: { snapshotId: "journey", capturedAt: new Date(), version: "1", journeyId: "j1", title: "Journey" },
+      travellerSnapshots: [{ snapshotId: "traveller", capturedAt: new Date(), version: "1", travellerId: "t1", fullName: "Ari" }],
+      pricingSnapshot: {
+        snapshotId: "pricing",
+        capturedAt: new Date(),
+        version: "1",
+        currency: "ZAR",
+        totalPrice: 1000,
+        taxes: 0,
+        discounts: 0,
+        fees: 0,
+      },
+      metadata: { createdAt: new Date(), updatedAt: new Date(), version: "1" },
+    });
+
+    const result = await service.fulfilReservation(existing, {
+      packageId: "package-1",
+      pricingInputs: [selected.pricing],
+      reservationInputs: [selected.reservation],
+      finalPackagePrice: { amount: 1000, currency: "ZAR" },
+      holder: { firstName: "Ari", lastName: "A", email: "ari@example.com" },
+      guests: [{ roomIndex: 0, type: "ADULT", firstName: "Ari", lastName: "A" }],
+      idempotencyKey: "reservation-simulated",
+    }, { customerId: "customer-1", bookingStartDate: new Date(), bookingEndDate: new Date() });
+
+    expect(result.successful).toBe(true);
+    expect(result.revalidations).toHaveLength(0);
+    expect(result.bookings).toHaveLength(1);
+    expect(result.bookings[0]).toMatchObject({
+      successful: true,
+      status: "SIMULATED",
+      provider: "gct-test-simulator",
+      isSimulated: true,
+    });
+    expect(result.bookings[0]?.warnings.join(" ")).toContain("no supplier booking was created");
+    expect(revalidate).not.toHaveBeenCalled();
+    expect(book).not.toHaveBeenCalled();
+    expect(persisted?.supplierReferences[0]).toMatchObject({
+      providerId: "gct-test-simulator",
+      reservationStatusId: "SIMULATED",
+      isSimulated: true,
+    });
+    expect(persisted?.supplierReferences[0]?.reservationReference).toBeUndefined();
+    expect(persisted?.supplierReferences[0]?.confirmedAt).toBeUndefined();
   });
 });

@@ -9,6 +9,12 @@ export interface JourneyQuoteAccommodationViewModel {
     readonly rate: string;
     readonly amount?: number;
     readonly currency: string;
+    readonly conversion?: {
+        readonly amount: number;
+        readonly currency: string;
+        readonly rate: number;
+        readonly policyId: string;
+    };
 }
 export interface JourneyQuoteViewModel {
     readonly journeyTitle: string;
@@ -23,6 +29,7 @@ export interface JourneyQuoteViewModel {
         readonly currency: string;
     };
     readonly accommodationTotal?: number;
+    readonly accommodationTotalCurrency?: string;
     readonly participantCount?: number;
     readonly roomAllocation?: ReadonlyArray<number>;
 }

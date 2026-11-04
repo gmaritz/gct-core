@@ -1,6 +1,7 @@
 import { JourneyAccommodationPricingInput } from "../../journeys/models";
 import { Currency } from "../models";
 import { PricingValidationRequest } from "../validation";
+import { AccommodationCurrencyPolicy } from "./accommodation-currency-policy";
 export interface AccommodationPricingComponent {
     readonly packageStopId: string;
     readonly accommodationId: string;
@@ -17,5 +18,5 @@ export declare class AccommodationCurrencyError extends Error {
     constructor(message: string);
 }
 export declare function createAccommodationPricingComponents(inputs: ReadonlyArray<JourneyAccommodationPricingInput>): ReadonlyArray<AccommodationPricingComponent>;
-export declare function withAccommodationPricingInputs(request: PricingValidationRequest, inputs: ReadonlyArray<JourneyAccommodationPricingInput>): PricingValidationRequest;
+export declare function withAccommodationPricingInputs(request: PricingValidationRequest, inputs: ReadonlyArray<JourneyAccommodationPricingInput>, policy?: AccommodationCurrencyPolicy): PricingValidationRequest;
 //# sourceMappingURL=accommodation-pricing-input.d.ts.map

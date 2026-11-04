@@ -7,6 +7,7 @@ export interface PaymentExperienceViewModel {
     readonly currency?: string;
     readonly status: PaymentExperienceStatus;
     readonly message: string;
+    readonly supplierFulfilmentNotice?: string;
     readonly providerAction?: CTAViewModel;
     readonly hostedPaymentAction?: {
         readonly method: "GET" | "POST";

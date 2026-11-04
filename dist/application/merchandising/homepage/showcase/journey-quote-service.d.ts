@@ -1,5 +1,5 @@
 import { Journey } from "../../../journeys";
-import { PricingEngine, PricingEngineResult } from "../../../pricing";
+import { PricingEngine, PricingEngineResult, AccommodationCurrencyPolicy } from "../../../pricing";
 import { AccommodationSelectionInput } from "./accommodation-selection-service";
 import { DynamicHomepageJourneyResolver } from "./dynamic-homepage-journey-resolver";
 import { JourneySelectionStore } from "./journey-selection-store";
@@ -24,7 +24,8 @@ export declare class DefaultJourneyQuoteService implements JourneyQuoteService {
     private readonly resolver;
     private readonly pricingEngine;
     private readonly selectionStore;
-    constructor(resolver: DynamicHomepageJourneyResolver, pricingEngine: PricingEngine, selectionStore?: JourneySelectionStore);
+    private readonly currencyPolicyProvider;
+    constructor(resolver: DynamicHomepageJourneyResolver, pricingEngine: PricingEngine, selectionStore?: JourneySelectionStore, currencyPolicyProvider?: () => AccommodationCurrencyPolicy);
     priceJourney(ownerId: string, journeyId: string, selections: ReadonlyArray<AccommodationSelectionInput>): Promise<JourneyQuoteResult>;
     priceCurrentJourney(ownerId: string, journeyId: string): Promise<JourneyQuoteResult>;
 }

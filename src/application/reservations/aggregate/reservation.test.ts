@@ -124,6 +124,41 @@ describe("Reservation aggregate", () => {
     }).toThrow(TypeError);
   });
 
+  it("freezes the accommodation currency conversion snapshot", () => {
+    const currencyConversion = {
+      fromCurrency: "EUR",
+      toCurrency: "ZAR",
+      exchangeRate: 18.6,
+      convertedAmount: 11098.25,
+      policyId: "CONFIGURED_FIXED_RATE",
+    };
+    const composition = createComposition();
+    const reservation = Reservation.create({
+      ...composition,
+      accommodationSnapshots: composition.accommodationSnapshots?.map((snapshot) => ({
+        ...snapshot,
+        supplierPrice: { amount: 596.68, currency: "EUR", basis: "TOTAL_STAY" },
+        currencyConversion,
+      })),
+    });
+
+    currencyConversion.exchangeRate = 20;
+
+    expect(reservation.accommodationSnapshots[0]?.supplierPrice).toEqual({
+      amount: 596.68,
+      currency: "EUR",
+      basis: "TOTAL_STAY",
+    });
+    expect(reservation.accommodationSnapshots[0]?.currencyConversion).toEqual({
+      fromCurrency: "EUR",
+      toCurrency: "ZAR",
+      exchangeRate: 18.6,
+      convertedAmount: 11098.25,
+      policyId: "CONFIGURED_FIXED_RATE",
+    });
+    expect(Object.isFrozen(reservation.accommodationSnapshots[0]?.currencyConversion)).toBe(true);
+  });
+
   it("protects aggregate state from input object mutation", () => {
     const composition = createComposition();
     const reservation = Reservation.create(composition);

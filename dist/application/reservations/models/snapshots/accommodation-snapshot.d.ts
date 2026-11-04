@@ -19,6 +19,13 @@ export interface AccommodationSnapshot extends ReservationSnapshot {
         readonly currency: string;
         readonly basis?: string;
     };
+    readonly currencyConversion?: {
+        readonly fromCurrency: string;
+        readonly toCurrency: string;
+        readonly exchangeRate: number;
+        readonly convertedAmount: number;
+        readonly policyId: string;
+    };
     readonly selectedRooms?: ReadonlyArray<{
         readonly roomSlotId?: string;
         readonly roomType: string;

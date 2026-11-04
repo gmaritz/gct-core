@@ -244,6 +244,15 @@ function toDomain(booking) {
                     basis: typeof item.supplierPrice.basis === "string" ? item.supplierPrice.basis : undefined,
                 }
                 : undefined,
+            currencyConversion: isObject(item.currencyConversion)
+                ? {
+                    fromCurrency: String(item.currencyConversion.fromCurrency ?? ""),
+                    toCurrency: String(item.currencyConversion.toCurrency ?? ""),
+                    exchangeRate: Number(item.currencyConversion.exchangeRate ?? 0),
+                    convertedAmount: Number(item.currencyConversion.convertedAmount ?? 0),
+                    policyId: String(item.currencyConversion.policyId ?? ""),
+                }
+                : undefined,
             selectedRooms: Array.isArray(item.selectedRooms)
                 ? item.selectedRooms.filter(isObject).map((room) => ({
                     roomSlotId: typeof room.roomSlotId === "string" ? room.roomSlotId : undefined,
@@ -304,6 +313,7 @@ function toDomain(booking) {
                 version: String(item.version ?? ""),
                 providerId: String(item.providerId ?? ""),
                 supplierBookingReference: String(item.supplierBookingReference ?? ""),
+                isSimulated: item.isSimulated === true,
                 confirmationNumber: typeof item.confirmationNumber === "string" ? item.confirmationNumber : undefined,
                 bookingId: typeof item.bookingId === "string" ? item.bookingId : undefined,
                 bookingItemId: typeof item.bookingItemId === "string" ? item.bookingItemId : undefined,

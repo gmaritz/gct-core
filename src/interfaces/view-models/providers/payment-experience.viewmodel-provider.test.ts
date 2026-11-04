@@ -26,4 +26,15 @@ describe("PaymentExperienceViewModelProvider", () => {
     expect(viewModel.hostedPaymentAction?.fields.passphrase).toBeUndefined();
     expect(Object.isFrozen(viewModel.hostedPaymentAction)).toBe(true);
   });
+
+  it("identifies simulated supplier fulfilment as a test-only result", (): void => {
+    const viewModel = new PaymentExperienceViewModelProvider().provide({
+      status: "UNAVAILABLE",
+      reservationId: "reservation-1",
+      errors: [],
+    }, "journey-1", true);
+
+    expect(viewModel.supplierFulfilmentNotice)
+      .toBe("Test only: accommodation supplier fulfilment was simulated. No Hotelbeds booking was created.");
+  });
 });

@@ -38,6 +38,7 @@ describe("ConfigurationService", () => {
 		delete process.env.DATABASE_URL;
 		delete process.env.LOG_LEVEL;
 		delete process.env.CORS_ENABLED;
+		delete process.env.ACCOMMODATION_FULFILMENT_MODE;
 
 		const config = new ConfigurationService().getConfiguration();
 
@@ -48,6 +49,14 @@ describe("ConfigurationService", () => {
 		expect(config.security.corsEnabled).toBe(true);
 		expect(config.security.anonymousSessionLifetimeSeconds).toBe(43200);
 		expect(config.security.anonymousSessionCookieSecure).toBe(false);
+		expect(config.accommodationFulfilmentMode).toBe("LIVE");
+	});
+
+	it("rejects simulated accommodation fulfilment during production configuration loading", () => {
+		process.env.NODE_ENV = "production";
+		process.env.ACCOMMODATION_FULFILMENT_MODE = "SIMULATED";
+		expect(() => new ConfigurationService()).toThrow("only permitted in development or test");
+		expect(() => new ConfigurationService()).toThrow("only permitted in development or test");
 	});
 
 	it("accepts a bounded anonymous-session lifetime and rejects unsafe values", () => {

@@ -18,6 +18,8 @@ import { AccommodationBookingOrchestrationService } from "../../application/rese
 import { createDefaultPricingEngine } from "../../application/merchandising/homepage/showcase/journey-quote-service";
 import { CustomerPrismaRepository, CanonicalReservationPrismaRepository } from "./repositories";
 import { createHotelbedsRuntimeProvider } from "../accommodation/hotelbeds/hotelbeds-runtime";
+import { loadAccommodationFulfilmentMode } from "../../config/accommodation-fulfilment.config";
+import { AccommodationFulfilmentMode } from "../../application/reservations/service/accommodation-fulfilment-mode";
 
 export function createCustomerJourneyReservationService(): CustomerJourneyReservationService {
   const reservationRepository = new CanonicalReservationPrismaRepository();
@@ -31,14 +33,18 @@ export function createCustomerJourneyReservationService(): CustomerJourneyReserv
     new ReservationBuilder({ validate: () => ({ valid: true, errors: [], warnings: [] }) }),
     reservationRepository,
   );
+  const fulfilmentMode = loadAccommodationFulfilmentMode();
   const providerRegistry = new InMemoryProviderRegistry();
-  providerRegistry.register(createHotelbedsRuntimeProvider());
+  if (fulfilmentMode === AccommodationFulfilmentMode.LIVE) {
+    providerRegistry.register(createHotelbedsRuntimeProvider());
+  }
   const bookingOrchestration = new AccommodationBookingOrchestrationService(
     createDefaultPricingEngine(),
     reservationService,
     new AccommodationRateRevalidationService(providerRegistry),
     new AccommodationBookingService(providerRegistry),
     reservationRepository,
+    fulfilmentMode,
   );
   return new CustomerJourneyReservationService(
     new CustomerResolutionService(new CustomerPrismaRepository()),

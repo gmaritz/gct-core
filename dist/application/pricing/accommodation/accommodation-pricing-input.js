@@ -4,6 +4,7 @@ exports.AccommodationCurrencyError = void 0;
 exports.createAccommodationPricingComponents = createAccommodationPricingComponents;
 exports.withAccommodationPricingInputs = withAccommodationPricingInputs;
 const models_1 = require("../models");
+const accommodation_currency_policy_1 = require("./accommodation-currency-policy");
 class AccommodationCurrencyError extends Error {
     constructor(message) {
         super(message);
@@ -84,21 +85,49 @@ function createAccommodationPricingComponents(inputs) {
     });
     return Object.freeze(components);
 }
-function withAccommodationPricingInputs(request, inputs) {
+// Rounds once to currency minor units (2 decimals); toPrecision removes binary floating-point noise first.
+function roundToMinorUnits(value) {
+    return Math.round(Number((value * 100).toPrecision(12))) / 100;
+}
+function reconciledLineItem(component, baseCurrency, policy) {
+    const original = componentLineItem(component);
+    if (component.currency === baseCurrency)
+        return original;
+    const fixedRate = (0, accommodation_currency_policy_1.findFixedRate)(policy, component.currency, baseCurrency);
+    if (!fixedRate) {
+        throw new AccommodationCurrencyError("Accommodation pricing currency must match the package pricing currency.");
+    }
+    const convertedAmount = roundToMinorUnits(component.amount * fixedRate.rate);
+    const converted = (0, models_1.createMoney)({ amount: convertedAmount, currency: baseCurrency });
+    return (0, models_1.createPricingLineItem)({
+        code: original.code,
+        label: original.label,
+        unitAmount: converted,
+        totalAmount: converted,
+        quantity: 1,
+        metadata: {
+            ...original.metadata,
+            supplierAmount: String(component.amount),
+            supplierCurrency: component.currency,
+            conversionRate: String(fixedRate.rate),
+            convertedAmount: String(convertedAmount),
+            convertedCurrency: baseCurrency,
+            conversionPolicyId: policy.policyId,
+        },
+    });
+}
+function withAccommodationPricingInputs(request, inputs, policy = accommodation_currency_policy_1.STRICT_SAME_CURRENCY_POLICY) {
     const components = createAccommodationPricingComponents(inputs);
     if (components.length === 0)
         return request;
     if (!request.breakdown || !request.totals || !request.currency) {
         throw new Error("Base pricing request is required before adding accommodation pricing.");
     }
-    const lineItems = components.map(componentLineItem);
     const baseCurrency = request.currency;
-    if (components.some((component) => component.currency !== baseCurrency)) {
-        throw new AccommodationCurrencyError("Accommodation pricing currency must match the package pricing currency.");
-    }
-    const accommodationTotal = lineItems.reduce((total, item) => total + item.totalAmount.amount, 0);
-    const subtotal = request.totals.subtotal.amount + accommodationTotal;
-    const grandTotal = request.totals.grandTotal.amount + accommodationTotal;
+    const lineItems = components.map((component) => reconciledLineItem(component, baseCurrency, policy));
+    const accommodationTotal = roundToMinorUnits(lineItems.reduce((total, item) => total + item.totalAmount.amount, 0));
+    const subtotal = roundToMinorUnits(request.totals.subtotal.amount + accommodationTotal);
+    const grandTotal = roundToMinorUnits(request.totals.grandTotal.amount + accommodationTotal);
     return Object.freeze({
         ...request,
         breakdown: (0, models_1.createPricingBreakdown)({

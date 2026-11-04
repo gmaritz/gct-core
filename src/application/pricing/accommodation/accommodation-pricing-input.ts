@@ -8,6 +8,11 @@ import {
   createPricingTotal,
 } from "../models";
 import { PricingValidationRequest } from "../validation";
+import {
+  AccommodationCurrencyPolicy,
+  STRICT_SAME_CURRENCY_POLICY,
+  findFixedRate,
+} from "./accommodation-currency-policy";
 
 export interface AccommodationPricingComponent {
   readonly packageStopId: string;
@@ -105,9 +110,47 @@ export function createAccommodationPricingComponents(
   return Object.freeze(components);
 }
 
+// Rounds once to currency minor units (2 decimals); toPrecision removes binary floating-point noise first.
+function roundToMinorUnits(value: number): number {
+  return Math.round(Number((value * 100).toPrecision(12))) / 100;
+}
+
+function reconciledLineItem(
+  component: AccommodationPricingComponent,
+  baseCurrency: Currency,
+  policy: AccommodationCurrencyPolicy,
+): PricingLineItem {
+  const original = componentLineItem(component);
+  if (component.currency === baseCurrency) return original;
+
+  const fixedRate = findFixedRate(policy, component.currency, baseCurrency);
+  if (!fixedRate) {
+    throw new AccommodationCurrencyError("Accommodation pricing currency must match the package pricing currency.");
+  }
+  const convertedAmount = roundToMinorUnits(component.amount * fixedRate.rate);
+  const converted = createMoney({ amount: convertedAmount, currency: baseCurrency });
+  return createPricingLineItem({
+    code: original.code,
+    label: original.label,
+    unitAmount: converted,
+    totalAmount: converted,
+    quantity: 1,
+    metadata: {
+      ...original.metadata,
+      supplierAmount: String(component.amount),
+      supplierCurrency: component.currency,
+      conversionRate: String(fixedRate.rate),
+      convertedAmount: String(convertedAmount),
+      convertedCurrency: baseCurrency,
+      conversionPolicyId: policy.policyId,
+    },
+  });
+}
+
 export function withAccommodationPricingInputs(
   request: PricingValidationRequest,
   inputs: ReadonlyArray<JourneyAccommodationPricingInput>,
+  policy: AccommodationCurrencyPolicy = STRICT_SAME_CURRENCY_POLICY,
 ): PricingValidationRequest {
   const components = createAccommodationPricingComponents(inputs);
   if (components.length === 0) return request;
@@ -115,14 +158,11 @@ export function withAccommodationPricingInputs(
     throw new Error("Base pricing request is required before adding accommodation pricing.");
   }
 
-  const lineItems = components.map(componentLineItem);
   const baseCurrency = request.currency;
-  if (components.some((component) => component.currency !== baseCurrency)) {
-    throw new AccommodationCurrencyError("Accommodation pricing currency must match the package pricing currency.");
-  }
-  const accommodationTotal = lineItems.reduce((total, item) => total + item.totalAmount.amount, 0);
-  const subtotal = request.totals.subtotal.amount + accommodationTotal;
-  const grandTotal = request.totals.grandTotal.amount + accommodationTotal;
+  const lineItems = components.map((component) => reconciledLineItem(component, baseCurrency, policy));
+  const accommodationTotal = roundToMinorUnits(lineItems.reduce((total, item) => total + item.totalAmount.amount, 0));
+  const subtotal = roundToMinorUnits(request.totals.subtotal.amount + accommodationTotal);
+  const grandTotal = roundToMinorUnits(request.totals.grandTotal.amount + accommodationTotal);
 
   return Object.freeze({
     ...request,

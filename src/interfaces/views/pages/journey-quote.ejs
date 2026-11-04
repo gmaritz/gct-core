@@ -28,10 +28,17 @@
                   <dd><%= quoteViewModel.groupComponent.currency %> <%= quoteViewModel.groupComponent.amount.toLocaleString() %></dd>
                   <% quoteViewModel.accommodation.forEach((stay) => { %>
                     <dt><%= stay.destination || "Stop" %> accommodation<% if (stay.checkIn && stay.checkOut) { %> (<%= stay.checkIn %> – <%= stay.checkOut %>)<% } %></dt>
-                    <dd><%= stay.currency %> <%= stay.amount.toLocaleString() %></dd>
+                    <dd>
+                      <% if (stay.conversion) { %>
+                        <%= stay.conversion.currency %> <%= stay.conversion.amount.toLocaleString() %>
+                        <small>(supplier price <%= stay.currency %> <%= stay.amount.toLocaleString() %> at fixed rate 1 <%= stay.currency %> = <%= stay.conversion.rate %> <%= stay.conversion.currency %>)</small>
+                      <% } else { %>
+                        <%= stay.currency %> <%= stay.amount.toLocaleString() %>
+                      <% } %>
+                    </dd>
                   <% }); %>
                   <dt>Total accommodation</dt>
-                  <dd><%= quoteViewModel.accommodation[0]?.currency || quoteViewModel.groupComponent.currency %> <%= quoteViewModel.accommodationTotal?.toLocaleString() %></dd>
+                  <dd><%= quoteViewModel.accommodationTotalCurrency || quoteViewModel.groupComponent.currency %> <%= quoteViewModel.accommodationTotal?.toLocaleString() %></dd>
                 <% } else { %>
                   <dt>Accommodation</dt>
                   <dd><%= quoteViewModel.pricing.displayLabels.totalLabel %></dd>

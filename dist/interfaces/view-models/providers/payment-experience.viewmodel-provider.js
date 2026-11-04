@@ -25,7 +25,7 @@ function messageFor(status) {
     }
 }
 class PaymentExperienceViewModelProvider {
-    provide(result, journeyId = result.reservationId) {
+    provide(result, journeyId = result.reservationId, simulatedSupplierFulfilment = false) {
         const status = mapStatus(result);
         return Object.freeze({
             journeyId,
@@ -33,6 +33,9 @@ class PaymentExperienceViewModelProvider {
             currency: result.currency,
             status,
             message: messageFor(status),
+            supplierFulfilmentNotice: simulatedSupplierFulfilment
+                ? "Test only: accommodation supplier fulfilment was simulated. No Hotelbeds booking was created."
+                : undefined,
             providerAction: result.status === "INITIATED" || result.status === "PENDING"
                 ? Object.freeze({ label: "Proceed to secure payment", href: "#secure-payment", style: "primary" })
                 : undefined,

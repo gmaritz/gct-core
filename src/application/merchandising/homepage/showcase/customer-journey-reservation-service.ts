@@ -12,6 +12,7 @@ import {
 import { AccommodationRateOption, AccommodationRoomOption } from "../../../accommodation";
 import { AccommodationReservationHandoffInput } from "../../../reservations/integration";
 import { AccommodationBookingOrchestrationService } from "../../../reservations/service/accommodation-booking-orchestration";
+import { Pricing } from "../../../pricing";
 import { ReservationReviewResult } from "./reservation-review-service";
 import { GuestTravellerInput } from "./guest-information-service";
 
@@ -24,6 +25,30 @@ interface SelectedRoomRate {
 interface SelectedStay {
   readonly accommodation: JourneyAccommodation;
   readonly roomRates: ReadonlyArray<SelectedRoomRate>;
+}
+
+function currencyConversionForStop(pricing: Pricing, stopId?: string): {
+  readonly fromCurrency: string;
+  readonly toCurrency: string;
+  readonly exchangeRate: number;
+  readonly convertedAmount: number;
+  readonly policyId: string;
+} | undefined {
+  if (!stopId) return undefined;
+  const lineItem = pricing.breakdown.lineItems.find((item) => item.code === `ACCOMMODATION:${stopId}`);
+  const metadata = lineItem?.metadata;
+  if (!metadata?.conversionRate) return undefined;
+
+  const exchangeRate = Number(metadata.conversionRate);
+  const convertedAmount = Number(metadata.convertedAmount);
+  const fromCurrency = metadata.supplierCurrency;
+  const toCurrency = metadata.convertedCurrency;
+  const policyId = metadata.conversionPolicyId;
+  if (!Number.isFinite(exchangeRate) || exchangeRate <= 0
+    || !Number.isFinite(convertedAmount) || !fromCurrency || !toCurrency || !policyId) {
+    throw new Error(`Accommodation currency conversion metadata is incomplete for stop ${stopId}.`);
+  }
+  return Object.freeze({ fromCurrency, toCurrency, exchangeRate, convertedAmount, policyId });
 }
 
 function createReservationRequestId(
@@ -198,6 +223,7 @@ export class CustomerJourneyReservationService {
             currency: roomRates[0]?.rate.pricing.currency ?? "UNKNOWN",
             basis: roomRates[0]?.rate.pricing.basis,
           },
+          currencyConversion: currencyConversionForStop(pricing, accommodation.packageStop?.stopId),
           selectedRooms: roomRates.map(({ room, rate, roomSlotId }) => ({
             roomSlotId,
             roomType: room.name,

@@ -355,6 +355,7 @@ describe("CanonicalReservationPrismaRepository", () => {
       .toEqual(["stop-001-room-1", "stop-001-room-2"]);
     expect(restored?.accommodationSnapshots[0]?.selectedRooms?.map((room) => room.occupancy?.childAges))
       .toEqual([[8], []]);
+    expect(restored?.accommodationSnapshots[0]?.currencyConversion).toBeUndefined();
     expect(restored?.supplierReferences[0]?.providerId).toBe("supplier-a");
     expect(restored?.supplierReferences[0]?.bookingId).toBe("booking-001");
     expect(restored?.supplierReferences[0]?.bookingItemId).toBe("booking-item-001");
@@ -367,6 +368,34 @@ describe("CanonicalReservationPrismaRepository", () => {
     expect(restored?.metadata.version).toBe("1.0.0");
   });
 
+  it("persists and reconstructs simulated supplier identity and status", async () => {
+    const mock = createPrismaMock();
+    const repository = new CanonicalReservationPrismaRepository(mock.prisma as unknown as PrismaClient);
+    const reservation = Reservation.restore({
+      ...createReservation(ReservationStatus.CREATED, "reservation-simulated", "RES-SIMULATED"),
+      supplierReferences: [{
+        snapshotId: "simulated-supplier-reference",
+        capturedAt: new Date("2026-10-01T00:00:00.000Z"),
+        version: "1.0.0",
+        providerId: "gct-test-simulator",
+        supplierBookingReference: "SIMULATED-stop-001",
+        isSimulated: true,
+        reservationStatusId: "SIMULATED",
+      }],
+    });
+
+    await repository.save(reservation, createContext());
+    const restored = await repository.findById(reservation.identity.id);
+
+    expect(restored?.supplierReferences[0]).toMatchObject({
+      providerId: "gct-test-simulator",
+      supplierBookingReference: "SIMULATED-stop-001",
+      reservationStatusId: "SIMULATED",
+      isSimulated: true,
+    });
+    expect(restored?.supplierReferences[0]?.confirmedAt).toBeUndefined();
+  });
+
   it("CUR-001 preserves EUR supplier amounts independently of the ZAR commercial pricing snapshot", async () => {
     const mock = createPrismaMock();
     const repository = new CanonicalReservationPrismaRepository(mock.prisma as unknown as PrismaClient);
@@ -377,12 +406,82 @@ describe("CanonicalReservationPrismaRepository", () => {
 
     const accommodation = restored?.accommodationSnapshots[0];
     expect(accommodation?.supplierPrice).toEqual({ amount: 23000, currency: "EUR", basis: "TOTAL_STAY" });
+    expect(accommodation?.currencyConversion).toBeUndefined();
     expect(accommodation?.selectedRooms?.map((room) => room.supplierPrice)).toEqual([
       { amount: 12000, currency: "EUR", basis: "TOTAL_STAY" },
       { amount: 11000, currency: "EUR", basis: "TOTAL_STAY" },
     ]);
     expect(restored?.pricingSnapshot?.currency).toBe("ZAR");
     expect(restored?.pricingSnapshot?.totalPrice).toBe(46000);
+  });
+
+  it("persists and restores per-stop currency conversion metadata without replacing supplier prices", async () => {
+    const mock = createPrismaMock();
+    const repository = new CanonicalReservationPrismaRepository(mock.prisma as unknown as PrismaClient);
+    const base = createReservation(ReservationStatus.CREATED, "reservation-conversion-template", "RES-CONV-TEMPLATE", "EUR", 1);
+    const template = base.accommodationSnapshots[0];
+    if (!template) throw new Error("Missing test accommodation snapshot.");
+    const snapshots = [
+      {
+        ...template,
+        snapshotId: "accommodation-stop-1",
+        packageStopId: "stop-1",
+        supplierPrice: { amount: 596.68, currency: "EUR", basis: "TOTAL_STAY" },
+        currencyConversion: {
+          fromCurrency: "EUR",
+          toCurrency: "ZAR",
+          exchangeRate: 18.6,
+          convertedAmount: 11098.25,
+          policyId: "CONFIGURED_FIXED_RATE",
+        },
+      },
+      {
+        ...template,
+        snapshotId: "accommodation-stop-2",
+        packageStopId: "stop-2",
+        supplierPrice: { amount: 135.26, currency: "EUR", basis: "TOTAL_STAY" },
+        currencyConversion: {
+          fromCurrency: "EUR",
+          toCurrency: "ZAR",
+          exchangeRate: 18.6,
+          convertedAmount: 2515.84,
+          policyId: "CONFIGURED_FIXED_RATE",
+        },
+      },
+    ];
+    const reservation = createReservation(
+      ReservationStatus.CREATED,
+      "reservation-conversion",
+      "RES-CONV-0001",
+      "EUR",
+      1,
+      snapshots,
+    );
+
+    await repository.save(reservation, createContext());
+    const restored = await repository.findById(reservation.identity.id);
+
+    expect(restored?.accommodationSnapshots.map((snapshot) => snapshot.packageStopId)).toEqual(["stop-1", "stop-2"]);
+    expect(restored?.accommodationSnapshots.map((snapshot) => snapshot.supplierPrice)).toEqual([
+      { amount: 596.68, currency: "EUR", basis: "TOTAL_STAY" },
+      { amount: 135.26, currency: "EUR", basis: "TOTAL_STAY" },
+    ]);
+    expect(restored?.accommodationSnapshots.map((snapshot) => snapshot.currencyConversion)).toEqual([
+      {
+        fromCurrency: "EUR",
+        toCurrency: "ZAR",
+        exchangeRate: 18.6,
+        convertedAmount: 11098.25,
+        policyId: "CONFIGURED_FIXED_RATE",
+      },
+      {
+        fromCurrency: "EUR",
+        toCurrency: "ZAR",
+        exchangeRate: 18.6,
+        convertedAmount: 2515.84,
+        policyId: "CONFIGURED_FIXED_RATE",
+      },
+    ]);
   });
 
   it("INT-004.4-A1 restores the slot identity of a single-room occupancy", async () => {

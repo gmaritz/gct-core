@@ -98,6 +98,7 @@ class CanonicalReservationPaymentContextResolver {
         const paymentId = `payment-${reservation.identity.id}`;
         return {
             reservationId: reservation.identity.id,
+            simulatedSupplierFulfilment: reservation.supplierReferences.some((reference) => reference.isSimulated === true),
             providerReference: {
                 providerIdentifier: "payfast",
                 reference: paymentId,

@@ -4,6 +4,24 @@ exports.CustomerJourneyReservationService = void 0;
 const crypto_1 = require("crypto");
 const reservations_1 = require("../../../reservations");
 const journeys_1 = require("../../../journeys");
+function currencyConversionForStop(pricing, stopId) {
+    if (!stopId)
+        return undefined;
+    const lineItem = pricing.breakdown.lineItems.find((item) => item.code === `ACCOMMODATION:${stopId}`);
+    const metadata = lineItem?.metadata;
+    if (!metadata?.conversionRate)
+        return undefined;
+    const exchangeRate = Number(metadata.conversionRate);
+    const convertedAmount = Number(metadata.convertedAmount);
+    const fromCurrency = metadata.supplierCurrency;
+    const toCurrency = metadata.convertedCurrency;
+    const policyId = metadata.conversionPolicyId;
+    if (!Number.isFinite(exchangeRate) || exchangeRate <= 0
+        || !Number.isFinite(convertedAmount) || !fromCurrency || !toCurrency || !policyId) {
+        throw new Error(`Accommodation currency conversion metadata is incomplete for stop ${stopId}.`);
+    }
+    return Object.freeze({ fromCurrency, toCurrency, exchangeRate, convertedAmount, policyId });
+}
 function createReservationRequestId(review, stays, totalPrice) {
     const fingerprint = {
         journeyId: review.journeyId,
@@ -158,6 +176,7 @@ class CustomerJourneyReservationService {
                         currency: roomRates[0]?.rate.pricing.currency ?? "UNKNOWN",
                         basis: roomRates[0]?.rate.pricing.basis,
                     },
+                    currencyConversion: currencyConversionForStop(pricing, accommodation.packageStop?.stopId),
                     selectedRooms: roomRates.map(({ room, rate, roomSlotId }) => ({
                         roomSlotId,
                         roomType: room.name,

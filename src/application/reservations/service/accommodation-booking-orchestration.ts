@@ -9,7 +9,7 @@ import {
   AccommodationRateRevalidationResult,
   AccommodationRateRevalidationService,
 } from "../../accommodation/revalidation";
-import { PricingEngine, PricingEngineRequest, withAccommodationPricingInputs } from "../../pricing";
+import { PricingEngine, PricingEngineRequest, withAccommodationPricingInputs, AccommodationCurrencyPolicy, loadAccommodationCurrencyPolicy } from "../../pricing";
 import { Reservation } from "../aggregate";
 import { ReservationService, ReservationServiceRequest } from "./index";
 import { ReservationPersistenceContext, ReservationRepository } from "../repository";
@@ -18,6 +18,7 @@ import {
   AccommodationReservationHandoffInput,
   createAccommodationReservationHandoff,
 } from "../integration";
+import { AccommodationFulfilmentMode } from "./accommodation-fulfilment-mode";
 
 export interface AccommodationBookingOrchestrationRequest {
   readonly pricing: PricingEngineRequest;
@@ -45,6 +46,8 @@ export class AccommodationBookingOrchestrationService
     private readonly revalidationService: AccommodationRateRevalidationService,
     private readonly bookingService: AccommodationBookingService,
     private readonly reservationRepository?: ReservationRepository,
+    private readonly fulfilmentMode: AccommodationFulfilmentMode = AccommodationFulfilmentMode.LIVE,
+    private readonly currencyPolicyProvider: () => AccommodationCurrencyPolicy = (): AccommodationCurrencyPolicy => loadAccommodationCurrencyPolicy(),
   ) {}
 
   public async fulfilReservation(
@@ -90,6 +93,7 @@ export class AccommodationBookingOrchestrationService
     const pricingRequest = withAccommodationPricingInputs(
       request.pricing.pricingRequest,
       request.handoff.pricingInputs,
+      this.currencyPolicyProvider(),
     );
     const pricingResult = await this.pricingEngine.execute({
       ...request.pricing,
@@ -164,6 +168,27 @@ export class AccommodationBookingOrchestrationService
   private async bookAccommodation(
     bookingRequests: ReadonlyArray<AccommodationBookingRequest>,
   ): Promise<{ readonly revalidations: ReadonlyArray<AccommodationRateRevalidationResult>; readonly bookings: ReadonlyArray<AccommodationBookingResult>; readonly errors: ReadonlyArray<string>; readonly warnings: ReadonlyArray<string> }> {
+    if (this.fulfilmentMode === AccommodationFulfilmentMode.SIMULATED) {
+      return {
+        revalidations: [],
+        bookings: bookingRequests.map((request) => Object.freeze({
+          successful: true,
+          status: "SIMULATED" as const,
+          provider: "gct-test-simulator",
+          accommodation: request.accommodation,
+          room: request.room,
+          rate: request.rate,
+          supplierBookingReference: `SIMULATED-${request.packageStopId ?? request.idempotencyKey}`,
+          isSimulated: true,
+          packageStopId: request.packageStopId,
+          errors: Object.freeze([]),
+          warnings: Object.freeze(["Test-only simulated accommodation fulfilment; no supplier booking was created."]),
+        })),
+        errors: [],
+        warnings: ["Test-only simulated accommodation fulfilment; no supplier booking was created."],
+      };
+    }
+
     const revalidations: AccommodationRateRevalidationResult[] = [];
     const bookings: AccommodationBookingResult[] = [];
     const errors: string[] = [];
@@ -228,8 +253,9 @@ function createSupplierReferences(
       version: "1.0.0",
       providerId: booking?.provider ?? request.providerReference.provider,
       supplierBookingReference: booking?.supplierBookingReference ?? `pending-${request.packageStopId ?? index}`,
+      isSimulated: booking?.isSimulated,
       supplierId: booking?.provider ?? request.providerReference.provider,
-      reservationReference: booking?.supplierBookingReference,
+      reservationReference: booking?.isSimulated ? undefined : booking?.supplierBookingReference,
       reservationStatusId: booking?.status ?? "UNKNOWN",
       reservedAt: new Date(),
       confirmedAt: booking?.status === "CONFIRMED" ? new Date() : undefined,

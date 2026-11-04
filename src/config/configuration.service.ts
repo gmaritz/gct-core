@@ -3,6 +3,8 @@ import { createLoggingConfig, LoggingConfig } from "./logging.config";
 import { createPlatformConfig, PlatformConfig } from "./platform.config";
 import { createSecurityConfig, SecurityConfig } from "./security.config";
 import { createServerConfig, ServerConfig } from "./server.config";
+import { loadAccommodationFulfilmentMode } from "./accommodation-fulfilment.config";
+import { AccommodationFulfilmentMode } from "../application/reservations/service/accommodation-fulfilment-mode";
 
 export interface ApplicationConfiguration {
 	platform: PlatformConfig;
@@ -10,6 +12,7 @@ export interface ApplicationConfiguration {
 	database: DatabaseConfig;
 	logging: LoggingConfig;
 	security: SecurityConfig;
+	accommodationFulfilmentMode: AccommodationFulfilmentMode;
 }
 
 export class ConfigurationService {
@@ -42,6 +45,10 @@ export class ConfigurationService {
 			logging: createLoggingConfig(loggingLevel),
 			security: createSecurityConfig(corsEnabled, nodeEnv, anonymousSessionLifetimeSeconds),
 			server: createServerConfig(port, corsEnabled),
+			accommodationFulfilmentMode: loadAccommodationFulfilmentMode({
+				...process.env,
+				NODE_ENV: nodeEnv,
+			}),
 		};
 	}
 

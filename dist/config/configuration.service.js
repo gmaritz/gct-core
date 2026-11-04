@@ -7,6 +7,7 @@ const logging_config_1 = require("./logging.config");
 const platform_config_1 = require("./platform.config");
 const security_config_1 = require("./security.config");
 const server_config_1 = require("./server.config");
+const accommodation_fulfilment_config_1 = require("./accommodation-fulfilment.config");
 class ConfigurationService {
     constructor() {
         this.configuration = this.createConfiguration();
@@ -27,6 +28,10 @@ class ConfigurationService {
             logging: (0, logging_config_1.createLoggingConfig)(loggingLevel),
             security: (0, security_config_1.createSecurityConfig)(corsEnabled, nodeEnv, anonymousSessionLifetimeSeconds),
             server: (0, server_config_1.createServerConfig)(port, corsEnabled),
+            accommodationFulfilmentMode: (0, accommodation_fulfilment_config_1.loadAccommodationFulfilmentMode)({
+                ...process.env,
+                NODE_ENV: nodeEnv,
+            }),
         };
     }
     parsePort(value) {

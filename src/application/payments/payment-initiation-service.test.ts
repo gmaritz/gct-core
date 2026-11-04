@@ -88,6 +88,11 @@ describe("CanonicalReservationPaymentContextResolver", () => {
           fees: 0,
         },
         paymentSnapshot: undefined,
+        supplierReferences: [{
+          providerId: "gct-test-simulator",
+          reservationStatusId: "SIMULATED",
+          isSimulated: true,
+        }],
         metadata: {
           createdAt: new Date("2026-08-28T00:00:00.000Z"),
           updatedAt: new Date("2026-08-28T00:00:00.000Z"),
@@ -101,5 +106,6 @@ describe("CanonicalReservationPaymentContextResolver", () => {
     expect(context?.engineRequest.paymentRequest.paymentAmount).toBe(12500);
     expect(context?.engineRequest.paymentRequest.currency).toBe("ZAR");
     expect(context?.engineRequest.paymentRequest.reference?.reservationId).toBe("reservation-1");
+    expect(context?.simulatedSupplierFulfilment).toBe(true);
   });
 });

@@ -10,6 +10,12 @@
       <p class="payment-experience__subtitle" role="status"><%= paymentViewModel.message %></p>
     </header>
 
+    <% if (paymentViewModel.supplierFulfilmentNotice) { %>
+      <div class="feedback feedback--warning" role="status">
+        <p><%= paymentViewModel.supplierFulfilmentNotice %></p>
+      </div>
+    <% } %>
+
     <% if (paymentViewModel.status === "UNAVAILABLE" || paymentViewModel.status === "FAILED" || paymentViewModel.status === "CANCELLED") { %>
       <div class="feedback feedback--warning" role="alert">
         <p><%= paymentViewModel.message %></p>

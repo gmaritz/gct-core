@@ -3,6 +3,7 @@ import { ReservationSnapshot } from "./reservation-snapshot";
 export interface SupplierReference extends ReservationSnapshot {
   readonly providerId: string;
   readonly supplierBookingReference: string;
+  readonly isSimulated?: boolean;
   readonly confirmationNumber?: string;
   readonly bookingId?: string;
   readonly bookingItemId?: string;

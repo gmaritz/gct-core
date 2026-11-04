@@ -21,6 +21,7 @@ export interface PaymentInitiationRequest {
   readonly reservationId: string;
   readonly engineRequest: PaymentEngineRequest;
   readonly providerReference: PaymentGatewayProviderReference;
+  readonly simulatedSupplierFulfilment?: boolean;
 }
 
 export interface PaymentInitiationResult {
@@ -145,6 +146,7 @@ export class CanonicalReservationPaymentContextResolver implements PaymentContex
 
     return {
       reservationId: reservation.identity.id,
+      simulatedSupplierFulfilment: reservation.supplierReferences.some((reference) => reference.isSimulated === true),
       providerReference: {
         providerIdentifier: "payfast",
         reference: paymentId,

@@ -4,13 +4,16 @@ exports.AccommodationBookingOrchestrationService = void 0;
 const pricing_1 = require("../../pricing");
 const aggregate_1 = require("../aggregate");
 const integration_1 = require("../integration");
+const accommodation_fulfilment_mode_1 = require("./accommodation-fulfilment-mode");
 class AccommodationBookingOrchestrationService {
-    constructor(pricingEngine, reservationService, revalidationService, bookingService, reservationRepository) {
+    constructor(pricingEngine, reservationService, revalidationService, bookingService, reservationRepository, fulfilmentMode = accommodation_fulfilment_mode_1.AccommodationFulfilmentMode.LIVE, currencyPolicyProvider = () => (0, pricing_1.loadAccommodationCurrencyPolicy)()) {
         this.pricingEngine = pricingEngine;
         this.reservationService = reservationService;
         this.revalidationService = revalidationService;
         this.bookingService = bookingService;
         this.reservationRepository = reservationRepository;
+        this.fulfilmentMode = fulfilmentMode;
+        this.currencyPolicyProvider = currencyPolicyProvider;
     }
     async fulfilReservation(reservation, handoff, persistenceContext) {
         const accommodationHandoff = (0, integration_1.createAccommodationReservationHandoff)(handoff);
@@ -43,7 +46,7 @@ class AccommodationBookingOrchestrationService {
         });
     }
     async execute(request) {
-        const pricingRequest = (0, pricing_1.withAccommodationPricingInputs)(request.pricing.pricingRequest, request.handoff.pricingInputs);
+        const pricingRequest = (0, pricing_1.withAccommodationPricingInputs)(request.pricing.pricingRequest, request.handoff.pricingInputs, this.currencyPolicyProvider());
         const pricingResult = await this.pricingEngine.execute({
             ...request.pricing,
             pricingRequest,
@@ -109,6 +112,26 @@ class AccommodationBookingOrchestrationService {
         });
     }
     async bookAccommodation(bookingRequests) {
+        if (this.fulfilmentMode === accommodation_fulfilment_mode_1.AccommodationFulfilmentMode.SIMULATED) {
+            return {
+                revalidations: [],
+                bookings: bookingRequests.map((request) => Object.freeze({
+                    successful: true,
+                    status: "SIMULATED",
+                    provider: "gct-test-simulator",
+                    accommodation: request.accommodation,
+                    room: request.room,
+                    rate: request.rate,
+                    supplierBookingReference: `SIMULATED-${request.packageStopId ?? request.idempotencyKey}`,
+                    isSimulated: true,
+                    packageStopId: request.packageStopId,
+                    errors: Object.freeze([]),
+                    warnings: Object.freeze(["Test-only simulated accommodation fulfilment; no supplier booking was created."]),
+                })),
+                errors: [],
+                warnings: ["Test-only simulated accommodation fulfilment; no supplier booking was created."],
+            };
+        }
         const revalidations = [];
         const bookings = [];
         const errors = [];
@@ -171,8 +194,9 @@ function createSupplierReferences(requests, bookings) {
             version: "1.0.0",
             providerId: booking?.provider ?? request.providerReference.provider,
             supplierBookingReference: booking?.supplierBookingReference ?? `pending-${request.packageStopId ?? index}`,
+            isSimulated: booking?.isSimulated,
             supplierId: booking?.provider ?? request.providerReference.provider,
-            reservationReference: booking?.supplierBookingReference,
+            reservationReference: booking?.isSimulated ? undefined : booking?.supplierBookingReference,
             reservationStatusId: booking?.status ?? "UNKNOWN",
             reservedAt: new Date(),
             confirmedAt: booking?.status === "CONFIRMED" ? new Date() : undefined,

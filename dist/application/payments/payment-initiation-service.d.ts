@@ -8,6 +8,7 @@ export interface PaymentInitiationRequest {
     readonly reservationId: string;
     readonly engineRequest: PaymentEngineRequest;
     readonly providerReference: PaymentGatewayProviderReference;
+    readonly simulatedSupplierFulfilment?: boolean;
 }
 export interface PaymentInitiationResult {
     readonly status: PaymentInitiationStatus;

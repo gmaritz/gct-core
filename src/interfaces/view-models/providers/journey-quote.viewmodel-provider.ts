@@ -27,6 +27,16 @@ export class JourneyQuoteViewModelProvider {
         );
         return room && rate ? [{ room, rate }] : [];
       });
+      const conversionItem = result.pricing?.pricing?.breakdown.lineItems.find((item) =>
+        item.code === `ACCOMMODATION:${option?.packageStop?.stopId}` && item.metadata?.conversionRate !== undefined);
+      const conversion = conversionItem?.metadata
+        ? Object.freeze({
+            amount: conversionItem.totalAmount.amount,
+            currency: conversionItem.totalAmount.currency as string,
+            rate: Number(conversionItem.metadata.conversionRate),
+            policyId: conversionItem.metadata.conversionPolicyId ?? "",
+          })
+        : undefined;
       return Object.freeze({
         stopId: option?.packageStop?.stopId,
         destination: option?.packageStop?.destination,
@@ -39,14 +49,16 @@ export class JourneyQuoteViewModelProvider {
           ? undefined
           : selectedRates.reduce((total, item) => total + item.rate.pricing.amount, 0),
         currency: [...new Set(selectedRates.map((item) => item.rate.pricing.currency))].join(" / ") || "UNSPECIFIED",
+        conversion,
       });
     }) ?? [];
     const groupComponent = result.pricing?.pricing?.breakdown.lineItems.find((item) => item.code === "BASE");
     const currencyUnconfirmed = result.status === "CURRENCY_UNCONFIRMED";
-    const accommodationCurrencies = new Set(accommodation.map((stay) => stay.currency));
+    const accommodationCurrencies = new Set(accommodation.map((stay) => stay.conversion?.currency ?? stay.currency));
     const accommodationTotal = !currencyUnconfirmed && accommodationCurrencies.size <= 1
-      ? accommodation.reduce((total, stay) => total + (stay.amount ?? 0), 0)
+      ? accommodation.reduce((total, stay) => total + (stay.conversion?.amount ?? stay.amount ?? 0), 0)
       : undefined;
+    const accommodationTotalCurrency = accommodationTotal === undefined ? undefined : [...accommodationCurrencies][0];
     const selectedOption = result.selections[0]
       ? journey?.accommodation.find((candidate) =>
           candidate.accommodationId === result.selections[0]!.accommodationId
@@ -79,6 +91,7 @@ export class JourneyQuoteViewModelProvider {
           ? Object.freeze({ ...result.groupComponent })
           : undefined,
       accommodationTotal,
+      accommodationTotalCurrency,
       participantCount: occupancyRooms.reduce((sum, room) => sum + room.adults + room.children, 0),
       roomAllocation: Object.freeze(occupancyRooms.map((room) => room.adults)),
     });

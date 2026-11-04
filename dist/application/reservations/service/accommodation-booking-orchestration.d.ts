@@ -1,11 +1,12 @@
 import { ApplicationService } from "../../application-service";
 import { AccommodationBookingResult, AccommodationBookingService } from "../../accommodation/booking";
 import { AccommodationRateRevalidationResult, AccommodationRateRevalidationService } from "../../accommodation/revalidation";
-import { PricingEngine, PricingEngineRequest } from "../../pricing";
+import { PricingEngine, PricingEngineRequest, AccommodationCurrencyPolicy } from "../../pricing";
 import { Reservation } from "../aggregate";
 import { ReservationService, ReservationServiceRequest } from "./index";
 import { ReservationPersistenceContext, ReservationRepository } from "../repository";
 import { AccommodationReservationHandoffInput } from "../integration";
+import { AccommodationFulfilmentMode } from "./accommodation-fulfilment-mode";
 export interface AccommodationBookingOrchestrationRequest {
     readonly pricing: PricingEngineRequest;
     readonly reservation: Omit<ReservationServiceRequest, "snapshots"> & {
@@ -28,7 +29,9 @@ export declare class AccommodationBookingOrchestrationService implements Applica
     private readonly revalidationService;
     private readonly bookingService;
     private readonly reservationRepository?;
-    constructor(pricingEngine: PricingEngine, reservationService: ReservationService, revalidationService: AccommodationRateRevalidationService, bookingService: AccommodationBookingService, reservationRepository?: ReservationRepository | undefined);
+    private readonly fulfilmentMode;
+    private readonly currencyPolicyProvider;
+    constructor(pricingEngine: PricingEngine, reservationService: ReservationService, revalidationService: AccommodationRateRevalidationService, bookingService: AccommodationBookingService, reservationRepository?: ReservationRepository | undefined, fulfilmentMode?: AccommodationFulfilmentMode, currencyPolicyProvider?: () => AccommodationCurrencyPolicy);
     fulfilReservation(reservation: Reservation, handoff: AccommodationReservationHandoffInput, persistenceContext: ReservationPersistenceContext): Promise<AccommodationBookingOrchestrationResult>;
     execute(request: AccommodationBookingOrchestrationRequest): Promise<AccommodationBookingOrchestrationResult>;
     private bookAccommodation;

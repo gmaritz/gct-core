@@ -43,7 +43,7 @@ function currencyUnconfirmed(journeyId, journey, selections, travellerCount) {
         groupComponent: amount > 0 ? { amount, currency: pricing_1.Currency.ZAR } : undefined,
     };
 }
-function createPricingRequest(journey, pricingInputs, travellerCount) {
+function createPricingRequest(journey, pricingInputs, travellerCount, currencyPolicy) {
     const currency = pricing_1.Currency.ZAR;
     const groupTotal = groupTotalFor(journey, travellerCount);
     const baseRequest = {
@@ -95,14 +95,15 @@ function createPricingRequest(journey, pricingInputs, travellerCount) {
         destination: journey.destinations[0]?.name,
         market: "ZA",
         salesChannel: "DIRECT",
-        pricingRequest: (0, pricing_1.withAccommodationPricingInputs)(baseRequest, pricingInputs),
+        pricingRequest: (0, pricing_1.withAccommodationPricingInputs)(baseRequest, pricingInputs, currencyPolicy),
     };
 }
 class DefaultJourneyQuoteService {
-    constructor(resolver, pricingEngine, selectionStore = journey_selection_store_1.journeySelectionStore) {
+    constructor(resolver, pricingEngine, selectionStore = journey_selection_store_1.journeySelectionStore, currencyPolicyProvider = () => (0, pricing_1.loadAccommodationCurrencyPolicy)()) {
         this.resolver = resolver;
         this.pricingEngine = pricingEngine;
         this.selectionStore = selectionStore;
+        this.currencyPolicyProvider = currencyPolicyProvider;
     }
     async priceJourney(ownerId, journeyId, selections) {
         (0, journey_state_ownership_1.assertJourneyStateOwner)(ownerId);
@@ -203,10 +204,10 @@ class DefaultJourneyQuoteService {
         }
         let pricingRequest;
         try {
-            pricingRequest = createPricingRequest(resolution.journey, pricingInputs, travellerCount);
+            pricingRequest = createPricingRequest(resolution.journey, pricingInputs, travellerCount, this.currencyPolicyProvider());
         }
         catch (error) {
-            if (error instanceof pricing_1.AccommodationCurrencyError) {
+            if (error instanceof pricing_1.AccommodationCurrencyError || error instanceof pricing_1.AccommodationCurrencyPolicyError) {
                 return currencyUnconfirmed(journeyId, resolution.journey, selections, travellerCount);
             }
             throw error;

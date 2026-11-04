@@ -11,6 +11,8 @@ const accommodation_booking_orchestration_1 = require("../../application/reserva
 const journey_quote_service_1 = require("../../application/merchandising/homepage/showcase/journey-quote-service");
 const repositories_1 = require("./repositories");
 const hotelbeds_runtime_1 = require("../accommodation/hotelbeds/hotelbeds-runtime");
+const accommodation_fulfilment_config_1 = require("../../config/accommodation-fulfilment.config");
+const accommodation_fulfilment_mode_1 = require("../../application/reservations/service/accommodation-fulfilment-mode");
 function createCustomerJourneyReservationService() {
     const reservationRepository = new repositories_1.CanonicalReservationPrismaRepository();
     const reservationService = new reservations_1.ReservationService(new reservations_1.ReservationValidationPipeline({
@@ -18,9 +20,12 @@ function createCustomerJourneyReservationService() {
         snapshotValidator: new reservations_1.ReservationSnapshotValidator(),
         integrityValidator: new reservations_1.CommercialIntegrityValidator(),
     }), new reservations_1.ReservationPolicyPipeline(), new reservations_1.ReservationBuilder({ validate: () => ({ valid: true, errors: [], warnings: [] }) }), reservationRepository);
+    const fulfilmentMode = (0, accommodation_fulfilment_config_1.loadAccommodationFulfilmentMode)();
     const providerRegistry = new registry_1.InMemoryProviderRegistry();
-    providerRegistry.register((0, hotelbeds_runtime_1.createHotelbedsRuntimeProvider)());
-    const bookingOrchestration = new accommodation_booking_orchestration_1.AccommodationBookingOrchestrationService((0, journey_quote_service_1.createDefaultPricingEngine)(), reservationService, new revalidation_1.AccommodationRateRevalidationService(providerRegistry), new booking_1.AccommodationBookingService(providerRegistry), reservationRepository);
+    if (fulfilmentMode === accommodation_fulfilment_mode_1.AccommodationFulfilmentMode.LIVE) {
+        providerRegistry.register((0, hotelbeds_runtime_1.createHotelbedsRuntimeProvider)());
+    }
+    const bookingOrchestration = new accommodation_booking_orchestration_1.AccommodationBookingOrchestrationService((0, journey_quote_service_1.createDefaultPricingEngine)(), reservationService, new revalidation_1.AccommodationRateRevalidationService(providerRegistry), new booking_1.AccommodationBookingService(providerRegistry), reservationRepository, fulfilmentMode);
     return new merchandising_1.CustomerJourneyReservationService(new customers_1.CustomerResolutionService(new repositories_1.CustomerPrismaRepository()), reservationService, bookingOrchestration);
 }
 //# sourceMappingURL=customer-journey-reservation-factory.js.map

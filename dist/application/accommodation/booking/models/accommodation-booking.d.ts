@@ -29,7 +29,7 @@ export interface AccommodationBookingRequest {
     readonly validatedRate?: AccommodationRateOption;
     readonly idempotencyKey: string;
 }
-export type AccommodationBookingStatus = "CONFIRMED" | "FAILED" | "PENDING" | "UNKNOWN";
+export type AccommodationBookingStatus = "CONFIRMED" | "SIMULATED" | "FAILED" | "PENDING" | "UNKNOWN";
 export interface AccommodationBookingResult {
     readonly successful: boolean;
     readonly status: AccommodationBookingStatus;
@@ -38,6 +38,7 @@ export interface AccommodationBookingResult {
     readonly room: AccommodationRoomOption;
     readonly rate: AccommodationRateOption;
     readonly supplierBookingReference?: string;
+    readonly isSimulated?: boolean;
     readonly supplierPrice?: {
         readonly amount: number;
         readonly currency: string;

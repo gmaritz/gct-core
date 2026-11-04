@@ -107,6 +107,9 @@ function freezeAccommodationSnapshot(snapshot: AccommodationSnapshot): Accommoda
         })
       : undefined,
     supplierPrice: snapshot.supplierPrice ? Object.freeze({ ...snapshot.supplierPrice }) : undefined,
+    currencyConversion: snapshot.currencyConversion
+      ? Object.freeze({ ...snapshot.currencyConversion })
+      : undefined,
     selectedRooms: snapshot.selectedRooms
       ? Object.freeze(snapshot.selectedRooms.map((room) => Object.freeze({
           ...room,
@@ -128,6 +131,7 @@ function freezeSupplierReference(reference: SupplierReference): SupplierReferenc
     version: reference.version,
     providerId: reference.providerId,
     supplierBookingReference: reference.supplierBookingReference,
+    isSimulated: reference.isSimulated,
     confirmationNumber: reference.confirmationNumber,
     bookingId: reference.bookingId,
     bookingItemId: reference.bookingItemId,
