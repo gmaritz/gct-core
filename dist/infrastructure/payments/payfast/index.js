@@ -42,6 +42,17 @@ function normalizeUrl(value, fallback) {
         throw new PayFastConfigurationError(`PayFast URL is invalid: ${safeValue}`);
     }
 }
+function normalizeRequiredCallbackUrl(value, fieldName) {
+    if (isBlank(value)) {
+        throw new PayFastConfigurationError(`${fieldName} is required.`);
+    }
+    const normalized = normalizeUrl(value, "");
+    const parsed = new URL(normalized);
+    if ((parsed.protocol !== "https:" && parsed.protocol !== "http:") || parsed.username || parsed.password) {
+        throw new PayFastConfigurationError(`${fieldName} must be an absolute HTTP or HTTPS URL without embedded credentials.`);
+    }
+    return normalized;
+}
 function parseEnvironment(rawEnvironment) {
     const candidate = rawEnvironment?.trim().toUpperCase();
     if (candidate === PayFastEnvironment.SANDBOX || candidate === PayFastEnvironment.LIVE) {
@@ -85,9 +96,9 @@ function createPayFastIntegrationConfig(input) {
         paymentQueryUrl: normalizeUrl(input.paymentQueryUrl, `${apiBaseUrl}/process/query`),
         refundQueryUrl: normalizeUrl(input.refundQueryUrl, `${apiBaseUrl}/refunds/query`),
         refundUrl: normalizeUrl(input.refundUrl, `${apiBaseUrl}/refunds`),
-        returnUrl: input.returnUrl ? normalizeUrl(input.returnUrl, "") : undefined,
-        cancelUrl: input.cancelUrl ? normalizeUrl(input.cancelUrl, "") : undefined,
-        notifyUrl: input.notifyUrl ? normalizeUrl(input.notifyUrl, "") : undefined,
+        returnUrl: normalizeRequiredCallbackUrl(input.returnUrl, "PAYFAST_RETURN_URL"),
+        cancelUrl: normalizeRequiredCallbackUrl(input.cancelUrl, "PAYFAST_CANCEL_URL"),
+        notifyUrl: normalizeRequiredCallbackUrl(input.notifyUrl, "PAYFAST_NOTIFY_URL"),
         timeoutMs: input.timeoutMs > 0 ? input.timeoutMs : 10000,
         apiVersion: input.apiVersion ?? "v1",
     });
@@ -124,53 +135,26 @@ function loadPayFastIntegrationConfig(env = process.env) {
 function encodePayFastValue(value) {
     return encodeURIComponent(value).replace(/%20/g, "+");
 }
-const PAYFAST_SIGNATURE_ORDER = [
-    "merchant_id",
-    "merchant_key",
-    "return_url",
-    "cancel_url",
-    "notify_url",
-    "m_payment_id",
-    "amount",
-    "item_name",
-    "item_description",
-    "email_address",
-    "name_first",
-    "name_last",
-    "cell_number",
-    "billing_date",
-    "custom_str1",
-    "custom_str2",
-    "custom_str3",
-    "custom_str4",
-    "custom_str5",
-    "custom_int1",
-    "custom_int2",
-    "custom_int3",
-    "custom_int4",
-    "custom_int5",
-];
-function defaultPayFastSignature(values, passphrase) {
-    const signatureEntries = Object.entries(values)
-        .filter(([, value]) => value !== undefined && value !== null && String(value).trim().length > 0)
-        .filter(([key]) => key !== "signature")
-        .map(([key, value]) => [key, String(value)]);
-    const orderedEntries = [...signatureEntries].sort(([leftKey], [rightKey]) => {
-        const leftIndex = PAYFAST_SIGNATURE_ORDER.indexOf(leftKey);
-        const rightIndex = PAYFAST_SIGNATURE_ORDER.indexOf(rightKey);
-        if (leftIndex === -1 && rightIndex === -1) {
-            return leftKey.localeCompare(rightKey);
+function encodePayFastHostedValue(value) {
+    return Array.from(Buffer.from(value.trim(), "utf8"), (byte) => {
+        const isAlphaNumeric = (byte >= 0x30 && byte <= 0x39) ||
+            (byte >= 0x41 && byte <= 0x5a) ||
+            (byte >= 0x61 && byte <= 0x7a);
+        if (isAlphaNumeric || byte === 0x2d || byte === 0x2e || byte === 0x5f) {
+            return String.fromCharCode(byte);
         }
-        if (leftIndex === -1)
-            return 1;
-        if (rightIndex === -1)
-            return -1;
-        return leftIndex - rightIndex;
-    });
-    const payload = orderedEntries
-        .map(([key, value]) => `${key}=${encodePayFastValue(value)}`)
+        if (byte === 0x20) {
+            return "+";
+        }
+        return `%${byte.toString(16).padStart(2, "0").toUpperCase()}`;
+    }).join("");
+}
+function defaultPayFastSignature(values, passphrase) {
+    const payload = Object.entries(values)
+        .filter(([key, value]) => key !== "signature" && value !== undefined && value !== null && String(value).trim().length > 0)
+        .map(([key, value]) => `${key}=${encodePayFastHostedValue(String(value))}`)
         .join("&");
-    const hashInput = `${payload}&passphrase=${encodePayFastValue(passphrase)}`;
+    const hashInput = `${payload}&passphrase=${encodePayFastHostedValue(passphrase)}`;
     return (0, crypto_1.createHash)("md5").update(hashInput).digest("hex");
 }
 function createPayFastApiSignature(values, passphrase) {
@@ -236,8 +220,23 @@ function normalizePaymentStatusForProvider(providerStatus) {
             return null;
     }
 }
-function toPayFastAmount(amountInCents) {
+function toPayFastRefundAmount(amountInCents) {
     return (amountInCents / 100).toFixed(2);
+}
+function formatHostedPaymentAmount(amount) {
+    if (!Number.isFinite(amount) || amount <= 0) {
+        return null;
+    }
+    const match = /^([0-9]+)(?:\.([0-9]{1,2}))?$/.exec(String(amount));
+    if (!match) {
+        return null;
+    }
+    const fraction = (match[2] ?? "").padEnd(2, "0");
+    const minorUnits = BigInt(match[1]) * 100n + BigInt(fraction);
+    if (minorUnits > BigInt(Number.MAX_SAFE_INTEGER)) {
+        return null;
+    }
+    return `${BigInt(match[1]).toString()}.${fraction}`;
 }
 function mapPaymentStatus(operation) {
     switch (operation) {
@@ -307,20 +306,25 @@ class DefaultPayFastGateway {
         }
         return this.executeCustomPayment(context, providerReference, paymentReference, amountInCents);
     }
-    executeCustomPayment(context, providerReference, paymentReference, amountInCents) {
+    executeCustomPayment(context, providerReference, paymentReference, amount) {
+        const currency = context.gatewayRequest.currency;
+        if (currency !== "ZAR") {
+            return createSafeGatewayFailure(context, providerReference, context.operation, [`PayFast hosted payments only support ZAR; received ${currency || "no currency"}.`], payments_1.PaymentStatus.CREATED);
+        }
+        const formattedAmount = formatHostedPaymentAmount(amount);
+        if (!formattedAmount) {
+            return createSafeGatewayFailure(context, providerReference, context.operation, ["PayFast hosted payment amount must be a positive, finite ZAR amount with at most two decimal places."], payments_1.PaymentStatus.CREATED);
+        }
         const customPaymentRequest = {
             merchant_id: this.config.merchantId,
             merchant_key: this.config.merchantKey,
-            return_url: this.config.returnUrl ?? "https://example.com/return",
-            cancel_url: this.config.cancelUrl ?? "https://example.com/cancel",
-            notify_url: this.config.notifyUrl ?? "https://example.com/notify",
+            return_url: this.config.returnUrl,
+            cancel_url: this.config.cancelUrl,
+            notify_url: this.config.notifyUrl,
             m_payment_id: paymentReference.paymentId,
-            amount: toPayFastAmount(amountInCents),
+            amount: formattedAmount,
             item_name: `Payment ${paymentReference.paymentId}`,
             item_description: `Reservation ${context.gatewayRequest.reservationReference}`,
-            email_address: "",
-            name_first: "",
-            name_last: "",
         };
         const signature = defaultPayFastSignature(customPaymentRequest, this.config.passphrase);
         const request = {
@@ -457,7 +461,7 @@ class DefaultPayFastGateway {
                 timestamp,
                 m_payment_id: paymentReference.paymentId,
                 pf_payment_id: providerReference.reference,
-                amount: toPayFastAmount(amountInCents),
+                amount: toPayFastRefundAmount(amountInCents),
                 reason: "GCT refund request",
                 notify_buyer: "0",
                 notify_merchant: "0",

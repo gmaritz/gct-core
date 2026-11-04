@@ -13,12 +13,17 @@ export interface PayFastIntegrationConfig {
     readonly paymentQueryUrl: string;
     readonly refundQueryUrl: string;
     readonly refundUrl: string;
-    readonly returnUrl?: string;
-    readonly cancelUrl?: string;
-    readonly notifyUrl?: string;
+    readonly returnUrl: string;
+    readonly cancelUrl: string;
+    readonly notifyUrl: string;
     readonly timeoutMs: number;
     readonly apiVersion?: string;
 }
+type PayFastIntegrationConfigInput = Omit<PayFastIntegrationConfig, "returnUrl" | "cancelUrl" | "notifyUrl"> & {
+    readonly returnUrl?: string;
+    readonly cancelUrl?: string;
+    readonly notifyUrl?: string;
+};
 export interface PayFastApiRequest {
     readonly method: "GET" | "POST";
     readonly url: string;
@@ -37,7 +42,7 @@ export declare class PayFastConfigurationError extends Error {
     readonly code = "PAYFAST_CONFIGURATION_ERROR";
     constructor(message: string);
 }
-export declare function createPayFastIntegrationConfig(input: PayFastIntegrationConfig): PayFastIntegrationConfig;
+export declare function createPayFastIntegrationConfig(input: PayFastIntegrationConfigInput): PayFastIntegrationConfig;
 export declare function loadPayFastIntegrationConfig(env?: NodeJS.ProcessEnv): PayFastIntegrationConfig;
 export declare function defaultPayFastSignature(values: Record<string, string | number | boolean | null | undefined>, passphrase: string): string;
 export declare function createPayFastApiSignature(values: Record<string, string | number | boolean | null | undefined>, passphrase: string): string;

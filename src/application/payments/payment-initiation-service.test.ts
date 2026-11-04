@@ -8,7 +8,7 @@ describe("DefaultPaymentInitiationService", () => {
   const payment = {
     reference: { paymentId: "payment-1", reservationId: "reservation-1" },
     reservationSnapshot: { reservationReference: "RES-1" },
-    paymentAmount: 12500,
+    paymentAmount: 64990.09,
     currency: "ZAR",
     paymentMethod: PaymentMethod.CARD,
     status: PaymentStatus.CREATED,
@@ -48,12 +48,12 @@ describe("DefaultPaymentInitiationService", () => {
     const result = await service.initiatePayment(request as never);
 
     expect(result.status).toBe("INITIATED");
-    expect(result.amount).toBe(12500);
+    expect(result.amount).toBe(64990.09);
     expect(result.currency).toBe("ZAR");
     expect(result.hostedPaymentAction?.action).toBe("https://sandbox.payfast.co.za/eng/process");
     expect(result.hostedPaymentAction?.fields.signature).toBe("signed");
     expect(gateway.execute).toHaveBeenCalledWith(expect.objectContaining({
-      gatewayRequest: expect.objectContaining({ amount: 12500, currency: "ZAR" }),
+      gatewayRequest: expect.objectContaining({ amount: 64990.09, currency: "ZAR" }),
     }));
   });
 
@@ -82,7 +82,7 @@ describe("CanonicalReservationPaymentContextResolver", () => {
           capturedAt: new Date("2026-08-28T00:00:00.000Z"),
           version: "1.0.0",
           currency: "ZAR",
-          totalPrice: 12500,
+          totalPrice: 64990.09,
           taxes: 0,
           discounts: 0,
           fees: 0,
@@ -103,7 +103,7 @@ describe("CanonicalReservationPaymentContextResolver", () => {
 
     const context = await resolver.resolveForJourney("journey-homepage-journey-001");
 
-    expect(context?.engineRequest.paymentRequest.paymentAmount).toBe(12500);
+    expect(context?.engineRequest.paymentRequest.paymentAmount).toBe(64990.09);
     expect(context?.engineRequest.paymentRequest.currency).toBe("ZAR");
     expect(context?.engineRequest.paymentRequest.reference?.reservationId).toBe("reservation-1");
     expect(context?.simulatedSupplierFulfilment).toBe(true);
