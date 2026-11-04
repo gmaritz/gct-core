@@ -120,6 +120,108 @@ describe("PayFast gateway integration", () => {
     expect(config.notifyUrl).toBe("https://merchant.example.test/notify");
   });
 
+  it("applies runtime-aware environment defaults and rejects invalid or unsafe configurations", () => {
+    const requiredConfig = {
+      PAYFAST_MERCHANT_ID: "10000100",
+      PAYFAST_MERCHANT_KEY: "merchant-key",
+      PAYFAST_PASSPHRASE: "passphrase",
+      PAYFAST_RETURN_URL: "https://merchant.example.test/return",
+      PAYFAST_CANCEL_URL: "https://merchant.example.test/cancel",
+      PAYFAST_NOTIFY_URL: "https://merchant.example.test/notify",
+    };
+
+    for (const runtime of ["development", "test"]) {
+      expect(loadPayFastIntegrationConfig({
+        ...requiredConfig,
+        NODE_ENV: runtime,
+      }).environment).toBe(PayFastEnvironment.SANDBOX);
+      expect(loadPayFastIntegrationConfig({
+        ...requiredConfig,
+        NODE_ENV: runtime,
+        PAYFAST_ENVIRONMENT: "  ",
+      }).environment).toBe(PayFastEnvironment.SANDBOX);
+      expect(loadPayFastIntegrationConfig({
+        ...requiredConfig,
+        NODE_ENV: runtime,
+        PAYFAST_ENVIRONMENT: "SANDBOX",
+      }).environment).toBe(PayFastEnvironment.SANDBOX);
+      expect(loadPayFastIntegrationConfig({
+        ...requiredConfig,
+        NODE_ENV: runtime,
+        PAYFAST_ENVIRONMENT: "LIVE",
+      }).environment).toBe(PayFastEnvironment.LIVE);
+      expect(() => loadPayFastIntegrationConfig({
+        ...requiredConfig,
+        NODE_ENV: runtime,
+        PAYFAST_ENVIRONMENT: "staging",
+      })).toThrow("PAYFAST_ENVIRONMENT must be SANDBOX or LIVE.");
+    }
+
+    expect(loadPayFastIntegrationConfig({
+      ...requiredConfig,
+      NODE_ENV: "production",
+      PAYFAST_ENVIRONMENT: "LIVE",
+    }).environment).toBe(PayFastEnvironment.LIVE);
+    for (const environment of [undefined, "  ", "SANDBOX"]) {
+      expect(() => loadPayFastIntegrationConfig({
+        ...requiredConfig,
+        NODE_ENV: "production",
+        PAYFAST_ENVIRONMENT: environment,
+      })).toThrow("PAYFAST_ENVIRONMENT must be explicitly set to LIVE in production.");
+    }
+    expect(() => loadPayFastIntegrationConfig({
+      ...requiredConfig,
+      NODE_ENV: "production",
+      PAYFAST_ENVIRONMENT: "staging",
+    })).toThrow("PAYFAST_ENVIRONMENT must be SANDBOX or LIVE.");
+
+    expect(() => loadPayFastIntegrationConfig({
+      ...requiredConfig,
+      NODE_ENV: "test",
+      PAYFAST_ENVIRONMENT: "LIVE",
+      PAYFAST_PAYMENT_URL: "https://sandbox.payfast.co.za/eng/process",
+    })).toThrow("PAYFAST_PAYMENT_URL must use HTTPS on www.payfast.co.za");
+    expect(() => loadPayFastIntegrationConfig({
+      ...requiredConfig,
+      NODE_ENV: "test",
+      PAYFAST_API_URL: "https://api.example.test",
+    })).toThrow("PAYFAST_API_URL must use HTTPS on api.payfast.co.za");
+    expect(() => loadPayFastIntegrationConfig({
+      ...requiredConfig,
+      NODE_ENV: "test",
+      PAYFAST_API_VERSION: "v2",
+    })).toThrow("PAYFAST_API_VERSION must be v1.");
+    expect(() => loadPayFastIntegrationConfig({
+      ...requiredConfig,
+      NODE_ENV: "test",
+      PAYFAST_MERCHANT_ID: "not-an-id",
+    })).toThrow("PayFast merchant ID must contain exactly 8 digits.");
+  });
+
+  it("fails safely when merchant authentication configuration is incomplete", () => {
+    const requiredConfig = {
+      PAYFAST_MERCHANT_ID: "10000100",
+      PAYFAST_MERCHANT_KEY: "merchant-key",
+      PAYFAST_PASSPHRASE: "passphrase",
+      PAYFAST_RETURN_URL: "https://merchant.example.test/return",
+      PAYFAST_CANCEL_URL: "https://merchant.example.test/cancel",
+      PAYFAST_NOTIFY_URL: "https://merchant.example.test/notify",
+    };
+
+    expect(() => loadPayFastIntegrationConfig({
+      ...requiredConfig,
+      PAYFAST_MERCHANT_ID: "",
+    })).toThrow("PayFast merchant ID is required.");
+    expect(() => loadPayFastIntegrationConfig({
+      ...requiredConfig,
+      PAYFAST_MERCHANT_KEY: "",
+    })).toThrow("PayFast merchant key is required.");
+    expect(() => loadPayFastIntegrationConfig({
+      ...requiredConfig,
+      PAYFAST_PASSPHRASE: "",
+    })).toThrow("PayFast passphrase is required.");
+  });
+
   it("matches the PayFast documentation signature vector using hosted-form field order", () => {
     const signature = defaultPayFastSignature(
       {
@@ -251,24 +353,35 @@ describe("PayFast gateway integration", () => {
     }
   });
 
-  it("creates PayFast API signatures for transaction queries and refund operations", () => {
-    const payload = {
-      merchant_id: "10000100",
-      merchant_key: "merchant-key",
+  it("matches an independent PayFast API signature vector with alphabetical URL encoding", () => {
+    expect(createPayFastApiSignature({
+      description: "A & B!",
+      "merchant-id": "10000100",
+      timestamp: "2020-04-01T12:00:01+02:00",
       version: "v1",
-      timestamp: "1720000000",
-      m_payment_id: "pay-123",
-      pf_payment_id: "pf-123",
+      omitted: undefined,
+      blank: "",
+    }, "p a")).toBe("f3feba77ae590246901ead761ab0d4e3");
+  });
+
+  it("excludes an existing signature property from API signature input", () => {
+    const fields = {
+      description: "A & B!",
+      "merchant-id": "10000100",
+      timestamp: "2020-04-01T12:00:01+02:00",
+      version: "v1",
     };
+    const expected = createPayFastApiSignature(fields, "p a");
 
-    const signature = createPayFastApiSignature(payload, "passphrase");
-
-    expect(typeof signature).toBe("string");
-    expect(signature).not.toContain("passphrase");
-    expect(signature.length).toBeGreaterThan(0);
+    expect(createPayFastApiSignature({
+      ...fields,
+      signature: "an-existing-signature",
+    }, "p a")).toBe(expected);
+    expect(expected).toBe("f3feba77ae590246901ead761ab0d4e3");
   });
 
   it("maps an unknown PayFast transaction status to a failed canonical result", async () => {
+    let capturedRequest: { method: string; url: string; headers?: Record<string, string> } | undefined;
     const gateway = new DefaultPayFastGateway(
       {
         environment: PayFastEnvironment.SANDBOX,
@@ -287,7 +400,10 @@ describe("PayFast gateway integration", () => {
         apiVersion: "v1",
       },
       {
-        execute: async (): Promise<{ status: number; ok: boolean; body: string }> => ({ status: 200, ok: true, body: JSON.stringify({ status: "UNKNOWN_STATE" }) }),
+        execute: async (request): Promise<{ status: number; ok: boolean; body: string }> => {
+          capturedRequest = request;
+          return { status: 200, ok: true, body: JSON.stringify({ status: "UNKNOWN_STATE" }) };
+        },
       },
     );
 
@@ -353,10 +469,62 @@ describe("PayFast gateway integration", () => {
     expect(result.success).toBe(false);
     expect(result.paymentStatus).toBeNull();
     expect(result.warnings).toContain("PayFast returned an unknown transaction status.");
+    expect(capturedRequest?.url).toBe("https://api.payfast.co.za/process/query/pf-123?testing=true");
+    expect(Object.keys(capturedRequest?.headers ?? {}).sort()).toEqual([
+      "merchant-id",
+      "signature",
+      "timestamp",
+      "version",
+    ]);
+    expect(capturedRequest?.headers).toMatchObject({
+      "merchant-id": "10000100",
+      version: "v1",
+    });
+    expect(capturedRequest?.headers?.timestamp).toMatch(
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00$/,
+    );
+    expect(capturedRequest?.headers?.signature).toBe(createPayFastApiSignature({
+      "merchant-id": capturedRequest?.headers?.["merchant-id"],
+      timestamp: capturedRequest?.headers?.timestamp,
+      version: capturedRequest?.headers?.version,
+    }, "passphrase"));
+    expect(JSON.stringify(capturedRequest)).not.toContain("merchant-key");
+  });
+
+  it("uses the live API endpoint without the sandbox-only testing parameter", async () => {
+    let capturedUrl = "";
+    const gateway = new DefaultPayFastGateway(
+      {
+        ...payFastTestConfig,
+        environment: PayFastEnvironment.LIVE,
+        paymentProcessUrl: "https://www.payfast.co.za/eng/process",
+      },
+      {
+        execute: async (request): Promise<{ status: number; ok: boolean; body: string }> => {
+          capturedUrl = request.url;
+          return { status: 200, ok: true, body: JSON.stringify({ status: "UNKNOWN_STATE" }) };
+        },
+      },
+    );
+    const context = createGatewayContext(1);
+    const statusContext = {
+      ...context,
+      operation: PaymentProviderOperation.STATUS,
+      gatewayRequest: {
+        ...context.gatewayRequest,
+        operation: PaymentProviderOperation.STATUS,
+      },
+    };
+
+    await gateway.execute(statusContext);
+
+    expect(capturedUrl).toBe("https://api.payfast.co.za/process/query/payfast-ref");
+    expect(capturedUrl).not.toContain("testing=");
   });
 
   it("supports refund eligibility checks and full refund execution", async () => {
     const invocationOrder: string[] = [];
+    const requests: Array<{ method: string; url: string; headers?: Record<string, string>; body?: string }> = [];
     const gateway = new DefaultPayFastGateway(
       {
         environment: PayFastEnvironment.SANDBOX,
@@ -377,6 +545,7 @@ describe("PayFast gateway integration", () => {
       {
         execute: async (request): Promise<{ status: number; ok: boolean; body: string }> => {
           invocationOrder.push(request.url);
+          requests.push(request);
           if (request.url.includes("/refunds/query/")) {
             return { status: 200, ok: true, body: JSON.stringify({ amount_available_for_refund: "27200" }) };
           }
@@ -448,5 +617,23 @@ describe("PayFast gateway integration", () => {
     expect(result.success).toBe(true);
     expect(result.paymentStatus).toBe(PaymentStatus.REFUNDED);
     expect(invocationOrder.length).toBeGreaterThan(1);
+    expect(requests[0].url).toBe("https://api.payfast.co.za/refunds/query/pf-123?testing=true");
+    expect(requests[1].url).toBe("https://api.payfast.co.za/refunds?testing=true");
+    expect(Object.keys(requests[1].headers ?? {}).sort()).toEqual([
+      "Content-Type",
+      "merchant-id",
+      "signature",
+      "timestamp",
+      "version",
+    ]);
+    const refundPayload = JSON.parse(requests[1].body ?? "{}") as Record<string, string>;
+    expect(refundPayload).not.toHaveProperty("merchant_key");
+    expect(refundPayload).not.toHaveProperty("merchant-id");
+    expect(requests[1].headers?.signature).toBe(createPayFastApiSignature({
+      ...refundPayload,
+      "merchant-id": requests[1].headers?.["merchant-id"],
+      timestamp: requests[1].headers?.timestamp,
+      version: requests[1].headers?.version,
+    }, "passphrase"));
   });
 });

@@ -30,17 +30,30 @@ function normalizeUrl(value, fallback) {
     if (isBlank(value)) {
         return fallback;
     }
-    const safeValue = value;
     try {
-        const parsed = new URL(safeValue);
+        const parsed = new URL(value);
         if (!parsed.protocol || !parsed.hostname) {
             throw new Error("Invalid URL");
         }
         return parsed.toString().replace(/\/$/, "");
     }
     catch {
-        throw new PayFastConfigurationError(`PayFast URL is invalid: ${safeValue}`);
+        throw new PayFastConfigurationError("PayFast URL is invalid.");
     }
+}
+function normalizePayFastEndpoint(value, fallback, hostname, fieldName) {
+    const normalized = normalizeUrl(value, fallback);
+    const parsed = new URL(normalized);
+    if (parsed.protocol !== "https:" ||
+        parsed.hostname !== hostname ||
+        parsed.port ||
+        parsed.username ||
+        parsed.password ||
+        parsed.search ||
+        parsed.hash) {
+        throw new PayFastConfigurationError(`${fieldName} must use HTTPS on ${hostname} without embedded credentials, query parameters, fragments, or a nonstandard port.`);
+    }
+    return normalized;
 }
 function normalizeRequiredCallbackUrl(value, fieldName) {
     if (isBlank(value)) {
@@ -53,12 +66,22 @@ function normalizeRequiredCallbackUrl(value, fieldName) {
     }
     return normalized;
 }
-function parseEnvironment(rawEnvironment) {
+function parseEnvironment(rawEnvironment, runtimeEnvironment) {
+    const runtimeIsProduction = runtimeEnvironment?.trim().toLowerCase() === "production";
     const candidate = rawEnvironment?.trim().toUpperCase();
-    if (candidate === PayFastEnvironment.SANDBOX || candidate === PayFastEnvironment.LIVE) {
-        return candidate;
+    if (!candidate && runtimeIsProduction) {
+        throw new PayFastConfigurationError("PAYFAST_ENVIRONMENT must be explicitly set to LIVE in production.");
     }
-    return PayFastEnvironment.SANDBOX;
+    if (!candidate) {
+        return PayFastEnvironment.SANDBOX;
+    }
+    if (candidate !== PayFastEnvironment.SANDBOX && candidate !== PayFastEnvironment.LIVE) {
+        throw new PayFastConfigurationError("PAYFAST_ENVIRONMENT must be SANDBOX or LIVE.");
+    }
+    if (runtimeIsProduction && candidate !== PayFastEnvironment.LIVE) {
+        throw new PayFastConfigurationError("PAYFAST_ENVIRONMENT must be explicitly set to LIVE in production.");
+    }
+    return candidate;
 }
 function parsePositiveInteger(value, fallback, fieldName) {
     if (isBlank(value)) {
@@ -72,8 +95,14 @@ function parsePositiveInteger(value, fallback, fieldName) {
     return parsed;
 }
 function createPayFastIntegrationConfig(input) {
+    if (input.environment !== PayFastEnvironment.SANDBOX && input.environment !== PayFastEnvironment.LIVE) {
+        throw new PayFastConfigurationError("PayFast environment must be SANDBOX or LIVE.");
+    }
     if (isBlank(input.merchantId)) {
         throw new PayFastConfigurationError("PayFast merchant ID is required.");
+    }
+    if (!/^\d{8}$/.test(input.merchantId.trim())) {
+        throw new PayFastConfigurationError("PayFast merchant ID must contain exactly 8 digits.");
     }
     if (isBlank(input.merchantKey)) {
         throw new PayFastConfigurationError("PayFast merchant key is required.");
@@ -81,11 +110,21 @@ function createPayFastIntegrationConfig(input) {
     if (isBlank(input.passphrase)) {
         throw new PayFastConfigurationError("PayFast passphrase is required.");
     }
-    const environment = input.environment ?? PayFastEnvironment.SANDBOX;
-    const paymentProcessUrl = normalizeUrl(input.paymentProcessUrl, environment === PayFastEnvironment.LIVE
+    const environment = input.environment;
+    const paymentHostname = environment === PayFastEnvironment.LIVE
+        ? "www.payfast.co.za"
+        : "sandbox.payfast.co.za";
+    const paymentProcessUrl = normalizePayFastEndpoint(input.paymentProcessUrl, environment === PayFastEnvironment.LIVE
         ? "https://www.payfast.co.za/eng/process"
-        : "https://sandbox.payfast.co.za/eng/process");
-    const apiBaseUrl = normalizeUrl(input.apiBaseUrl, environment === PayFastEnvironment.LIVE ? "https://api.payfast.co.za" : "https://api.payfast.co.za");
+        : "https://sandbox.payfast.co.za/eng/process", paymentHostname, "PAYFAST_PAYMENT_URL");
+    const apiBaseUrl = normalizePayFastEndpoint(input.apiBaseUrl, "https://api.payfast.co.za", "api.payfast.co.za", "PAYFAST_API_URL");
+    const paymentQueryUrl = normalizePayFastEndpoint(input.paymentQueryUrl, `${apiBaseUrl}/process/query`, "api.payfast.co.za", "PAYFAST_PAYMENT_QUERY_URL");
+    const refundQueryUrl = normalizePayFastEndpoint(input.refundQueryUrl, `${apiBaseUrl}/refunds/query`, "api.payfast.co.za", "PAYFAST_REFUND_QUERY_URL");
+    const refundUrl = normalizePayFastEndpoint(input.refundUrl, `${apiBaseUrl}/refunds`, "api.payfast.co.za", "PAYFAST_REFUND_URL");
+    const apiVersion = input.apiVersion ?? "v1";
+    if (apiVersion !== "v1") {
+        throw new PayFastConfigurationError("PAYFAST_API_VERSION must be v1.");
+    }
     return Object.freeze({
         environment,
         merchantId: input.merchantId.trim(),
@@ -93,35 +132,36 @@ function createPayFastIntegrationConfig(input) {
         passphrase: input.passphrase.trim(),
         paymentProcessUrl,
         apiBaseUrl,
-        paymentQueryUrl: normalizeUrl(input.paymentQueryUrl, `${apiBaseUrl}/process/query`),
-        refundQueryUrl: normalizeUrl(input.refundQueryUrl, `${apiBaseUrl}/refunds/query`),
-        refundUrl: normalizeUrl(input.refundUrl, `${apiBaseUrl}/refunds`),
+        paymentQueryUrl,
+        refundQueryUrl,
+        refundUrl,
         returnUrl: normalizeRequiredCallbackUrl(input.returnUrl, "PAYFAST_RETURN_URL"),
         cancelUrl: normalizeRequiredCallbackUrl(input.cancelUrl, "PAYFAST_CANCEL_URL"),
         notifyUrl: normalizeRequiredCallbackUrl(input.notifyUrl, "PAYFAST_NOTIFY_URL"),
         timeoutMs: input.timeoutMs > 0 ? input.timeoutMs : 10000,
-        apiVersion: input.apiVersion ?? "v1",
+        apiVersion,
     });
 }
 function loadPayFastIntegrationConfig(env = process.env) {
-    const environment = parseEnvironment(env.PAYFAST_ENVIRONMENT);
+    const environment = parseEnvironment(env.PAYFAST_ENVIRONMENT, env.NODE_ENV);
     const merchantId = env.PAYFAST_MERCHANT_ID ?? "";
     const merchantKey = env.PAYFAST_MERCHANT_KEY ?? "";
     const passphrase = env.PAYFAST_PASSPHRASE ?? "";
+    const apiBaseUrl = env.PAYFAST_API_URL ?? "https://api.payfast.co.za";
     const paymentProcessUrl = env.PAYFAST_PAYMENT_URL ??
         (environment === PayFastEnvironment.LIVE
             ? "https://www.payfast.co.za/eng/process"
             : "https://sandbox.payfast.co.za/eng/process");
-    const paymentQueryUrl = env.PAYFAST_PAYMENT_QUERY_URL ?? "https://api.payfast.co.za/process/query";
-    const refundQueryUrl = env.PAYFAST_REFUND_QUERY_URL ?? "https://api.payfast.co.za/refunds/query";
-    const refundUrl = env.PAYFAST_REFUND_URL ?? "https://api.payfast.co.za/refunds";
+    const paymentQueryUrl = env.PAYFAST_PAYMENT_QUERY_URL ?? `${apiBaseUrl}/process/query`;
+    const refundQueryUrl = env.PAYFAST_REFUND_QUERY_URL ?? `${apiBaseUrl}/refunds/query`;
+    const refundUrl = env.PAYFAST_REFUND_URL ?? `${apiBaseUrl}/refunds`;
     return createPayFastIntegrationConfig({
         environment,
         merchantId,
         merchantKey,
         passphrase,
         paymentProcessUrl,
-        apiBaseUrl: env.PAYFAST_API_URL ?? "https://api.payfast.co.za",
+        apiBaseUrl,
         paymentQueryUrl,
         refundQueryUrl,
         refundUrl,
@@ -133,7 +173,18 @@ function loadPayFastIntegrationConfig(env = process.env) {
     });
 }
 function encodePayFastValue(value) {
-    return encodeURIComponent(value).replace(/%20/g, "+");
+    return Array.from(Buffer.from(value, "utf8"), (byte) => {
+        const isAlphaNumeric = (byte >= 0x30 && byte <= 0x39) ||
+            (byte >= 0x41 && byte <= 0x5a) ||
+            (byte >= 0x61 && byte <= 0x7a);
+        if (isAlphaNumeric || byte === 0x2d || byte === 0x2e || byte === 0x5f) {
+            return String.fromCharCode(byte);
+        }
+        if (byte === 0x20) {
+            return "+";
+        }
+        return `%${byte.toString(16).padStart(2, "0").toUpperCase()}`;
+    }).join("");
 }
 function encodePayFastHostedValue(value) {
     return Array.from(Buffer.from(value.trim(), "utf8"), (byte) => {
@@ -158,14 +209,34 @@ function defaultPayFastSignature(values, passphrase) {
     return (0, crypto_1.createHash)("md5").update(hashInput).digest("hex");
 }
 function createPayFastApiSignature(values, passphrase) {
-    const flattened = Object.entries(values)
-        .filter(([, value]) => value !== undefined && value !== null && String(value).trim().length > 0)
-        .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+    const flattened = Object.entries({ ...values, passphrase })
+        .filter(([key, value]) => key !== "signature" && value !== undefined && value !== null && String(value).trim().length > 0)
+        .sort(([leftKey], [rightKey]) => leftKey < rightKey ? -1 : leftKey > rightKey ? 1 : 0)
         .map(([key, value]) => `${key}=${encodePayFastValue(String(value))}`)
         .join("&");
-    return (0, crypto_1.createHash)("md5")
-        .update(`${flattened}&passphrase=${encodePayFastValue(passphrase)}`)
-        .digest("hex");
+    return (0, crypto_1.createHash)("md5").update(flattened).digest("hex");
+}
+function createPayFastApiRequestUrl(url, environment) {
+    const requestUrl = new URL(url);
+    if (environment === PayFastEnvironment.SANDBOX) {
+        requestUrl.searchParams.set("testing", "true");
+    }
+    else {
+        requestUrl.searchParams.delete("testing");
+    }
+    return requestUrl.toString();
+}
+function createPayFastApiHeaders(merchantId, apiVersion, timestamp, passphrase, requestValues = {}) {
+    const signature = createPayFastApiSignature({ ...requestValues, "merchant-id": merchantId, timestamp, version: apiVersion }, passphrase);
+    return {
+        "merchant-id": merchantId,
+        version: apiVersion,
+        timestamp,
+        signature,
+    };
+}
+function createPayFastApiTimestamp(now = new Date()) {
+    return now.toISOString().replace(/\.\d{3}Z$/, "+00:00");
 }
 function verifyPayFastSignature(payload, passphrase) {
     const signature = payload.signature;
@@ -362,28 +433,13 @@ class DefaultPayFastGateway {
     }
     async executeTransactionQuery(context, providerReference, paymentReference, requestAmount) {
         const providerPaymentReference = providerReference.reference || paymentReference.paymentId;
-        const requestUrl = `${this.config.paymentQueryUrl.replace(/\/$/, "")}/${encodeURIComponent(providerPaymentReference)}`;
-        const timestamp = Math.round(Date.now() / 1000).toString();
-        const payload = {
-            merchant_id: this.config.merchantId,
-            merchant_key: this.config.merchantKey,
-            version: this.config.apiVersion ?? "v1",
-            timestamp,
-            m_payment_id: paymentReference.paymentId,
-            pf_payment_id: providerPaymentReference,
-        };
-        const signature = createPayFastApiSignature(payload, this.config.passphrase);
+        const requestUrl = createPayFastApiRequestUrl(`${this.config.paymentQueryUrl.replace(/\/$/, "")}/${encodeURIComponent(providerPaymentReference)}`, this.config.environment);
+        const timestamp = createPayFastApiTimestamp();
         try {
             const response = await this.httpClient.execute({
                 method: "GET",
                 url: requestUrl,
-                headers: {
-                    "x-payfast-signature": signature,
-                    "x-payfast-merchant-id": this.config.merchantId,
-                    "x-payfast-merchant-key": this.config.merchantKey,
-                    "x-payfast-version": this.config.apiVersion ?? "v1",
-                    "x-payfast-timestamp": timestamp,
-                },
+                headers: createPayFastApiHeaders(this.config.merchantId, this.config.apiVersion ?? "v1", timestamp, this.config.passphrase),
             });
             if (!response.ok || response.status >= 400) {
                 return createSafeGatewayFailure(context, providerReference, integration_1.PaymentProviderOperation.STATUS, ["PayFast transaction query failed."], null);
@@ -421,28 +477,13 @@ class DefaultPayFastGateway {
         }
     }
     async executeRefundFlow(context, providerReference, paymentReference, amountInCents) {
-        const queryUrl = `${this.config.refundQueryUrl.replace(/\/$/, "")}/${encodeURIComponent(providerReference.reference)}`;
-        const timestamp = Math.round(Date.now() / 1000).toString();
-        const queryPayload = {
-            merchant_id: this.config.merchantId,
-            merchant_key: this.config.merchantKey,
-            version: this.config.apiVersion ?? "v1",
-            timestamp,
-            m_payment_id: paymentReference.paymentId,
-            pf_payment_id: providerReference.reference,
-        };
-        const querySignature = createPayFastApiSignature(queryPayload, this.config.passphrase);
+        const queryUrl = createPayFastApiRequestUrl(`${this.config.refundQueryUrl.replace(/\/$/, "")}/${encodeURIComponent(providerReference.reference)}`, this.config.environment);
+        const queryTimestamp = createPayFastApiTimestamp();
         try {
             const queryResponse = await this.httpClient.execute({
                 method: "GET",
                 url: queryUrl,
-                headers: {
-                    "x-payfast-signature": querySignature,
-                    "x-payfast-merchant-id": this.config.merchantId,
-                    "x-payfast-merchant-key": this.config.merchantKey,
-                    "x-payfast-version": this.config.apiVersion ?? "v1",
-                    "x-payfast-timestamp": timestamp,
-                },
+                headers: createPayFastApiHeaders(this.config.merchantId, this.config.apiVersion ?? "v1", queryTimestamp, this.config.passphrase),
             });
             if (!queryResponse.ok || queryResponse.status >= 400) {
                 return createSafeGatewayFailure(context, providerReference, integration_1.PaymentProviderOperation.REFUND, ["PayFast refund eligibility query failed."], payments_1.PaymentStatus.CREATED);
@@ -455,10 +496,6 @@ class DefaultPayFastGateway {
                 return createSafeGatewayFailure(context, providerReference, integration_1.PaymentProviderOperation.REFUND, ["Refund amount exceeds the provider-reported refundable amount."], payments_1.PaymentStatus.CREATED);
             }
             const refundPayload = {
-                merchant_id: this.config.merchantId,
-                merchant_key: this.config.merchantKey,
-                version: this.config.apiVersion ?? "v1",
-                timestamp,
                 m_payment_id: paymentReference.paymentId,
                 pf_payment_id: providerReference.reference,
                 amount: toPayFastRefundAmount(amountInCents),
@@ -466,17 +503,13 @@ class DefaultPayFastGateway {
                 notify_buyer: "0",
                 notify_merchant: "0",
             };
-            const refundSignature = createPayFastApiSignature(refundPayload, this.config.passphrase);
+            const refundTimestamp = createPayFastApiTimestamp();
             const refundResponse = await this.httpClient.execute({
                 method: "POST",
-                url: this.config.refundUrl,
+                url: createPayFastApiRequestUrl(this.config.refundUrl, this.config.environment),
                 headers: {
                     "Content-Type": "application/json",
-                    "x-payfast-signature": refundSignature,
-                    "x-payfast-merchant-id": this.config.merchantId,
-                    "x-payfast-merchant-key": this.config.merchantKey,
-                    "x-payfast-version": this.config.apiVersion ?? "v1",
-                    "x-payfast-timestamp": timestamp,
+                    ...createPayFastApiHeaders(this.config.merchantId, this.config.apiVersion ?? "v1", refundTimestamp, this.config.passphrase, refundPayload),
                 },
                 body: JSON.stringify(refundPayload),
             });
