@@ -1592,6 +1592,8 @@ model PaymentAttempt {
   currency              String   @db.VarChar(3)
   status                String
   providerTransactionId String?  @unique
+  providerNotificationHash String?
+  notificationReceivedAt DateTime?
   providerInitiatedAt   DateTime?
   providerRespondedAt   DateTime?
   createdAt             DateTime @default(now())

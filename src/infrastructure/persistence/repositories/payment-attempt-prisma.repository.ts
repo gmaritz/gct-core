@@ -1,6 +1,9 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import {
+  ApplyVerifiedPayFastNotificationInput,
   CreatePaymentAttemptInput,
+  PaymentAttemptNotificationConflictError,
+  PaymentAttemptNotFoundError,
   PaymentAttempt,
   PaymentAttemptRepository,
 } from "@application/payments";
@@ -19,6 +22,8 @@ type PaymentAttemptRecord = {
   currency: string;
   status: string;
   providerTransactionId: string | null;
+  providerNotificationHash: string | null;
+  notificationReceivedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   providerInitiatedAt: Date | null;
@@ -38,6 +43,8 @@ function fromRecord(record: PaymentAttemptRecord): PaymentAttempt {
     currency: record.currency,
     status: record.status as PaymentStatus,
     providerTransactionId: record.providerTransactionId ?? undefined,
+    providerNotificationHash: record.providerNotificationHash ?? undefined,
+    notificationReceivedAt: record.notificationReceivedAt ? new Date(record.notificationReceivedAt) : undefined,
     createdAt: new Date(record.createdAt),
     updatedAt: new Date(record.updatedAt),
     providerInitiatedAt: record.providerInitiatedAt ? new Date(record.providerInitiatedAt) : undefined,
@@ -157,6 +164,99 @@ export class PaymentAttemptPrismaRepository implements PaymentAttemptRepository 
     const record = await this.prisma.paymentAttempt.findUnique({ where: { paymentReference } });
     if (!record) throw new Error("Payment attempt was not found after provider correlation.");
     return fromRecord(record as unknown as PaymentAttemptRecord);
+  }
+
+  public async applyVerifiedPayFastNotification(
+    input: ApplyVerifiedPayFastNotificationInput,
+  ): Promise<"APPLIED" | "DUPLICATE"> {
+    const transactionId = input.providerTransactionId.trim();
+    const mappedStatus = input.providerStatus === "COMPLETE" ? PaymentStatus.COMPLETED : PaymentStatus.CANCELLED;
+    const snapshotStatusIsValid = input.providerStatus === "COMPLETE"
+      ? input.nextPaymentSnapshot.paymentStatus === PaymentStatus.COMPLETED
+        || input.nextPaymentSnapshot.paymentStatus === "PARTIAL"
+      : input.nextPaymentSnapshot.paymentStatus === input.expectedPaymentSnapshot.paymentStatus
+        && input.nextPaymentSnapshot.amountReceived === input.expectedPaymentSnapshot.amountReceived
+        && input.nextPaymentSnapshot.balanceOutstanding === input.expectedPaymentSnapshot.balanceOutstanding;
+    if (
+      !transactionId
+      || !/^[a-f0-9]{64}$/i.test(input.notificationHash)
+      || input.paymentStatus !== mappedStatus
+      || !snapshotStatusIsValid
+    ) {
+      throw new PaymentAttemptNotificationConflictError("Verified notification evidence is incomplete.");
+    }
+
+    try {
+      return await this.prisma.$transaction(async (transaction) => {
+        const record = await transaction.paymentAttempt.findUnique({
+          where: { paymentReference: input.paymentReference },
+        });
+        if (!record) throw new PaymentAttemptNotFoundError();
+        const attempt = fromRecord(record as unknown as PaymentAttemptRecord);
+        if (attempt.reservationId !== input.reservationId || attempt.provider !== "PAYFAST") {
+          throw new PaymentAttemptNotificationConflictError("Payment attempt does not match the notification context.");
+        }
+
+        if (attempt.status === input.paymentStatus) {
+          if (
+            attempt.providerTransactionId === transactionId
+            && attempt.providerNotificationHash === input.notificationHash
+          ) return "DUPLICATE";
+          throw new PaymentAttemptNotificationConflictError("A conflicting notification was already applied to this attempt.");
+        }
+        if (attempt.status !== PaymentStatus.AUTHORIZATION_REQUESTED || attempt.providerTransactionId) {
+          throw new PaymentAttemptNotificationConflictError("Payment attempt is not awaiting this provider notification.");
+        }
+
+        const changedAttempt = await transaction.paymentAttempt.updateMany({
+          where: {
+            id: attempt.attemptId,
+            status: PaymentStatus.AUTHORIZATION_REQUESTED,
+            providerTransactionId: null,
+          },
+          data: {
+            status: input.paymentStatus,
+            providerTransactionId: transactionId,
+            providerNotificationHash: input.notificationHash,
+            notificationReceivedAt: new Date(),
+            providerRespondedAt: new Date(),
+          },
+        });
+        if (changedAttempt.count !== 1) {
+          const current = await transaction.paymentAttempt.findUnique({
+            where: { paymentReference: input.paymentReference },
+          });
+          if (
+            current?.status === input.paymentStatus
+            && current.providerTransactionId === transactionId
+            && current.providerNotificationHash === input.notificationHash
+          ) return "DUPLICATE";
+          throw new PaymentAttemptNotificationConflictError("Payment attempt was concurrently processed.");
+        }
+
+        const reservationUpdate = await transaction.reservation.updateMany({
+          where: {
+            id: input.reservationId,
+            paymentSnapshot: {
+              equals: JSON.parse(JSON.stringify(input.expectedPaymentSnapshot)) as Prisma.InputJsonValue,
+            },
+          },
+          data: {
+            paymentSnapshot: JSON.parse(JSON.stringify(input.nextPaymentSnapshot)) as Prisma.InputJsonValue,
+            reservationMetadata: JSON.parse(JSON.stringify(input.nextReservationMetadata)) as Prisma.InputJsonValue,
+          },
+        });
+        if (reservationUpdate.count !== 1) {
+          throw new PaymentAttemptNotificationConflictError("Reservation payment snapshot changed during notification processing.");
+        }
+        return "APPLIED";
+      });
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        throw new PaymentAttemptNotificationConflictError("Provider transaction ID is already associated with another attempt.");
+      }
+      throw error;
+    }
   }
 }
 

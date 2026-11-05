@@ -109,6 +109,22 @@ export function createExpressApplication(
 	app.use(helmet());
 	app.use(compression());
 	app.use(cors(corsOptions));
+	app.use(
+		"/api/v1/payfast/itn",
+		express.raw({ type: "application/x-www-form-urlencoded", limit: "16kb" }),
+		(error: unknown, _request: Request, response: Response, next: NextFunction): void => {
+			const parserError = error as { readonly type?: unknown };
+			if (parserError?.type === "entity.too.large") {
+				response.status(413).type("text/plain").send("Payment notification is too large.");
+				return;
+			}
+			if (parserError?.type === "entity.parse.failed") {
+				response.status(400).type("text/plain").send("Malformed payment notification.");
+				return;
+			}
+			next(error);
+		},
+	);
 	app.use(express.json());
 	app.use(express.urlencoded({ extended: true }));
 

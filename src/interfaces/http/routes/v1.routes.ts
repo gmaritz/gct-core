@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import { receivePayFastItn } from "../controllers/payfast-itn.controller";
 
 export function createV1Router(): Router {
 	const router = Router();
@@ -8,6 +9,7 @@ export function createV1Router(): Router {
 			message: "GCT Core API v1",
 		});
 	});
+	router.post("/payfast/itn", receivePayFastItn);
 
 	return router;
 }

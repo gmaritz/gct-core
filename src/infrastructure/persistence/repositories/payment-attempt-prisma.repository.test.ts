@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
-import { CreatePaymentAttemptInput, PaymentStatus } from "@application/payments";
+import { ApplyVerifiedPayFastNotificationInput, CreatePaymentAttemptInput, PaymentStatus } from "@application/payments";
 import { PaymentGatewayResult, PaymentProviderContext, PaymentProviderOperation } from "@application/payments/integration";
+import { PaymentSnapshot } from "@application/reservations/models";
 import { PaymentAttemptPrismaRepository } from "./payment-attempt-prisma.repository";
 
 function createRecord(overrides: Record<string, unknown> = {}): Record<string, unknown> {
@@ -187,8 +188,33 @@ databaseConcurrencyDescribe("PaymentAttemptPrismaRepository PostgreSQL concurren
     const firstReference = `gct-attempt-${suffix}-1`;
     const secondReference = `gct-attempt-${suffix}-2`;
     const transactionId = `pf-transaction-${suffix}`;
+    const itnTransactionId = `pf-itn-${suffix}`;
+    const capturedAt = new Date("2026-11-05T00:00:00.000Z");
+    const initialPaymentSnapshot: PaymentSnapshot = {
+      snapshotId: `payment-snapshot-${suffix}`,
+      capturedAt,
+      version: "1.0.0",
+      paymentStatus: "CREATED",
+      amountReceived: 0,
+      balanceOutstanding: 64990.09,
+    };
 
-    await prisma.reservation.create({ data: { id: reservationId } });
+    await prisma.reservation.create({ data: {
+      id: reservationId,
+      reservationLifecycleCode: "CREATED",
+      pricingSnapshot: {
+        snapshotId: `pricing-snapshot-${suffix}`,
+        capturedAt: capturedAt.toISOString(),
+        version: "1.0.0",
+        currency: "ZAR",
+        totalPrice: 64990.09,
+        taxes: 0,
+        discounts: 0,
+        fees: 0,
+      },
+      paymentSnapshot: JSON.parse(JSON.stringify(initialPaymentSnapshot)),
+      reservationMetadata: { createdAt: capturedAt.toISOString(), updatedAt: capturedAt.toISOString(), version: "1.0.0" },
+    } });
     try {
       const createInput = (key: string, reference: string): CreatePaymentAttemptInput => ({
         idempotencyKey: key,
@@ -268,6 +294,44 @@ databaseConcurrencyDescribe("PaymentAttemptPrismaRepository PostgreSQL concurren
       expect(gatewayExecute).toHaveBeenCalledTimes(1);
       expect(initiationResults.filter((result) => result.hostedPaymentAction)).toHaveLength(1);
       expect(initiationResults.filter((result) => result.status === "PENDING")).toHaveLength(8);
+
+      const initiated = initiationResults.find((result) => result.hostedPaymentAction)!;
+      const completedPaymentSnapshot: PaymentSnapshot = {
+        ...initialPaymentSnapshot,
+        capturedAt: new Date(),
+        paymentStatus: "COMPLETED",
+        amountReceived: 64990.09,
+        balanceOutstanding: 0,
+      };
+      const notificationInput: ApplyVerifiedPayFastNotificationInput = {
+        paymentReference: initiated.paymentReference!,
+        reservationId,
+        providerTransactionId: itnTransactionId,
+        notificationHash: "a".repeat(64),
+        providerStatus: "COMPLETE" as const,
+        paymentStatus: PaymentStatus.COMPLETED,
+        expectedPaymentSnapshot: initialPaymentSnapshot,
+        nextPaymentSnapshot: completedPaymentSnapshot,
+        nextReservationMetadata: { createdAt: capturedAt, updatedAt: new Date(), version: "1.0.0" },
+      };
+      const notificationResults = await Promise.all([
+        repository.applyVerifiedPayFastNotification(notificationInput),
+        repository.applyVerifiedPayFastNotification(notificationInput),
+      ]);
+      expect(notificationResults.filter((result) => result === "APPLIED")).toHaveLength(1);
+      expect(notificationResults.filter((result) => result === "DUPLICATE")).toHaveLength(1);
+      const persistedAttempt = await prisma.paymentAttempt.findUnique({ where: { paymentReference: initiated.paymentReference } });
+      const persistedReservation = await prisma.reservation.findUnique({ where: { id: reservationId } });
+      expect(persistedAttempt).toMatchObject({
+        status: PaymentStatus.COMPLETED,
+        providerTransactionId: itnTransactionId,
+        providerNotificationHash: "a".repeat(64),
+      });
+      expect(persistedReservation?.paymentSnapshot).toMatchObject({
+        paymentStatus: PaymentStatus.COMPLETED,
+        amountReceived: 64990.09,
+        balanceOutstanding: 0,
+      });
 
       const secondAttempt = await repository.createOrFind(createInput(secondKey, secondReference));
       const associations = await Promise.allSettled([

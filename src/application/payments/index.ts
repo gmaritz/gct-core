@@ -8,3 +8,4 @@ export * from "./presentation";
 export * from "./integration";
 export * from "./payment-initiation-service";
 export * from "./payment-attempt";
+export * from "./verified-payfast-notification-transition";

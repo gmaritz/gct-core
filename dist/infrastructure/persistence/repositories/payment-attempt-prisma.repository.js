@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PaymentAttemptPrismaRepository = void 0;
+const payments_1 = require("@application/payments");
 const models_1 = require("@application/payments/models");
 const prisma_1 = require("../../../bootstrap/prisma");
 function fromRecord(record) {
@@ -16,6 +17,8 @@ function fromRecord(record) {
         currency: record.currency,
         status: record.status,
         providerTransactionId: record.providerTransactionId ?? undefined,
+        providerNotificationHash: record.providerNotificationHash ?? undefined,
+        notificationReceivedAt: record.notificationReceivedAt ? new Date(record.notificationReceivedAt) : undefined,
         createdAt: new Date(record.createdAt),
         updatedAt: new Date(record.updatedAt),
         providerInitiatedAt: record.providerInitiatedAt ? new Date(record.providerInitiatedAt) : undefined,
@@ -127,6 +130,90 @@ class PaymentAttemptPrismaRepository {
         if (!record)
             throw new Error("Payment attempt was not found after provider correlation.");
         return fromRecord(record);
+    }
+    async applyVerifiedPayFastNotification(input) {
+        const transactionId = input.providerTransactionId.trim();
+        const mappedStatus = input.providerStatus === "COMPLETE" ? models_1.PaymentStatus.COMPLETED : models_1.PaymentStatus.CANCELLED;
+        const snapshotStatusIsValid = input.providerStatus === "COMPLETE"
+            ? input.nextPaymentSnapshot.paymentStatus === models_1.PaymentStatus.COMPLETED
+                || input.nextPaymentSnapshot.paymentStatus === "PARTIAL"
+            : input.nextPaymentSnapshot.paymentStatus === input.expectedPaymentSnapshot.paymentStatus
+                && input.nextPaymentSnapshot.amountReceived === input.expectedPaymentSnapshot.amountReceived
+                && input.nextPaymentSnapshot.balanceOutstanding === input.expectedPaymentSnapshot.balanceOutstanding;
+        if (!transactionId
+            || !/^[a-f0-9]{64}$/i.test(input.notificationHash)
+            || input.paymentStatus !== mappedStatus
+            || !snapshotStatusIsValid) {
+            throw new payments_1.PaymentAttemptNotificationConflictError("Verified notification evidence is incomplete.");
+        }
+        try {
+            return await this.prisma.$transaction(async (transaction) => {
+                const record = await transaction.paymentAttempt.findUnique({
+                    where: { paymentReference: input.paymentReference },
+                });
+                if (!record)
+                    throw new payments_1.PaymentAttemptNotFoundError();
+                const attempt = fromRecord(record);
+                if (attempt.reservationId !== input.reservationId || attempt.provider !== "PAYFAST") {
+                    throw new payments_1.PaymentAttemptNotificationConflictError("Payment attempt does not match the notification context.");
+                }
+                if (attempt.status === input.paymentStatus) {
+                    if (attempt.providerTransactionId === transactionId
+                        && attempt.providerNotificationHash === input.notificationHash)
+                        return "DUPLICATE";
+                    throw new payments_1.PaymentAttemptNotificationConflictError("A conflicting notification was already applied to this attempt.");
+                }
+                if (attempt.status !== models_1.PaymentStatus.AUTHORIZATION_REQUESTED || attempt.providerTransactionId) {
+                    throw new payments_1.PaymentAttemptNotificationConflictError("Payment attempt is not awaiting this provider notification.");
+                }
+                const changedAttempt = await transaction.paymentAttempt.updateMany({
+                    where: {
+                        id: attempt.attemptId,
+                        status: models_1.PaymentStatus.AUTHORIZATION_REQUESTED,
+                        providerTransactionId: null,
+                    },
+                    data: {
+                        status: input.paymentStatus,
+                        providerTransactionId: transactionId,
+                        providerNotificationHash: input.notificationHash,
+                        notificationReceivedAt: new Date(),
+                        providerRespondedAt: new Date(),
+                    },
+                });
+                if (changedAttempt.count !== 1) {
+                    const current = await transaction.paymentAttempt.findUnique({
+                        where: { paymentReference: input.paymentReference },
+                    });
+                    if (current?.status === input.paymentStatus
+                        && current.providerTransactionId === transactionId
+                        && current.providerNotificationHash === input.notificationHash)
+                        return "DUPLICATE";
+                    throw new payments_1.PaymentAttemptNotificationConflictError("Payment attempt was concurrently processed.");
+                }
+                const reservationUpdate = await transaction.reservation.updateMany({
+                    where: {
+                        id: input.reservationId,
+                        paymentSnapshot: {
+                            equals: JSON.parse(JSON.stringify(input.expectedPaymentSnapshot)),
+                        },
+                    },
+                    data: {
+                        paymentSnapshot: JSON.parse(JSON.stringify(input.nextPaymentSnapshot)),
+                        reservationMetadata: JSON.parse(JSON.stringify(input.nextReservationMetadata)),
+                    },
+                });
+                if (reservationUpdate.count !== 1) {
+                    throw new payments_1.PaymentAttemptNotificationConflictError("Reservation payment snapshot changed during notification processing.");
+                }
+                return "APPLIED";
+            });
+        }
+        catch (error) {
+            if (isUniqueConstraintError(error)) {
+                throw new payments_1.PaymentAttemptNotificationConflictError("Provider transaction ID is already associated with another attempt.");
+            }
+            throw error;
+        }
     }
 }
 exports.PaymentAttemptPrismaRepository = PaymentAttemptPrismaRepository;
