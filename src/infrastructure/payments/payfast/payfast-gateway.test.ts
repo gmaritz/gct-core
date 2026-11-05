@@ -302,12 +302,15 @@ describe("PayFast gateway integration", () => {
 
     expect(result.success).toBe(true);
     expect(result.authorizationStatus).toBeDefined();
-    expect(result.paymentStatus).toBe(PaymentStatus.AUTHORIZED);
+    expect(result.paymentStatus).toBe(PaymentStatus.CREATED);
+    expect(result.authorizationStatus).toBeNull();
+    expect(result.transactionReference).toBeNull();
     expect(result.providerReference?.providerIdentifier).toBe("payfast");
     expect(result.metadata.operation).toBe(PaymentProviderOperation.AUTHORIZE);
     expect(result.hostedPaymentAction?.method).toBe("POST");
     expect(result.hostedPaymentAction?.action).toBe("https://sandbox.payfast.co.za/eng/process");
     expect(result.hostedPaymentAction?.fields.amount).toBe("64990.09");
+    expect(result.hostedPaymentAction?.fields.m_payment_id).toBe("payfast-ref");
     expect(result.hostedPaymentAction?.fields.merchant_id).toBe("10000100");
     expect(result.hostedPaymentAction?.fields.merchant_key).toBe("merchant-key");
     expect(result.hostedPaymentAction?.fields.return_url).toBe(payFastTestConfig.returnUrl);

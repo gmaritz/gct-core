@@ -1,6 +1,5 @@
 import { createHash } from "crypto";
 import {
-  AuthorizationStatus,
   CaptureStatus,
   PaymentStatus,
   SettlementStatus,
@@ -579,9 +578,9 @@ export class DefaultPayFastGateway implements PaymentGateway {
       return_url: this.config.returnUrl,
       cancel_url: this.config.cancelUrl,
       notify_url: this.config.notifyUrl,
-      m_payment_id: paymentReference.paymentId,
+      m_payment_id: providerReference.reference || paymentReference.paymentId,
       amount: formattedAmount,
-      item_name: `Payment ${paymentReference.paymentId}`,
+      item_name: `Payment ${providerReference.reference || paymentReference.paymentId}`,
       item_description: `Reservation ${context.gatewayRequest.reservationReference}`,
     };
 
@@ -594,18 +593,15 @@ export class DefaultPayFastGateway implements PaymentGateway {
     return createPaymentGatewayResult({
       success: true,
       providerReference,
-      transactionReference: {
-        transactionId: paymentReference.paymentId,
-        providerCorrelationId: providerReference.reference,
-        customerReference: context.gatewayRequest.reservationReference,
-      },
-      authorizationStatus:
-        context.operation === PaymentProviderOperation.AUTHORIZE ? AuthorizationStatus.APPROVED : null,
+      transactionReference: null,
+      authorizationStatus: null,
       captureStatus:
         context.operation === PaymentProviderOperation.CAPTURE ? CaptureStatus.CAPTURED : null,
       settlementStatus:
         context.operation === PaymentProviderOperation.SETTLE ? SettlementStatus.SETTLED : null,
-      paymentStatus: mapPaymentStatus(context.operation),
+      paymentStatus: context.operation === PaymentProviderOperation.AUTHORIZE
+        ? PaymentStatus.CREATED
+        : mapPaymentStatus(context.operation),
       hostedPaymentAction: context.operation === PaymentProviderOperation.AUTHORIZE
         ? {
             method: "POST",

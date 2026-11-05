@@ -4,12 +4,19 @@ import {
   createDefaultPaymentEngine,
 } from "../../application/payments";
 import { CanonicalReservationPrismaRepository } from "../persistence/repositories";
-import { DefaultPayFastGateway } from "./payfast";
+import { PaymentAttemptPrismaRepository } from "../persistence/repositories/payment-attempt-prisma.repository";
+import { DefaultPayFastGateway, loadPayFastIntegrationConfig } from "./payfast";
 
 export function createCanonicalPaymentContextResolver(): CanonicalReservationPaymentContextResolver {
   return new CanonicalReservationPaymentContextResolver(new CanonicalReservationPrismaRepository());
 }
 
 export function createDefaultPaymentInitiationService(): DefaultPaymentInitiationService {
-  return new DefaultPaymentInitiationService(createDefaultPaymentEngine(), new DefaultPayFastGateway());
+  const payFastConfig = loadPayFastIntegrationConfig();
+  return new DefaultPaymentInitiationService(
+    createDefaultPaymentEngine(),
+    new DefaultPayFastGateway(payFastConfig),
+    new PaymentAttemptPrismaRepository(),
+    payFastConfig.environment,
+  );
 }

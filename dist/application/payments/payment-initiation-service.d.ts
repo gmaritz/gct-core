@@ -3,6 +3,7 @@ import { PaymentGatewayProviderReference, PaymentGatewayResult } from "./integra
 import { PaymentGateway } from "./integration/payment-gateway";
 import { PaymentStatus } from "./models";
 import { ReservationRepository } from "../reservations/repository";
+import { PaymentAttemptEnvironment, PaymentAttemptRepository } from "./payment-attempt";
 export type PaymentInitiationStatus = "INITIATED" | "PENDING" | "FAILED" | "INVALID" | "UNAVAILABLE" | "COMPLETED" | "CANCELLED" | "UNKNOWN";
 export interface PaymentInitiationRequest {
     readonly reservationId: string;
@@ -14,6 +15,8 @@ export interface PaymentInitiationResult {
     readonly status: PaymentInitiationStatus;
     readonly reservationId: string;
     readonly paymentId?: string;
+    readonly paymentAttemptId?: string;
+    readonly paymentReference?: string;
     readonly amount?: number;
     readonly currency?: string;
     readonly paymentStatus?: PaymentStatus;
@@ -32,8 +35,10 @@ export declare class UnavailablePaymentContextResolver implements PaymentContext
 }
 export declare class DefaultPaymentInitiationService implements PaymentInitiationService {
     private readonly engine;
+    private readonly paymentAttemptRepository;
+    private readonly providerEnvironment;
     private readonly integration;
-    constructor(engine: PaymentEngine, gateway: PaymentGateway);
+    constructor(engine: PaymentEngine, gateway: PaymentGateway, paymentAttemptRepository: PaymentAttemptRepository, providerEnvironment: PaymentAttemptEnvironment);
     initiatePayment(request: PaymentInitiationRequest): Promise<PaymentInitiationResult>;
 }
 export declare class CanonicalReservationPaymentContextResolver implements PaymentContextResolver {

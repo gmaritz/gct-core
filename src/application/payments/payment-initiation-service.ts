@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { DefaultPaymentAggregateFactory, PaymentEngine, PaymentEngineRequest } from "./engine";
 import { PaymentGatewayProviderReference, PaymentProviderIntegrationService, PaymentGatewayResult } from "./integration";
 import { PaymentGateway } from "./integration/payment-gateway";
@@ -14,6 +15,10 @@ import { PaymentPolicyPipeline } from "./policies";
 import { PaymentProcessingPipeline } from "./processing";
 import { ReservationRepository } from "../reservations/repository";
 import { ReservationStatus } from "../reservations/aggregate";
+import {
+  PaymentAttemptEnvironment,
+  PaymentAttemptRepository,
+} from "./payment-attempt";
 
 export type PaymentInitiationStatus = "INITIATED" | "PENDING" | "FAILED" | "INVALID" | "UNAVAILABLE" | "COMPLETED" | "CANCELLED" | "UNKNOWN";
 
@@ -28,6 +33,8 @@ export interface PaymentInitiationResult {
   readonly status: PaymentInitiationStatus;
   readonly reservationId: string;
   readonly paymentId?: string;
+  readonly paymentAttemptId?: string;
+  readonly paymentReference?: string;
   readonly amount?: number;
   readonly currency?: string;
   readonly paymentStatus?: PaymentStatus;
@@ -60,6 +67,8 @@ export class DefaultPaymentInitiationService implements PaymentInitiationService
   public constructor(
     private readonly engine: PaymentEngine,
     gateway: PaymentGateway,
+    private readonly paymentAttemptRepository: PaymentAttemptRepository,
+    private readonly providerEnvironment: PaymentAttemptEnvironment,
   ) {
     this.integration = new PaymentProviderIntegrationService(gateway);
   }
@@ -88,32 +97,114 @@ export class DefaultPaymentInitiationService implements PaymentInitiationService
       ]);
     }
 
-    const gatewayResult = await this.integration.authorize({
-      engineResult,
-      providerReference: request.providerReference,
-    });
+    const payment = engineResult.payment;
+    if (!Number.isFinite(payment.paymentAmount) || payment.paymentAmount <= 0 || payment.currency !== "ZAR") {
+      return failure(request, "INVALID", ["PayFast requires a positive authoritative ZAR payment amount."]);
+    }
+
+    let paymentAttemptId: string;
+    let paymentReference: string;
+    const requestedReference = `gct-${randomUUID()}`;
+    try {
+      const attempt = await this.paymentAttemptRepository.createOrFind({
+        idempotencyKey: request.engineRequest.requestId?.trim() || payment.reference.paymentId,
+        paymentId: payment.reference.paymentId,
+        reservationId: request.reservationId,
+        paymentReference: requestedReference,
+        provider: "PAYFAST",
+        environment: this.providerEnvironment,
+        amount: payment.paymentAmount,
+        currency: payment.currency,
+        status: PaymentStatus.CREATED,
+      });
+      paymentAttemptId = attempt.attemptId;
+      paymentReference = attempt.paymentReference;
+      const claimed = await this.paymentAttemptRepository.claimInitiation(paymentReference);
+      if (!claimed) {
+        return Object.freeze({
+          status: attempt.status === PaymentStatus.AUTHORIZATION_FAILED ? "FAILED" : "PENDING",
+          reservationId: request.reservationId,
+          paymentId: payment.reference.paymentId,
+          paymentAttemptId,
+          paymentReference,
+          amount: payment.paymentAmount,
+          currency: payment.currency,
+          paymentStatus: attempt.status,
+          errors: Object.freeze(["A payment attempt already exists for this initiation request."]),
+        });
+      }
+    } catch {
+      return failure(request, "FAILED", ["Payment attempt could not be persisted."]);
+    }
+
+    let gatewayResult: PaymentGatewayResult;
+    try {
+      gatewayResult = await this.integration.authorize({
+        engineResult,
+        providerReference: { ...request.providerReference, reference: paymentReference },
+      });
+    } catch {
+      await this.paymentAttemptRepository.updateStatus(
+        paymentReference,
+        PaymentStatus.AUTHORIZATION_FAILED,
+        undefined,
+        new Date(),
+      ).catch(() => undefined);
+      return failure(request, "FAILED", ["Payment provider request could not be constructed."]);
+    }
+
+    if (gatewayResult.transactionReference?.transactionId) {
+      try {
+        await this.paymentAttemptRepository.associateProviderTransaction(
+          paymentReference,
+          gatewayResult.transactionReference.transactionId,
+        );
+      } catch {
+        return failure(request, "FAILED", ["Payment provider transaction could not be correlated safely."]);
+      }
+    }
 
     if (!gatewayResult.success) {
+      await this.paymentAttemptRepository.updateStatus(
+        paymentReference,
+        PaymentStatus.AUTHORIZATION_FAILED,
+        undefined,
+        gatewayResult.metadata.completedAt,
+      ).catch(() => undefined);
       return Object.freeze({
         status: "FAILED",
         reservationId: request.reservationId,
-        paymentId: engineResult.payment.reference.paymentId,
-        amount: engineResult.payment.paymentAmount,
-        currency: engineResult.payment.currency,
+        paymentId: payment.reference.paymentId,
+        paymentAttemptId,
+        paymentReference,
+        amount: payment.paymentAmount,
+        currency: payment.currency,
         paymentStatus: gatewayResult.paymentStatus ?? undefined,
-        hostedPaymentAction: gatewayResult.hostedPaymentAction,
         gatewayResult,
         errors: Object.freeze(["Payment initiation was not completed."]),
       });
+    }
+
+    try {
+      await this.paymentAttemptRepository.updateStatus(
+        paymentReference,
+        PaymentStatus.AUTHORIZATION_REQUESTED,
+        undefined,
+        gatewayResult.metadata.completedAt,
+      );
+    } catch {
+      return failure(request, "FAILED", ["Payment attempt response could not be persisted."]);
     }
 
     const pending = gatewayResult.paymentStatus === PaymentStatus.CREATED || engineResult.metadata.pending;
     return Object.freeze({
       status: pending ? "PENDING" : "INITIATED",
       reservationId: request.reservationId,
-      paymentId: engineResult.payment.reference.paymentId,
-      amount: engineResult.payment.paymentAmount,
-      currency: engineResult.payment.currency,
+      paymentId: payment.reference.paymentId,
+      paymentAttemptId,
+      paymentReference,
+      amount: payment.paymentAmount,
+      currency: payment.currency,
       paymentStatus: gatewayResult.paymentStatus ?? engineResult.payment.status,
       hostedPaymentAction: gatewayResult.hostedPaymentAction,
       gatewayResult,

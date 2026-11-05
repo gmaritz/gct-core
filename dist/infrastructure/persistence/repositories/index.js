@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AnonymousSessionPrismaRepository = exports.CustomerPrismaRepository = exports.CanonicalReservationPrismaRepository = exports.JourneyPrismaRepository = exports.TravellerPrismaRepository = void 0;
+exports.PaymentAttemptPrismaRepository = exports.AnonymousSessionPrismaRepository = exports.CustomerPrismaRepository = exports.CanonicalReservationPrismaRepository = exports.JourneyPrismaRepository = exports.TravellerPrismaRepository = void 0;
 /**
  * Persistence Repositories Index
  *
@@ -16,4 +16,6 @@ var customer_prisma_repository_1 = require("./customer-prisma.repository");
 Object.defineProperty(exports, "CustomerPrismaRepository", { enumerable: true, get: function () { return customer_prisma_repository_1.CustomerPrismaRepository; } });
 var anonymous_session_prisma_repository_1 = require("./anonymous-session-prisma.repository");
 Object.defineProperty(exports, "AnonymousSessionPrismaRepository", { enumerable: true, get: function () { return anonymous_session_prisma_repository_1.AnonymousSessionPrismaRepository; } });
+var payment_attempt_prisma_repository_1 = require("./payment-attempt-prisma.repository");
+Object.defineProperty(exports, "PaymentAttemptPrismaRepository", { enumerable: true, get: function () { return payment_attempt_prisma_repository_1.PaymentAttemptPrismaRepository; } });
 //# sourceMappingURL=index.js.map

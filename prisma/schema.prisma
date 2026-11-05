@@ -839,6 +839,7 @@ model Reservation {
   supplier             Supplier?   @relation(fields: [supplierId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   reservationStatus    ReservationStatus? @relation(fields: [reservationStatusId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   bookingItems         BookingItem[] @relation("ReservationBookingItems")
+  paymentAttempts     PaymentAttempt[]
 
   @@index([bookingId])
   @@index([bookingItemId])
@@ -1577,6 +1578,31 @@ model Payment {
   @@index([paymentStatusId])
   @@index([paymentDate])
   @@map("payment")
+}
+
+model PaymentAttempt {
+  id                    String   @id @default(uuid())
+  idempotencyKey        String   @unique
+  paymentId             String
+  reservationId         String
+  paymentReference      String   @unique
+  provider              String
+  environment           String
+  amount                Decimal  @db.Decimal(19,4)
+  currency              String   @db.VarChar(3)
+  status                String
+  providerTransactionId String?  @unique
+  providerInitiatedAt   DateTime?
+  providerRespondedAt   DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  reservation           Reservation @relation(fields: [reservationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([reservationId])
+  @@index([paymentId])
+  @@index([provider, environment, status])
+  @@map("payment_attempt")
 }
 
 model PaymentAllocation {
