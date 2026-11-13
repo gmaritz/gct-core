@@ -4,6 +4,7 @@ import {
   PaymentAttemptNotFoundError,
 } from "../../../application/payments";
 import { createPayFastItnProcessor } from "../../../infrastructure/payments/payfast/payfast-itn-factory";
+import { loadPayFastIntegrationConfig } from "../../../infrastructure/payments/payfast";
 import { PayFastItnRequestError } from "../../../infrastructure/payments/payfast/payfast-itn-security";
 import { getLogger } from "../../../bootstrap/logging";
 
@@ -38,8 +39,11 @@ export async function receivePayFastItn(request: Request, response: Response): P
   }
 
   try {
-    const trustedProxyAddresses = process.env.PAYFAST_ITN_TRUSTED_PROXY_IPS?.split(",").map((address) => address.trim()).filter(Boolean) ?? [];
-    await createPayFastItnProcessor().process(request.body, resolvePayFastItnPeerAddress(request, trustedProxyAddresses));
+    const config = loadPayFastIntegrationConfig();
+    await createPayFastItnProcessor(config).process(
+      request.body,
+      resolvePayFastItnPeerAddress(request, config.trustedProxyAddresses),
+    );
     getLogger().info("payfast_itn_processed", { requestId: requestCorrelationId(request), outcome: "accepted" });
     response.status(200).type("text/plain").send("OK");
   } catch (error) {

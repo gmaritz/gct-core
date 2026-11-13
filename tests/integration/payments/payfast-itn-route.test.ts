@@ -3,6 +3,7 @@ import { Request } from "express";
 import { createTestApplication } from "../../helpers/application.helper";
 import { createRequest } from "../../helpers/request.helper";
 import { resolvePayFastItnPeerAddress } from "../../../src/interfaces/http/controllers/payfast-itn.controller";
+import { loadPayFastIntegrationConfig } from "../../../src/infrastructure/payments/payfast";
 
 describe("PayFast ITN route", () => {
   let app: Express;
@@ -50,6 +51,24 @@ describe("PayFast ITN route", () => {
     expect(resolvePayFastItnPeerAddress(request, ["10.20.0.5"])).toBe("197.97.145.144");
     expect(resolvePayFastItnPeerAddress(spoofedRequest, ["10.20.0.5"])).toBe("203.0.113.20");
     expect(resolvePayFastItnPeerAddress(chainedRequest, ["10.20.0.5"])).toBe("");
+  });
+
+  it("uses validated trusted proxy addresses from PayFast configuration", (): void => {
+    const config = loadPayFastIntegrationConfig({
+      PAYFAST_MERCHANT_ID: "10000100",
+      PAYFAST_MERCHANT_KEY: "merchant-key",
+      PAYFAST_PASSPHRASE: "passphrase",
+      PAYFAST_RETURN_URL: "https://merchant.example.test/return",
+      PAYFAST_CANCEL_URL: "https://merchant.example.test/cancel",
+      PAYFAST_NOTIFY_URL: "https://merchant.example.test/notify",
+      PAYFAST_ITN_TRUSTED_PROXY_IPS: "10.20.0.5",
+    });
+    const request = {
+      socket: { remoteAddress: "10.20.0.5" },
+      header: (name: string) => name.toLowerCase() === "x-forwarded-for" ? "197.97.145.144" : undefined,
+    } as unknown as Request;
+
+    expect(resolvePayFastItnPeerAddress(request, config.trustedProxyAddresses)).toBe("197.97.145.144");
   });
 
   it("rejects over-sized notifications with 413 before parsing or provider work", async (): Promise<void> => {

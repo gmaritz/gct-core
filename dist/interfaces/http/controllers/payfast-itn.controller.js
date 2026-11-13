@@ -4,6 +4,7 @@ exports.resolvePayFastItnPeerAddress = resolvePayFastItnPeerAddress;
 exports.receivePayFastItn = receivePayFastItn;
 const payments_1 = require("../../../application/payments");
 const payfast_itn_factory_1 = require("../../../infrastructure/payments/payfast/payfast-itn-factory");
+const payfast_1 = require("../../../infrastructure/payments/payfast");
 const payfast_itn_security_1 = require("../../../infrastructure/payments/payfast/payfast-itn-security");
 const logging_1 = require("../../../bootstrap/logging");
 function requestCorrelationId(request) {
@@ -32,8 +33,8 @@ async function receivePayFastItn(request, response) {
         return;
     }
     try {
-        const trustedProxyAddresses = process.env.PAYFAST_ITN_TRUSTED_PROXY_IPS?.split(",").map((address) => address.trim()).filter(Boolean) ?? [];
-        await (0, payfast_itn_factory_1.createPayFastItnProcessor)().process(request.body, resolvePayFastItnPeerAddress(request, trustedProxyAddresses));
+        const config = (0, payfast_1.loadPayFastIntegrationConfig)();
+        await (0, payfast_itn_factory_1.createPayFastItnProcessor)(config).process(request.body, resolvePayFastItnPeerAddress(request, config.trustedProxyAddresses));
         (0, logging_1.getLogger)().info("payfast_itn_processed", { requestId: requestCorrelationId(request), outcome: "accepted" });
         response.status(200).type("text/plain").send("OK");
     }

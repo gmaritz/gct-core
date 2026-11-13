@@ -8,6 +8,7 @@ exports.createPayFastApiSignature = createPayFastApiSignature;
 exports.verifyPayFastSignature = verifyPayFastSignature;
 exports.normalizePayFastITN = normalizePayFastITN;
 const crypto_1 = require("crypto");
+const net_1 = require("net");
 const payments_1 = require("@application/payments");
 const integration_1 = require("@application/payments/integration");
 var PayFastEnvironment;
@@ -61,10 +62,16 @@ function normalizeRequiredCallbackUrl(value, fieldName) {
     }
     const normalized = normalizeUrl(value, "");
     const parsed = new URL(normalized);
-    if ((parsed.protocol !== "https:" && parsed.protocol !== "http:") || parsed.username || parsed.password) {
-        throw new PayFastConfigurationError(`${fieldName} must be an absolute HTTP or HTTPS URL without embedded credentials.`);
+    if (parsed.protocol !== "https:" || parsed.username || parsed.password) {
+        throw new PayFastConfigurationError(`${fieldName} must be an absolute HTTPS URL without embedded credentials.`);
     }
     return normalized;
+}
+function validateTrustedProxyAddresses(addresses) {
+    if (addresses.some((address) => typeof address !== "string" || (0, net_1.isIP)(address.trim()) === 0)) {
+        throw new PayFastConfigurationError("PAYFAST_ITN_TRUSTED_PROXY_IPS must contain only individual IPv4 or IPv6 addresses.");
+    }
+    return Object.freeze(addresses.map((address) => address.trim()));
 }
 function parseEnvironment(rawEnvironment, runtimeEnvironment) {
     const runtimeIsProduction = runtimeEnvironment?.trim().toLowerCase() === "production";
@@ -138,6 +145,7 @@ function createPayFastIntegrationConfig(input) {
         returnUrl: normalizeRequiredCallbackUrl(input.returnUrl, "PAYFAST_RETURN_URL"),
         cancelUrl: normalizeRequiredCallbackUrl(input.cancelUrl, "PAYFAST_CANCEL_URL"),
         notifyUrl: normalizeRequiredCallbackUrl(input.notifyUrl, "PAYFAST_NOTIFY_URL"),
+        trustedProxyAddresses: validateTrustedProxyAddresses(input.trustedProxyAddresses ?? []),
         timeoutMs: input.timeoutMs > 0 ? input.timeoutMs : 10000,
         apiVersion,
     });
@@ -155,6 +163,9 @@ function loadPayFastIntegrationConfig(env = process.env) {
     const paymentQueryUrl = env.PAYFAST_PAYMENT_QUERY_URL ?? `${apiBaseUrl}/process/query`;
     const refundQueryUrl = env.PAYFAST_REFUND_QUERY_URL ?? `${apiBaseUrl}/refunds/query`;
     const refundUrl = env.PAYFAST_REFUND_URL ?? `${apiBaseUrl}/refunds`;
+    const trustedProxyAddresses = env.PAYFAST_ITN_TRUSTED_PROXY_IPS?.trim()
+        ? env.PAYFAST_ITN_TRUSTED_PROXY_IPS.split(",").map((address) => address.trim())
+        : [];
     return createPayFastIntegrationConfig({
         environment,
         merchantId,
@@ -168,6 +179,7 @@ function loadPayFastIntegrationConfig(env = process.env) {
         returnUrl: env.PAYFAST_RETURN_URL,
         cancelUrl: env.PAYFAST_CANCEL_URL,
         notifyUrl: env.PAYFAST_NOTIFY_URL,
+        trustedProxyAddresses,
         timeoutMs: parsePositiveInteger(env.PAYFAST_TIMEOUT_MS, 10000, "PAYFAST_TIMEOUT_MS"),
         apiVersion: env.PAYFAST_API_VERSION ?? "v1",
     });

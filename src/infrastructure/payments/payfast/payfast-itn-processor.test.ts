@@ -18,6 +18,7 @@ const config: PayFastIntegrationConfig = {
   returnUrl: "https://merchant.example.test/return",
   cancelUrl: "https://merchant.example.test/cancel",
   notifyUrl: "https://merchant.example.test/notify",
+  trustedProxyAddresses: [],
   timeoutMs: 10000,
 };
 

@@ -16,13 +16,15 @@ export interface PayFastIntegrationConfig {
     readonly returnUrl: string;
     readonly cancelUrl: string;
     readonly notifyUrl: string;
+    readonly trustedProxyAddresses: ReadonlyArray<string>;
     readonly timeoutMs: number;
     readonly apiVersion?: string;
 }
-type PayFastIntegrationConfigInput = Omit<PayFastIntegrationConfig, "returnUrl" | "cancelUrl" | "notifyUrl"> & {
+type PayFastIntegrationConfigInput = Omit<PayFastIntegrationConfig, "returnUrl" | "cancelUrl" | "notifyUrl" | "trustedProxyAddresses"> & {
     readonly returnUrl?: string;
     readonly cancelUrl?: string;
     readonly notifyUrl?: string;
+    readonly trustedProxyAddresses?: ReadonlyArray<string>;
 };
 export interface PayFastApiRequest {
     readonly method: "GET" | "POST";

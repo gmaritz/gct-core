@@ -2,10 +2,11 @@ import { CanonicalReservationPrismaRepository } from "../../persistence/reposito
 import { PaymentAttemptPrismaRepository } from "../../persistence/repositories/payment-attempt-prisma.repository";
 import { FetchPayFastItnServerValidator } from "./payfast-itn-security";
 import { PayFastItnProcessor } from "./payfast-itn-processor";
-import { loadPayFastIntegrationConfig } from "./index";
+import { loadPayFastIntegrationConfig, PayFastIntegrationConfig } from "./index";
 
-export function createPayFastItnProcessor(): PayFastItnProcessor {
-  const config = loadPayFastIntegrationConfig();
+export function createPayFastItnProcessor(
+  config: PayFastIntegrationConfig = loadPayFastIntegrationConfig(),
+): PayFastItnProcessor {
   return new PayFastItnProcessor(
     config,
     new PaymentAttemptPrismaRepository(),

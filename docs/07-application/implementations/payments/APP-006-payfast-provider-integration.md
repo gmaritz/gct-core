@@ -215,7 +215,7 @@ The PayFast adapter SHALL map canonical APP-006 payment information into the req
 At minimum, where applicable, the mapping SHALL support:
 
 - merchant_id;
-- merchant_key where required by the chosen integration flow;
+- merchant_key, as required by the hosted Custom Payment Integration;
 - amount;
 - item_name;
 - item_description;
@@ -285,17 +285,22 @@ Do not reuse the custom payment signature implementation for API requests.
 The following values SHALL be configuration/secrets, not source-code constants:
 
 - PayFast merchant ID;
-- PayFast merchant key where required;
-- PayFast passphrase.
+- PayFast merchant key, required in the hosted Custom Payment Integration form;
+- PayFast security passphrase, used only for server-side signature generation.
 
-Credentials SHALL NOT be:
+The Merchant ID identifies the merchant, and the Merchant Key is submitted in the hosted form to PayFast. Neither is the security passphrase. The hosted-form signature SHALL be generated server-side from the payment fields and the passphrase; the passphrase SHALL never be sent to the browser or PayFast form.
+
+For the hosted Custom Payment Integration, the submitted form includes `merchant_id`, `merchant_key`, and the server-generated `signature`, as described in the [official PayFast quickstart](https://developers.payfast.co.za/docs#quickstart).
+
+Merchant credentials and the passphrase SHALL NOT be:
 
 - committed to Git;
 - stored in canonical domain models;
 - stored in specifications;
 - logged;
-- returned to customers;
 - embedded in tests.
+
+The Merchant ID and Merchant Key are necessarily present in the browser-submitted hosted form. Do not expose the passphrase, or return it to customers.
 
 The existing GCT Core configuration/secrets mechanism SHALL be reused.
 
@@ -743,7 +748,36 @@ An unset environment SHALL use the safe SANDBOX default; any other environment v
 
 Endpoint overrides SHALL use HTTPS on the corresponding official PayFast host and SHALL NOT contain embedded credentials, query parameters, fragments, or a nonstandard port. Overrides that cross environment hosts or target a different API host SHALL fail configuration validation.
 
+The return, cancel, and notify callback URLs SHALL be absolute HTTPS URLs without embedded credentials. HTTP callback URLs SHALL fail PayFast configuration loading.
+
 Do not hard-code environment-specific URLs inside business/application services.
+
+### 36.1 Environment variables
+
+The implementation reads the following variables from `process.env`:
+
+| Variable | Requirement and behavior |
+|---|---|
+| `NODE_ENV` | Optional runtime selector; `production` requires an explicit `PAYFAST_ENVIRONMENT=LIVE`. |
+| `PAYFAST_ENVIRONMENT` | Optional outside production; defaults to `SANDBOX`. Only `SANDBOX` and `LIVE` are accepted. Production requires explicit `LIVE`. |
+| `PAYFAST_MERCHANT_ID` | Required; merchant identifier. |
+| `PAYFAST_MERCHANT_KEY` | Required; included in the hosted payment form as required by PayFast. |
+| `PAYFAST_PASSPHRASE` | Required; server-side security passphrase for hosted-form, API, and ITN signatures. |
+| `PAYFAST_PAYMENT_URL` | Optional hosted-payment endpoint override; must use the official host for the selected environment. |
+| `PAYFAST_API_URL` | Optional API base URL override; must use the official API host. |
+| `PAYFAST_PAYMENT_QUERY_URL` | Optional payment-query endpoint override; defaults under `PAYFAST_API_URL`. |
+| `PAYFAST_REFUND_QUERY_URL` | Optional refund-query endpoint override; defaults under `PAYFAST_API_URL`. |
+| `PAYFAST_REFUND_URL` | Optional refund endpoint override; defaults under `PAYFAST_API_URL`. |
+| `PAYFAST_RETURN_URL` | Required absolute HTTPS customer-return URL. |
+| `PAYFAST_CANCEL_URL` | Required absolute HTTPS customer-cancel URL. |
+| `PAYFAST_NOTIFY_URL` | Required absolute HTTPS ITN URL, publicly reachable by PayFast in the target environment. |
+| `PAYFAST_ITN_TRUSTED_PROXY_IPS` | Optional comma-separated list of exact reverse-proxy IPv4 or IPv6 peer addresses. Individual addresses only; CIDR ranges are rejected. Forwarded addresses are used only when the immediate socket peer matches this list. |
+| `PAYFAST_TIMEOUT_MS` | Optional positive timeout in milliseconds; defaults to `10000`. |
+| `PAYFAST_API_VERSION` | Optional; only `v1` is accepted and is the default. |
+
+These settings are validated when PayFast configuration is loaded by a payment or ITN flow; they are not validated by the general application startup configuration loader. The repository development script does not itself load `.env`; provide variables through the runtime or deployment environment, or explicitly load a dotenv file in the launch environment.
+
+ITN server-to-server validation uses `https://sandbox.payfast.co.za/eng/query/validate` in SANDBOX and `https://www.payfast.co.za/eng/query/validate` in LIVE; this endpoint is selected from `PAYFAST_ENVIRONMENT`, not configured separately.
 
 ## 37. Sandbox
 

@@ -1,4 +1,5 @@
 import { createHash } from "crypto";
+import { isIP } from "net";
 import {
   CaptureStatus,
   PaymentStatus,
@@ -30,14 +31,16 @@ export interface PayFastIntegrationConfig {
   readonly returnUrl: string;
   readonly cancelUrl: string;
   readonly notifyUrl: string;
+  readonly trustedProxyAddresses: ReadonlyArray<string>;
   readonly timeoutMs: number;
   readonly apiVersion?: string;
 }
 
-type PayFastIntegrationConfigInput = Omit<PayFastIntegrationConfig, "returnUrl" | "cancelUrl" | "notifyUrl"> & {
+type PayFastIntegrationConfigInput = Omit<PayFastIntegrationConfig, "returnUrl" | "cancelUrl" | "notifyUrl" | "trustedProxyAddresses"> & {
   readonly returnUrl?: string;
   readonly cancelUrl?: string;
   readonly notifyUrl?: string;
+  readonly trustedProxyAddresses?: ReadonlyArray<string>;
 };
 
 export interface PayFastApiRequest {
@@ -117,11 +120,20 @@ function normalizeRequiredCallbackUrl(value: string | undefined, fieldName: stri
 
   const normalized = normalizeUrl(value, "");
   const parsed = new URL(normalized);
-  if ((parsed.protocol !== "https:" && parsed.protocol !== "http:") || parsed.username || parsed.password) {
-    throw new PayFastConfigurationError(`${fieldName} must be an absolute HTTP or HTTPS URL without embedded credentials.`);
+  if (parsed.protocol !== "https:" || parsed.username || parsed.password) {
+    throw new PayFastConfigurationError(`${fieldName} must be an absolute HTTPS URL without embedded credentials.`);
   }
 
   return normalized;
+}
+
+function validateTrustedProxyAddresses(addresses: ReadonlyArray<string>): ReadonlyArray<string> {
+  if (addresses.some((address) => typeof address !== "string" || isIP(address.trim()) === 0)) {
+    throw new PayFastConfigurationError(
+      "PAYFAST_ITN_TRUSTED_PROXY_IPS must contain only individual IPv4 or IPv6 addresses.",
+    );
+  }
+  return Object.freeze(addresses.map((address) => address.trim()));
 }
 
 function parseEnvironment(
@@ -234,6 +246,7 @@ export function createPayFastIntegrationConfig(input: PayFastIntegrationConfigIn
     returnUrl: normalizeRequiredCallbackUrl(input.returnUrl, "PAYFAST_RETURN_URL"),
     cancelUrl: normalizeRequiredCallbackUrl(input.cancelUrl, "PAYFAST_CANCEL_URL"),
     notifyUrl: normalizeRequiredCallbackUrl(input.notifyUrl, "PAYFAST_NOTIFY_URL"),
+    trustedProxyAddresses: validateTrustedProxyAddresses(input.trustedProxyAddresses ?? []),
     timeoutMs: input.timeoutMs > 0 ? input.timeoutMs : 10000,
     apiVersion,
   });
@@ -254,6 +267,9 @@ export function loadPayFastIntegrationConfig(env: NodeJS.ProcessEnv = process.en
   const paymentQueryUrl = env.PAYFAST_PAYMENT_QUERY_URL ?? `${apiBaseUrl}/process/query`;
   const refundQueryUrl = env.PAYFAST_REFUND_QUERY_URL ?? `${apiBaseUrl}/refunds/query`;
   const refundUrl = env.PAYFAST_REFUND_URL ?? `${apiBaseUrl}/refunds`;
+  const trustedProxyAddresses = env.PAYFAST_ITN_TRUSTED_PROXY_IPS?.trim()
+    ? env.PAYFAST_ITN_TRUSTED_PROXY_IPS.split(",").map((address) => address.trim())
+    : [];
 
   return createPayFastIntegrationConfig({
     environment,
@@ -268,6 +284,7 @@ export function loadPayFastIntegrationConfig(env: NodeJS.ProcessEnv = process.en
     returnUrl: env.PAYFAST_RETURN_URL,
     cancelUrl: env.PAYFAST_CANCEL_URL,
     notifyUrl: env.PAYFAST_NOTIFY_URL,
+    trustedProxyAddresses,
     timeoutMs: parsePositiveInteger(env.PAYFAST_TIMEOUT_MS, 10000, "PAYFAST_TIMEOUT_MS"),
     apiVersion: env.PAYFAST_API_VERSION ?? "v1",
   });

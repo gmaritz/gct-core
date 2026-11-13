@@ -28,6 +28,7 @@ const payFastTestConfig = {
   returnUrl: "https://merchant.example.test/return",
   cancelUrl: "https://merchant.example.test/cancel",
   notifyUrl: "https://merchant.example.test/notify",
+  trustedProxyAddresses: [],
   timeoutMs: 5000,
   apiVersion: "v1",
 };
@@ -162,6 +163,16 @@ describe("PayFast gateway integration", () => {
       NODE_ENV: "production",
       PAYFAST_ENVIRONMENT: "LIVE",
     }).environment).toBe(PayFastEnvironment.LIVE);
+    expect(loadPayFastIntegrationConfig({
+      ...requiredConfig,
+      NODE_ENV: "production",
+      PAYFAST_ENVIRONMENT: "LIVE",
+    }).paymentProcessUrl).toBe("https://www.payfast.co.za/eng/process");
+    expect(loadPayFastIntegrationConfig({
+      ...requiredConfig,
+      NODE_ENV: "test",
+      PAYFAST_ENVIRONMENT: "SANDBOX",
+    }).paymentProcessUrl).toBe("https://sandbox.payfast.co.za/eng/process");
     for (const environment of [undefined, "  ", "SANDBOX"]) {
       expect(() => loadPayFastIntegrationConfig({
         ...requiredConfig,
@@ -196,6 +207,84 @@ describe("PayFast gateway integration", () => {
       NODE_ENV: "test",
       PAYFAST_MERCHANT_ID: "not-an-id",
     })).toThrow("PayFast merchant ID must contain exactly 8 digits.");
+  });
+
+  it("requires valid HTTPS callback URLs for sandbox and live configurations", () => {
+    const requiredConfig = {
+      PAYFAST_MERCHANT_ID: "10000100",
+      PAYFAST_MERCHANT_KEY: "merchant-key",
+      PAYFAST_PASSPHRASE: "passphrase",
+      PAYFAST_RETURN_URL: "https://merchant.example.test/return",
+      PAYFAST_CANCEL_URL: "https://merchant.example.test/cancel",
+      PAYFAST_NOTIFY_URL: "https://merchant.example.test/notify",
+    };
+    const callbackVariables = [
+      "PAYFAST_RETURN_URL",
+      "PAYFAST_CANCEL_URL",
+      "PAYFAST_NOTIFY_URL",
+    ] as const;
+
+    for (const environment of ["SANDBOX", "LIVE"]) {
+      const baseEnvironment = {
+        ...requiredConfig,
+        NODE_ENV: "test",
+        PAYFAST_ENVIRONMENT: environment,
+      };
+
+      expect(loadPayFastIntegrationConfig(baseEnvironment).environment).toBe(environment);
+
+      for (const variable of callbackVariables) {
+        expect(() => loadPayFastIntegrationConfig({
+          ...baseEnvironment,
+          [variable]: `http://merchant.example.test/${variable.toLowerCase()}`,
+        })).toThrow(`${variable} must be an absolute HTTPS URL without embedded credentials.`);
+        expect(() => loadPayFastIntegrationConfig({
+          ...baseEnvironment,
+          [variable]: "not a valid URL",
+        })).toThrow("PayFast URL is invalid.");
+        expect(() => loadPayFastIntegrationConfig({
+          ...baseEnvironment,
+          [variable]: "",
+        })).toThrow(`${variable} is required.`);
+        expect(() => loadPayFastIntegrationConfig({
+          ...baseEnvironment,
+          [variable]: undefined,
+        })).toThrow(`${variable} is required.`);
+      }
+    }
+  });
+
+  it("loads only individual IPv4 and IPv6 trusted proxy addresses", () => {
+    const requiredConfig = {
+      PAYFAST_MERCHANT_ID: "10000100",
+      PAYFAST_MERCHANT_KEY: "merchant-key",
+      PAYFAST_PASSPHRASE: "passphrase",
+      PAYFAST_RETURN_URL: "https://merchant.example.test/return",
+      PAYFAST_CANCEL_URL: "https://merchant.example.test/cancel",
+      PAYFAST_NOTIFY_URL: "https://merchant.example.test/notify",
+    };
+
+    expect(loadPayFastIntegrationConfig({
+      ...requiredConfig,
+      PAYFAST_ITN_TRUSTED_PROXY_IPS: "10.20.0.5, 2001:db8::5",
+    }).trustedProxyAddresses).toEqual(["10.20.0.5", "2001:db8::5"]);
+    expect(loadPayFastIntegrationConfig({
+      ...requiredConfig,
+      PAYFAST_ITN_TRUSTED_PROXY_IPS: "  ",
+    }).trustedProxyAddresses).toEqual([]);
+
+    for (const addresses of [
+      "not-an-ip",
+      "10.20.0.0/24",
+      "10.20.0.5,",
+      ",10.20.0.5",
+      "2001:db8:::5",
+    ]) {
+      expect(() => loadPayFastIntegrationConfig({
+        ...requiredConfig,
+        PAYFAST_ITN_TRUSTED_PROXY_IPS: addresses,
+      })).toThrow("PAYFAST_ITN_TRUSTED_PROXY_IPS must contain only individual IPv4 or IPv6 addresses.");
+    }
   });
 
   it("fails safely when merchant authentication configuration is incomplete", () => {
@@ -270,7 +359,7 @@ describe("PayFast gateway integration", () => {
     expect(() => loadPayFastIntegrationConfig({
       ...requiredConfig,
       PAYFAST_NOTIFY_URL: "https://merchant:secret@merchant.example.test/notify",
-    })).toThrow("PAYFAST_NOTIFY_URL must be an absolute HTTP or HTTPS URL without embedded credentials.");
+    })).toThrow("PAYFAST_NOTIFY_URL must be an absolute HTTPS URL without embedded credentials.");
   });
 
   it("verifies a valid PayFast ITN signature", () => {
@@ -399,6 +488,7 @@ describe("PayFast gateway integration", () => {
         returnUrl: payFastTestConfig.returnUrl,
         cancelUrl: payFastTestConfig.cancelUrl,
         notifyUrl: payFastTestConfig.notifyUrl,
+        trustedProxyAddresses: [],
         timeoutMs: 5000,
         apiVersion: "v1",
       },
@@ -542,6 +632,7 @@ describe("PayFast gateway integration", () => {
         returnUrl: payFastTestConfig.returnUrl,
         cancelUrl: payFastTestConfig.cancelUrl,
         notifyUrl: payFastTestConfig.notifyUrl,
+        trustedProxyAddresses: [],
         timeoutMs: 5000,
         apiVersion: "v1",
       },
