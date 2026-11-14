@@ -17,11 +17,13 @@ exports.confirmReservationReview = confirmReservationReview;
 exports.renderPaymentPage = renderPaymentPage;
 exports.initiatePayment = initiatePayment;
 exports.renderPaymentReturn = renderPaymentReturn;
+exports.renderPaymentCancel = renderPaymentCancel;
 exports.renderBookingConfirmationPage = renderBookingConfirmationPage;
 const path_1 = __importDefault(require("path"));
 const ejs_1 = __importDefault(require("ejs"));
 const view_models_1 = require("../../view-models");
 const merchandising_1 = require("../../../application/merchandising");
+const payments_1 = require("../../../application/payments");
 const payment_experience_factory_1 = require("../../../infrastructure/payments/payment-experience-factory");
 const view_models_2 = require("../../view-models");
 const reservation_confirmation_factory_1 = require("../../../infrastructure/persistence/reservation-confirmation-factory");
@@ -29,6 +31,8 @@ const customer_journey_reservation_factory_1 = require("../../../infrastructure/
 const frontend_journey_resolver_1 = require("../../../infrastructure/merchandising/frontend-journey-resolver");
 const logging_1 = require("../../../bootstrap/logging");
 const anonymous_session_middleware_1 = require("../middleware/anonymous-session.middleware");
+const payment_attempt_prisma_repository_1 = require("../../../infrastructure/persistence/repositories/payment-attempt-prisma.repository");
+const payfast_1 = require("../../../infrastructure/payments/payfast");
 function diagnostic(request, operation, outcome) {
     return {
         requestId: request.requestId ?? "unknown",
@@ -479,6 +483,66 @@ function paymentStateResult(context) {
         errors: [],
     };
 }
+function paymentAttemptResult(attempt) {
+    const status = attempt.status === payments_1.PaymentStatus.COMPLETED
+        ? "COMPLETED"
+        : attempt.status === payments_1.PaymentStatus.CANCELLED
+            ? "CANCELLED"
+            : attempt.status === payments_1.PaymentStatus.AUTHORIZATION_FAILED
+                ? "FAILED"
+                : "PENDING";
+    return {
+        status,
+        reservationId: attempt.reservationId,
+        paymentId: attempt.paymentId,
+        paymentAttemptId: attempt.attemptId,
+        paymentReference: attempt.paymentReference,
+        amount: attempt.amount,
+        currency: attempt.currency,
+        paymentStatus: attempt.status,
+        errors: [],
+    };
+}
+async function renderPaymentCallback(request, response) {
+    if (!await resolvePaymentJourney(request, response))
+        return;
+    const paymentReference = request.query.paymentReference;
+    if (typeof paymentReference !== "string") {
+        response.status(404);
+        await renderNotFoundPage(request, response);
+        return;
+    }
+    try {
+        const environment = (0, payfast_1.resolvePayFastEnvironment)();
+        const callback = await new payments_1.PaymentAttemptCallbackResolver(createPaymentContextResolver(), new payment_attempt_prisma_repository_1.PaymentAttemptPrismaRepository(), environment).resolve(request.params.journeyId, paymentReference);
+        const reservationSnapshot = callback?.context.reservationPaymentSnapshot;
+        if (!callback || !reservationSnapshot) {
+            response.status(404);
+            await renderNotFoundPage(request, response);
+            return;
+        }
+        const paymentViewModel = new view_models_2.PaymentExperienceViewModelProvider().provide(paymentAttemptResult(callback.attempt), request.params.journeyId, callback.context.simulatedSupplierFulfilment ?? false, {
+            status: callback.attempt.status,
+            reservationPaymentStatus: reservationSnapshot.paymentStatus,
+            balanceOutstanding: reservationSnapshot.balanceOutstanding,
+        });
+        await renderView(response, "pages/payment-experience", {
+            title: "Payment status",
+            pageTitle: "Payment status",
+            currentPath: request.path,
+            paymentViewModel,
+        });
+    }
+    catch (error) {
+        (0, logging_1.getLogger)().error("payment_callback_resolution_failed", diagnostic(request, "payment_callback_resolution", error instanceof Error ? "exception" : "unknown"));
+        response.status(503);
+        await renderView(response, "errors/unavailable", {
+            title: "Payment status unavailable",
+            pageTitle: "Payment status is currently unavailable",
+            currentPath: request.path,
+        });
+    }
+}
 async function renderPaymentPage(request, response) {
     if (!await resolvePaymentJourney(request, response))
         return;
@@ -523,17 +587,10 @@ async function initiatePayment(request, response) {
     });
 }
 async function renderPaymentReturn(request, response) {
-    if (!await resolvePaymentJourney(request, response))
-        return;
-    const context = await resolvePaymentContext(request.params.journeyId);
-    const result = context ? paymentStateResult(context) : unavailablePaymentResult(request.params.journeyId);
-    const paymentViewModel = new view_models_2.PaymentExperienceViewModelProvider().provide(result, request.params.journeyId, context?.simulatedSupplierFulfilment ?? false);
-    await renderView(response, "pages/payment-experience", {
-        title: "Payment status",
-        pageTitle: "Payment status",
-        currentPath: request.path,
-        paymentViewModel,
-    });
+    await renderPaymentCallback(request, response);
+}
+async function renderPaymentCancel(request, response) {
+    await renderPaymentCallback(request, response);
 }
 async function renderBookingConfirmationPage(request, response) {
     let result;

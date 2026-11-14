@@ -1,5 +1,11 @@
-import { PaymentInitiationResult } from "../../../application/payments";
+import { PaymentInitiationResult, PaymentStatus } from "../../../application/payments";
 import { PaymentExperienceStatus, PaymentExperienceViewModel } from "../journeys/payment-experience.viewmodel";
+
+export interface PaymentAttemptPresentation {
+  readonly status: PaymentStatus;
+  readonly reservationPaymentStatus: string;
+  readonly balanceOutstanding: number;
+}
 
 function mapStatus(result: PaymentInitiationResult): PaymentExperienceStatus {
   switch (result.status) {
@@ -11,6 +17,15 @@ function mapStatus(result: PaymentInitiationResult): PaymentExperienceStatus {
     case "CANCELLED": return "CANCELLED";
     case "UNKNOWN": return "UNKNOWN";
     default: return "UNKNOWN";
+  }
+}
+
+function mapPaymentAttemptStatus(status: PaymentStatus): PaymentExperienceStatus {
+  switch (status) {
+    case PaymentStatus.COMPLETED: return "COMPLETED";
+    case PaymentStatus.CANCELLED: return "CANCELLED";
+    case PaymentStatus.AUTHORIZATION_FAILED: return "FAILED";
+    default: return "PENDING";
   }
 }
 
@@ -31,14 +46,23 @@ export class PaymentExperienceViewModelProvider {
     result: PaymentInitiationResult,
     journeyId = result.reservationId,
     simulatedSupplierFulfilment = false,
+    paymentAttempt?: PaymentAttemptPresentation,
   ): PaymentExperienceViewModel {
-    const status = mapStatus(result);
+    const status = paymentAttempt ? mapPaymentAttemptStatus(paymentAttempt.status) : mapStatus(result);
+    const reservationConfirmed = paymentAttempt
+      ? paymentAttempt.reservationPaymentStatus === "COMPLETED"
+      : status === "COMPLETED";
     return Object.freeze({
       journeyId,
       amount: result.amount,
       currency: result.currency,
       status,
-      message: messageFor(status),
+      message: paymentAttempt?.status === PaymentStatus.CANCELLED
+        ? "This payment attempt was cancelled. The reservation payment balance remains unchanged until verified payment processing."
+        : messageFor(status),
+      paymentAttemptStatus: paymentAttempt?.status,
+      reservationPaymentStatus: paymentAttempt?.reservationPaymentStatus,
+      balanceOutstanding: paymentAttempt?.balanceOutstanding,
       supplierFulfilmentNotice: simulatedSupplierFulfilment
         ? "Test only: accommodation supplier fulfilment was simulated. No Hotelbeds booking was created."
         : undefined,
@@ -53,7 +77,7 @@ export class PaymentExperienceViewModelProvider {
           })
         : undefined,
       recoveryAction: Object.freeze({ label: "Return to reservation review", href: `/ui/journeys/${journeyId}/review`, style: "neutral" }),
-      confirmationAction: status === "COMPLETED"
+      confirmationAction: reservationConfirmed
         ? Object.freeze({ label: "View booking confirmation", href: `/ui/journeys/${journeyId}/confirmation`, style: "primary" })
         : undefined,
     });

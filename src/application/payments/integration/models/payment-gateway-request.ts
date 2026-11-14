@@ -10,6 +10,7 @@ export interface PaymentGatewayRequestMetadata {
 }
 
 export interface PaymentGatewayRequest {
+  readonly journeyId?: string;
   readonly paymentReference: PaymentReference;
   readonly reservationReference: string;
   readonly providerReference: PaymentGatewayProviderReference;
@@ -22,6 +23,7 @@ export interface PaymentGatewayRequest {
 
 export function createPaymentGatewayRequest(request: PaymentGatewayRequest): PaymentGatewayRequest {
   return Object.freeze({
+    journeyId: request.journeyId,
     paymentReference: Object.freeze({
       paymentId: request.paymentReference.paymentId,
       reservationId: request.paymentReference.reservationId,

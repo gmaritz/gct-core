@@ -25,15 +25,19 @@ const payFastTestConfig = {
   paymentQueryUrl: "https://api.payfast.co.za/process/query",
   refundQueryUrl: "https://api.payfast.co.za/refunds/query",
   refundUrl: "https://api.payfast.co.za/refunds",
-  returnUrl: "https://merchant.example.test/return",
-  cancelUrl: "https://merchant.example.test/cancel",
+  publicBaseUrl: "https://merchant.example.test",
   notifyUrl: "https://merchant.example.test/notify",
   trustedProxyAddresses: [],
   timeoutMs: 5000,
   apiVersion: "v1",
 };
 
-function createGatewayContext(amount: number, currency = "ZAR"): PaymentProviderContext {
+function createGatewayContext(
+  amount: number,
+  currency = "ZAR",
+  journeyId = "journey-reservation-123",
+  paymentReference = "gct-payfast-ref",
+): PaymentProviderContext {
   const capturedAt = new Date("2026-08-01T00:00:00.000Z");
   const payment = Payment.create({
     reference: { paymentId: "pay-123", reservationId: "res-123" },
@@ -71,11 +75,12 @@ function createGatewayContext(amount: number, currency = "ZAR"): PaymentProvider
   return {
     paymentAggregate: payment,
     gatewayRequest: {
+      journeyId,
       paymentReference: payment.reference,
       reservationReference: payment.reservationSnapshot.reservationReference,
       providerReference: createPaymentGatewayProviderReference({
         providerIdentifier: "payfast",
-        reference: "payfast-ref",
+        reference: paymentReference,
       }),
       operation: PaymentProviderOperation.AUTHORIZE,
       paymentMethod: payment.paymentMethod,
@@ -108,16 +113,14 @@ describe("PayFast gateway integration", () => {
       PAYFAST_TIMEOUT_MS: "5000",
       PAYFAST_PAYMENT_URL: "https://sandbox.payfast.co.za/eng/process",
       PAYFAST_API_URL: "https://api.payfast.co.za",
-      PAYFAST_RETURN_URL: "https://merchant.example.test/return",
-      PAYFAST_CANCEL_URL: "https://merchant.example.test/cancel",
+      PAYFAST_PUBLIC_BASE_URL: "https://merchant.example.test",
       PAYFAST_NOTIFY_URL: "https://merchant.example.test/notify",
     });
 
     expect(config.environment).toBe(PayFastEnvironment.SANDBOX);
     expect(config.paymentProcessUrl).toContain("sandbox.payfast.co.za");
     expect(config.timeoutMs).toBe(5000);
-    expect(config.returnUrl).toBe("https://merchant.example.test/return");
-    expect(config.cancelUrl).toBe("https://merchant.example.test/cancel");
+    expect(config.publicBaseUrl).toBe("https://merchant.example.test");
     expect(config.notifyUrl).toBe("https://merchant.example.test/notify");
   });
 
@@ -126,8 +129,7 @@ describe("PayFast gateway integration", () => {
       PAYFAST_MERCHANT_ID: "10000100",
       PAYFAST_MERCHANT_KEY: "merchant-key",
       PAYFAST_PASSPHRASE: "passphrase",
-      PAYFAST_RETURN_URL: "https://merchant.example.test/return",
-      PAYFAST_CANCEL_URL: "https://merchant.example.test/cancel",
+      PAYFAST_PUBLIC_BASE_URL: "https://merchant.example.test",
       PAYFAST_NOTIFY_URL: "https://merchant.example.test/notify",
     };
 
@@ -209,21 +211,14 @@ describe("PayFast gateway integration", () => {
     })).toThrow("PayFast merchant ID must contain exactly 8 digits.");
   });
 
-  it("requires valid HTTPS callback URLs for sandbox and live configurations", () => {
+  it("requires a valid HTTPS public base URL for sandbox and live configurations", () => {
     const requiredConfig = {
       PAYFAST_MERCHANT_ID: "10000100",
       PAYFAST_MERCHANT_KEY: "merchant-key",
       PAYFAST_PASSPHRASE: "passphrase",
-      PAYFAST_RETURN_URL: "https://merchant.example.test/return",
-      PAYFAST_CANCEL_URL: "https://merchant.example.test/cancel",
+      PAYFAST_PUBLIC_BASE_URL: "https://merchant.example.test",
       PAYFAST_NOTIFY_URL: "https://merchant.example.test/notify",
     };
-    const callbackVariables = [
-      "PAYFAST_RETURN_URL",
-      "PAYFAST_CANCEL_URL",
-      "PAYFAST_NOTIFY_URL",
-    ] as const;
-
     for (const environment of ["SANDBOX", "LIVE"]) {
       const baseEnvironment = {
         ...requiredConfig,
@@ -233,24 +228,35 @@ describe("PayFast gateway integration", () => {
 
       expect(loadPayFastIntegrationConfig(baseEnvironment).environment).toBe(environment);
 
-      for (const variable of callbackVariables) {
-        expect(() => loadPayFastIntegrationConfig({
-          ...baseEnvironment,
-          [variable]: `http://merchant.example.test/${variable.toLowerCase()}`,
-        })).toThrow(`${variable} must be an absolute HTTPS URL without embedded credentials.`);
-        expect(() => loadPayFastIntegrationConfig({
-          ...baseEnvironment,
-          [variable]: "not a valid URL",
-        })).toThrow("PayFast URL is invalid.");
-        expect(() => loadPayFastIntegrationConfig({
-          ...baseEnvironment,
-          [variable]: "",
-        })).toThrow(`${variable} is required.`);
-        expect(() => loadPayFastIntegrationConfig({
-          ...baseEnvironment,
-          [variable]: undefined,
-        })).toThrow(`${variable} is required.`);
-      }
+      expect(loadPayFastIntegrationConfig(baseEnvironment).publicBaseUrl).toBe("https://merchant.example.test");
+    }
+
+    for (const invalidUrl of [
+      "http://merchant.example.test",
+      "https://user:password@merchant.example.test",
+      "https://merchant.example.test/some/path",
+      "https://merchant.example.test?query=value",
+      "https://merchant.example.test#fragment",
+      "https://localhost",
+    ]) {
+      expect(() => loadPayFastIntegrationConfig({
+        ...requiredConfig,
+        PAYFAST_PUBLIC_BASE_URL: invalidUrl,
+      })).toThrow("PAYFAST_PUBLIC_BASE_URL must be an HTTPS origin without credentials, a path, query, or fragment.");
+    }
+    expect(() => loadPayFastIntegrationConfig({
+      ...requiredConfig,
+      PAYFAST_PUBLIC_BASE_URL: "not a valid URL",
+    })).toThrow("PayFast URL is invalid.");
+    expect(() => loadPayFastIntegrationConfig({
+      ...requiredConfig,
+      PAYFAST_PUBLIC_BASE_URL: "https://invalid host",
+    })).toThrow("PayFast URL is invalid.");
+    for (const missing of ["", undefined]) {
+      expect(() => loadPayFastIntegrationConfig({
+        ...requiredConfig,
+        PAYFAST_PUBLIC_BASE_URL: missing,
+      })).toThrow("PAYFAST_PUBLIC_BASE_URL is required.");
     }
   });
 
@@ -259,8 +265,7 @@ describe("PayFast gateway integration", () => {
       PAYFAST_MERCHANT_ID: "10000100",
       PAYFAST_MERCHANT_KEY: "merchant-key",
       PAYFAST_PASSPHRASE: "passphrase",
-      PAYFAST_RETURN_URL: "https://merchant.example.test/return",
-      PAYFAST_CANCEL_URL: "https://merchant.example.test/cancel",
+      PAYFAST_PUBLIC_BASE_URL: "https://merchant.example.test",
       PAYFAST_NOTIFY_URL: "https://merchant.example.test/notify",
     };
 
@@ -292,8 +297,7 @@ describe("PayFast gateway integration", () => {
       PAYFAST_MERCHANT_ID: "10000100",
       PAYFAST_MERCHANT_KEY: "merchant-key",
       PAYFAST_PASSPHRASE: "passphrase",
-      PAYFAST_RETURN_URL: "https://merchant.example.test/return",
-      PAYFAST_CANCEL_URL: "https://merchant.example.test/cancel",
+      PAYFAST_PUBLIC_BASE_URL: "https://merchant.example.test",
       PAYFAST_NOTIFY_URL: "https://merchant.example.test/notify",
     };
 
@@ -342,17 +346,16 @@ describe("PayFast gateway integration", () => {
     )).toBe("65e9fe63ea8248cb8108ebaac70a54cd");
   });
 
-  it("fails closed when any hosted-form callback URL is missing", () => {
+  it("fails closed when the public base or central notify URL is missing", () => {
     const requiredConfig: Record<string, string> = {
       PAYFAST_MERCHANT_ID: "10000100",
       PAYFAST_MERCHANT_KEY: "merchant-key",
       PAYFAST_PASSPHRASE: "passphrase",
-      PAYFAST_RETURN_URL: "https://merchant.example.test/return",
-      PAYFAST_CANCEL_URL: "https://merchant.example.test/cancel",
+      PAYFAST_PUBLIC_BASE_URL: "https://merchant.example.test",
       PAYFAST_NOTIFY_URL: "https://merchant.example.test/notify",
     };
 
-    for (const field of ["PAYFAST_RETURN_URL", "PAYFAST_CANCEL_URL", "PAYFAST_NOTIFY_URL"]) {
+    for (const field of ["PAYFAST_PUBLIC_BASE_URL", "PAYFAST_NOTIFY_URL"]) {
       expect(() => loadPayFastIntegrationConfig({ ...requiredConfig, [field]: "" })).toThrow(`${field} is required.`);
     }
 
@@ -399,11 +402,15 @@ describe("PayFast gateway integration", () => {
     expect(result.hostedPaymentAction?.method).toBe("POST");
     expect(result.hostedPaymentAction?.action).toBe("https://sandbox.payfast.co.za/eng/process");
     expect(result.hostedPaymentAction?.fields.amount).toBe("64990.09");
-    expect(result.hostedPaymentAction?.fields.m_payment_id).toBe("payfast-ref");
+    expect(result.hostedPaymentAction?.fields.m_payment_id).toBe("gct-payfast-ref");
     expect(result.hostedPaymentAction?.fields.merchant_id).toBe("10000100");
     expect(result.hostedPaymentAction?.fields.merchant_key).toBe("merchant-key");
-    expect(result.hostedPaymentAction?.fields.return_url).toBe(payFastTestConfig.returnUrl);
-    expect(result.hostedPaymentAction?.fields.cancel_url).toBe(payFastTestConfig.cancelUrl);
+    expect(result.hostedPaymentAction?.fields.return_url).toBe(
+      "https://merchant.example.test/ui/journeys/journey-reservation-123/payment/return?paymentReference=gct-payfast-ref",
+    );
+    expect(result.hostedPaymentAction?.fields.cancel_url).toBe(
+      "https://merchant.example.test/ui/journeys/journey-reservation-123/payment/cancel?paymentReference=gct-payfast-ref",
+    );
     expect(result.hostedPaymentAction?.fields.notify_url).toBe(payFastTestConfig.notifyUrl);
     expect(Object.keys(result.hostedPaymentAction?.fields ?? {})).toEqual([
       "merchant_id",
@@ -418,11 +425,46 @@ describe("PayFast gateway integration", () => {
       "signature",
     ]);
     expect(result.hostedPaymentAction?.fields.signature).toBeDefined();
+    expect(result.hostedPaymentAction?.fields.signature).toBe(
+      defaultPayFastSignature(result.hostedPaymentAction?.fields ?? {}, payFastTestConfig.passphrase),
+    );
     expect(result.hostedPaymentAction?.fields.passphrase).toBeUndefined();
     expect(result.hostedPaymentAction?.fields.name_first).toBeUndefined();
     expect(result.hostedPaymentAction?.fields.name_last).toBeUndefined();
     expect(result.hostedPaymentAction?.fields.email_address).toBeUndefined();
     expect(result.hostedPaymentAction?.fields.cell_number).toBeUndefined();
+  });
+
+  it("generates signed, journey-specific callback URLs while preserving the central ITN URL", async () => {
+    const gateway = new DefaultPayFastGateway(payFastTestConfig);
+    const first = await gateway.execute(createGatewayContext(100, "ZAR", "journey-first", "gct-first"));
+    const second = await gateway.execute(createGatewayContext(200, "ZAR", "journey-second", "gct-second"));
+
+    expect(first.hostedPaymentAction?.fields.return_url).toBe(
+      "https://merchant.example.test/ui/journeys/journey-first/payment/return?paymentReference=gct-first",
+    );
+    expect(second.hostedPaymentAction?.fields.return_url).toBe(
+      "https://merchant.example.test/ui/journeys/journey-second/payment/return?paymentReference=gct-second",
+    );
+    expect(first.hostedPaymentAction?.fields.cancel_url).toBe(
+      "https://merchant.example.test/ui/journeys/journey-first/payment/cancel?paymentReference=gct-first",
+    );
+    expect(second.hostedPaymentAction?.fields.cancel_url).toBe(
+      "https://merchant.example.test/ui/journeys/journey-second/payment/cancel?paymentReference=gct-second",
+    );
+    expect(first.hostedPaymentAction?.fields.notify_url).toBe(payFastTestConfig.notifyUrl);
+    expect(second.hostedPaymentAction?.fields.notify_url).toBe(payFastTestConfig.notifyUrl);
+  });
+
+  it("rejects malformed journey and GCT payment references before producing a hosted form", async () => {
+    const gateway = new DefaultPayFastGateway(payFastTestConfig);
+    for (const [journeyId, paymentReference] of [
+      ["../external", "gct-valid"],
+      ["journey-valid", "../external"],
+    ]) {
+      await expect(gateway.execute(createGatewayContext(100, "ZAR", journeyId, paymentReference)))
+        .rejects.toThrow();
+    }
   });
 
   it("rejects unsupported hosted-payment currencies and invalid major-unit amounts", async () => {
@@ -485,8 +527,7 @@ describe("PayFast gateway integration", () => {
         paymentQueryUrl: "https://api.payfast.co.za/process/query",
         refundQueryUrl: "https://api.payfast.co.za/refunds/query",
         refundUrl: "https://api.payfast.co.za/refunds",
-        returnUrl: payFastTestConfig.returnUrl,
-        cancelUrl: payFastTestConfig.cancelUrl,
+        publicBaseUrl: payFastTestConfig.publicBaseUrl,
         notifyUrl: payFastTestConfig.notifyUrl,
         trustedProxyAddresses: [],
         timeoutMs: 5000,
@@ -611,7 +652,7 @@ describe("PayFast gateway integration", () => {
 
     await gateway.execute(statusContext);
 
-    expect(capturedUrl).toBe("https://api.payfast.co.za/process/query/payfast-ref");
+    expect(capturedUrl).toBe("https://api.payfast.co.za/process/query/gct-payfast-ref");
     expect(capturedUrl).not.toContain("testing=");
   });
 
@@ -629,8 +670,7 @@ describe("PayFast gateway integration", () => {
         paymentQueryUrl: "https://api.payfast.co.za/process/query",
         refundQueryUrl: "https://api.payfast.co.za/refunds/query",
         refundUrl: "https://api.payfast.co.za/refunds",
-        returnUrl: payFastTestConfig.returnUrl,
-        cancelUrl: payFastTestConfig.cancelUrl,
+        publicBaseUrl: payFastTestConfig.publicBaseUrl,
         notifyUrl: payFastTestConfig.notifyUrl,
         trustedProxyAddresses: [],
         timeoutMs: 5000,

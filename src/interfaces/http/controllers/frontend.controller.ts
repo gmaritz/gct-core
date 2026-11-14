@@ -20,7 +20,9 @@ import {
 } from "../../../application/merchandising";
 import {
 	CanonicalReservationPaymentContextResolver,
+	PaymentAttemptCallbackResolver,
 	PaymentInitiationResult,
+	PaymentStatus,
 } from "../../../application/payments";
 import {
 	createCanonicalPaymentContextResolver,
@@ -40,6 +42,8 @@ import { createCustomerJourneyReservationService } from "../../../infrastructure
 import { createFrontendJourneyResolver } from "../../../infrastructure/merchandising/frontend-journey-resolver";
 import { getLogger } from "../../../bootstrap/logging";
 import { requireAnonymousSession } from "../middleware/anonymous-session.middleware";
+import { PaymentAttemptPrismaRepository } from "../../../infrastructure/persistence/repositories/payment-attempt-prisma.repository";
+import { resolvePayFastEnvironment } from "../../../infrastructure/payments/payfast";
 
 type RequestWithId = Request & { requestId?: string };
 
@@ -549,6 +553,83 @@ function paymentStateResult(
 	};
 }
 
+function paymentAttemptResult(
+	attempt: import("../../../application/payments").PaymentAttempt,
+): PaymentInitiationResult {
+	const status = attempt.status === PaymentStatus.COMPLETED
+		? "COMPLETED"
+		: attempt.status === PaymentStatus.CANCELLED
+			? "CANCELLED"
+			: attempt.status === PaymentStatus.AUTHORIZATION_FAILED
+				? "FAILED"
+				: "PENDING";
+	return {
+		status,
+		reservationId: attempt.reservationId,
+		paymentId: attempt.paymentId,
+		paymentAttemptId: attempt.attemptId,
+		paymentReference: attempt.paymentReference,
+		amount: attempt.amount,
+		currency: attempt.currency,
+		paymentStatus: attempt.status,
+		errors: [],
+	};
+}
+
+async function renderPaymentCallback(request: Request, response: Response): Promise<void> {
+	if (!await resolvePaymentJourney(request, response)) return;
+	const paymentReference = request.query.paymentReference;
+	if (typeof paymentReference !== "string") {
+		response.status(404);
+		await renderNotFoundPage(request, response);
+		return;
+	}
+
+	try {
+		const environment = resolvePayFastEnvironment();
+		const callback = await new PaymentAttemptCallbackResolver(
+			createPaymentContextResolver(),
+			new PaymentAttemptPrismaRepository(),
+			environment,
+		).resolve(request.params.journeyId, paymentReference);
+		const reservationSnapshot = callback?.context.reservationPaymentSnapshot;
+		if (!callback || !reservationSnapshot) {
+			response.status(404);
+			await renderNotFoundPage(request, response);
+			return;
+		}
+
+		const paymentViewModel = new PaymentExperienceViewModelProvider().provide(
+			paymentAttemptResult(callback.attempt),
+			request.params.journeyId,
+			callback.context.simulatedSupplierFulfilment ?? false,
+			{
+				status: callback.attempt.status,
+				reservationPaymentStatus: reservationSnapshot.paymentStatus,
+				balanceOutstanding: reservationSnapshot.balanceOutstanding,
+			},
+		);
+		await renderView(response, "pages/payment-experience", {
+			title: "Payment status",
+			pageTitle: "Payment status",
+			currentPath: request.path,
+			paymentViewModel,
+		});
+	} catch (error) {
+		getLogger().error("payment_callback_resolution_failed", diagnostic(
+			request,
+			"payment_callback_resolution",
+			error instanceof Error ? "exception" : "unknown",
+		));
+		response.status(503);
+		await renderView(response, "errors/unavailable", {
+			title: "Payment status unavailable",
+			pageTitle: "Payment status is currently unavailable",
+			currentPath: request.path,
+		});
+	}
+}
+
 export async function renderPaymentPage(request: Request, response: Response): Promise<void> {
 	if (!await resolvePaymentJourney(request, response)) return;
 	const context = await resolvePaymentContext(request.params.journeyId);
@@ -601,20 +682,11 @@ export async function initiatePayment(request: Request, response: Response): Pro
 }
 
 export async function renderPaymentReturn(request: Request, response: Response): Promise<void> {
-	if (!await resolvePaymentJourney(request, response)) return;
-	const context = await resolvePaymentContext(request.params.journeyId);
-	const result = context ? paymentStateResult(context) : unavailablePaymentResult(request.params.journeyId);
-	const paymentViewModel = new PaymentExperienceViewModelProvider().provide(
-		result,
-		request.params.journeyId,
-		context?.simulatedSupplierFulfilment ?? false,
-	);
-	await renderView(response, "pages/payment-experience", {
-		title: "Payment status",
-		pageTitle: "Payment status",
-		currentPath: request.path,
-		paymentViewModel,
-	});
+	await renderPaymentCallback(request, response);
+}
+
+export async function renderPaymentCancel(request: Request, response: Response): Promise<void> {
+	await renderPaymentCallback(request, response);
 }
 
 export async function renderBookingConfirmationPage(request: Request, response: Response): Promise<void> {

@@ -4,9 +4,12 @@ import { PaymentGateway } from "./integration/payment-gateway";
 import { PaymentStatus } from "./models";
 import { ReservationRepository } from "../reservations/repository";
 import { PaymentAttemptEnvironment, PaymentAttemptRepository } from "./payment-attempt";
+import { PaymentSnapshot } from "../reservations/models";
 export type PaymentInitiationStatus = "INITIATED" | "PENDING" | "FAILED" | "INVALID" | "UNAVAILABLE" | "COMPLETED" | "CANCELLED" | "UNKNOWN";
 export interface PaymentInitiationRequest {
+    readonly journeyId: string;
     readonly reservationId: string;
+    readonly reservationPaymentSnapshot?: PaymentSnapshot;
     readonly engineRequest: PaymentEngineRequest;
     readonly providerReference: PaymentGatewayProviderReference;
     readonly simulatedSupplierFulfilment?: boolean;

@@ -91,6 +91,7 @@ class DefaultPaymentInitiationService {
             gatewayResult = await this.integration.authorize({
                 engineResult,
                 providerReference: { ...request.providerReference, reference: paymentReference },
+                journeyId: request.journeyId,
             });
         }
         catch {
@@ -164,7 +165,9 @@ class CanonicalReservationPaymentContextResolver {
         const effectiveMethod = paymentMethod ?? models_1.PaymentMethod.CARD;
         const paymentId = `payment-${reservation.identity.id}`;
         return {
+            journeyId,
             reservationId: reservation.identity.id,
+            reservationPaymentSnapshot: reservation.paymentSnapshot,
             simulatedSupplierFulfilment: reservation.supplierReferences.some((reference) => reference.isSimulated === true),
             providerReference: {
                 providerIdentifier: "payfast",

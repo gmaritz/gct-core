@@ -35,8 +35,9 @@ function createBusinessFailureResult(engineResult, providerReference, operation)
         },
     });
 }
-function buildGatewayContext(payment, providerReference, operation, amount, engineResult) {
+function buildGatewayContext(payment, providerReference, operation, amount, engineResult, journeyId) {
     const gatewayRequest = (0, models_2.createPaymentGatewayRequest)({
+        ...(journeyId ? { journeyId } : {}),
         paymentReference: payment.reference,
         reservationReference: payment.reservationSnapshot.reservationReference,
         providerReference,
@@ -89,7 +90,7 @@ class PaymentProviderIntegrationService {
         }
         const payment = engineResult.payment;
         const effectiveAmount = typeof amount === "number" ? amount : payment.paymentAmount;
-        const context = buildGatewayContext(payment, providerReference, operation, effectiveAmount, engineResult);
+        const context = buildGatewayContext(payment, providerReference, operation, effectiveAmount, engineResult, request.journeyId);
         const gatewayResult = await this.gateway.execute(context);
         return (0, models_2.createPaymentGatewayResult)({
             success: gatewayResult.success,

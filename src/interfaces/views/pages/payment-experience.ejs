@@ -35,6 +35,11 @@
             <% if (paymentViewModel.reservationReference) { %>
               <p class="payment-experience__meta"><strong>Reservation Reference:</strong> <%= paymentViewModel.reservationReference %></p>
             <% } %>
+            <% if (paymentViewModel.paymentAttemptStatus) { %>
+              <p class="payment-experience__meta"><strong>This payment attempt:</strong> <%= paymentViewModel.paymentAttemptStatus %></p>
+              <p class="payment-experience__meta"><strong>Reservation payment status:</strong> <%= paymentViewModel.reservationPaymentStatus %></p>
+              <p class="payment-experience__meta"><strong>Outstanding balance:</strong> <%= paymentViewModel.currency %> <%= paymentViewModel.balanceOutstanding.toFixed(2) %></p>
+            <% } %>
             <p class="payment-experience__description"><%= paymentViewModel.message %></p>
           </div>
         </section>

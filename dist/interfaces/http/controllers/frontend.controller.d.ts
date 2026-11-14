@@ -13,5 +13,6 @@ export declare function confirmReservationReview(request: Request, response: Res
 export declare function renderPaymentPage(request: Request, response: Response): Promise<void>;
 export declare function initiatePayment(request: Request, response: Response): Promise<void>;
 export declare function renderPaymentReturn(request: Request, response: Response): Promise<void>;
+export declare function renderPaymentCancel(request: Request, response: Response): Promise<void>;
 export declare function renderBookingConfirmationPage(request: Request, response: Response): Promise<void>;
 //# sourceMappingURL=frontend.controller.d.ts.map

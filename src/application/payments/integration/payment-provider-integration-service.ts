@@ -15,6 +15,7 @@ export interface PaymentProviderIntegrationRequest {
   readonly engineResult: PaymentEngineResult;
   readonly providerReference: PaymentGatewayProviderReference;
   readonly amount?: number;
+  readonly journeyId?: string;
 }
 
 function collectWarnings(engineResult: PaymentEngineResult): ReadonlyArray<string> {
@@ -63,8 +64,10 @@ function buildGatewayContext(
   operation: PaymentProviderOperation,
   amount: number,
   engineResult: PaymentEngineResult,
+  journeyId?: string,
 ): ReturnType<typeof createPaymentProviderContext> {
   const gatewayRequest = createPaymentGatewayRequest({
+    ...(journeyId ? { journeyId } : {}),
     paymentReference: payment.reference,
     reservationReference: payment.reservationSnapshot.reservationReference,
     providerReference,
@@ -129,7 +132,7 @@ export class PaymentProviderIntegrationService {
 
     const payment = engineResult.payment;
     const effectiveAmount = typeof amount === "number" ? amount : payment.paymentAmount;
-    const context = buildGatewayContext(payment, providerReference, operation, effectiveAmount, engineResult);
+    const context = buildGatewayContext(payment, providerReference, operation, effectiveAmount, engineResult, request.journeyId);
     const gatewayResult = await this.gateway.execute(context);
 
     return createPaymentGatewayResult({

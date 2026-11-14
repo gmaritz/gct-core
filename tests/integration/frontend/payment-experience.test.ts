@@ -35,12 +35,19 @@ describe("Frontend payment experience", () => {
     expect(response.text).not.toContain("Payment Complete");
   });
 
-  it("treats provider return as unknown until authoritative state is available", async (): Promise<void> => {
+  it("rejects a provider return without a matching GCT payment reference", async (): Promise<void> => {
     const response = await getRequest(`/ui/journeys/${isolatedJourneyId}/payment/return?payment_status=COMPLETE`);
 
-    expect(response.status).toBe(200);
-    expect(response.text).toContain("Payment is not available");
+    expect(response.status).toBe(404);
+    expect(response.text).toContain("Page unavailable");
     expect(response.text).not.toContain("Payment Complete");
+  });
+
+  it("requires a matching reference on cancellation callbacks as well", async (): Promise<void> => {
+    const response = await getRequest(`/ui/journeys/${isolatedJourneyId}/payment/cancel`);
+
+    expect(response.status).toBe(404);
+    expect(response.text).toContain("Page unavailable");
   });
 
   it("rejects malformed payment journey references consistently", async (): Promise<void> => {

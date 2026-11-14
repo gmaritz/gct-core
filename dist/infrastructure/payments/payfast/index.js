@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.payfast = exports.DefaultPayFastGateway = exports.defaultPayFastHttpClient = exports.PayFastConfigurationError = exports.PayFastEnvironment = void 0;
+exports.resolvePayFastEnvironment = resolvePayFastEnvironment;
 exports.createPayFastIntegrationConfig = createPayFastIntegrationConfig;
 exports.loadPayFastIntegrationConfig = loadPayFastIntegrationConfig;
 exports.defaultPayFastSignature = defaultPayFastSignature;
@@ -67,6 +68,40 @@ function normalizeRequiredCallbackUrl(value, fieldName) {
     }
     return normalized;
 }
+function normalizePublicBaseUrl(value) {
+    if (isBlank(value)) {
+        throw new PayFastConfigurationError("PAYFAST_PUBLIC_BASE_URL is required.");
+    }
+    const normalized = normalizeUrl(value, "");
+    const parsed = new URL(normalized);
+    if (parsed.protocol !== "https:"
+        || !parsed.hostname
+        || parsed.username
+        || parsed.password
+        || parsed.pathname !== "/"
+        || parsed.search
+        || parsed.hash
+        || parsed.hostname === "localhost"
+        || parsed.hostname.endsWith(".localhost")
+        || parsed.hostname.endsWith(".local")) {
+        throw new PayFastConfigurationError("PAYFAST_PUBLIC_BASE_URL must be an HTTPS origin without credentials, a path, query, or fragment.");
+    }
+    return parsed.origin;
+}
+function createJourneyCallbackUrls(publicBaseUrl, journeyId, paymentReference) {
+    if (!journeyId || !/^journey-[a-z0-9-]{1,120}$/i.test(journeyId)) {
+        throw new PayFastConfigurationError("A valid journey ID is required for PayFast callbacks.");
+    }
+    if (!/^gct-[a-z0-9-]{1,96}$/i.test(paymentReference)) {
+        throw new PayFastConfigurationError("A valid GCT payment reference is required for PayFast callbacks.");
+    }
+    const journeyPath = `/ui/journeys/${encodeURIComponent(journeyId)}/payment`;
+    const returnUrl = new URL(`${journeyPath}/return`, publicBaseUrl);
+    returnUrl.searchParams.set("paymentReference", paymentReference);
+    const cancelUrl = new URL(`${journeyPath}/cancel`, publicBaseUrl);
+    cancelUrl.searchParams.set("paymentReference", paymentReference);
+    return Object.freeze({ returnUrl: returnUrl.toString(), cancelUrl: cancelUrl.toString() });
+}
 function validateTrustedProxyAddresses(addresses) {
     if (addresses.some((address) => typeof address !== "string" || (0, net_1.isIP)(address.trim()) === 0)) {
         throw new PayFastConfigurationError("PAYFAST_ITN_TRUSTED_PROXY_IPS must contain only individual IPv4 or IPv6 addresses.");
@@ -89,6 +124,9 @@ function parseEnvironment(rawEnvironment, runtimeEnvironment) {
         throw new PayFastConfigurationError("PAYFAST_ENVIRONMENT must be explicitly set to LIVE in production.");
     }
     return candidate;
+}
+function resolvePayFastEnvironment(environment = process.env.PAYFAST_ENVIRONMENT, runtimeEnvironment = process.env.NODE_ENV) {
+    return parseEnvironment(environment, runtimeEnvironment);
 }
 function parsePositiveInteger(value, fallback, fieldName) {
     if (isBlank(value)) {
@@ -142,8 +180,7 @@ function createPayFastIntegrationConfig(input) {
         paymentQueryUrl,
         refundQueryUrl,
         refundUrl,
-        returnUrl: normalizeRequiredCallbackUrl(input.returnUrl, "PAYFAST_RETURN_URL"),
-        cancelUrl: normalizeRequiredCallbackUrl(input.cancelUrl, "PAYFAST_CANCEL_URL"),
+        publicBaseUrl: normalizePublicBaseUrl(input.publicBaseUrl),
         notifyUrl: normalizeRequiredCallbackUrl(input.notifyUrl, "PAYFAST_NOTIFY_URL"),
         trustedProxyAddresses: validateTrustedProxyAddresses(input.trustedProxyAddresses ?? []),
         timeoutMs: input.timeoutMs > 0 ? input.timeoutMs : 10000,
@@ -151,7 +188,7 @@ function createPayFastIntegrationConfig(input) {
     });
 }
 function loadPayFastIntegrationConfig(env = process.env) {
-    const environment = parseEnvironment(env.PAYFAST_ENVIRONMENT, env.NODE_ENV);
+    const environment = resolvePayFastEnvironment(env.PAYFAST_ENVIRONMENT, env.NODE_ENV);
     const merchantId = env.PAYFAST_MERCHANT_ID ?? "";
     const merchantKey = env.PAYFAST_MERCHANT_KEY ?? "";
     const passphrase = env.PAYFAST_PASSPHRASE ?? "";
@@ -176,8 +213,7 @@ function loadPayFastIntegrationConfig(env = process.env) {
         paymentQueryUrl,
         refundQueryUrl,
         refundUrl,
-        returnUrl: env.PAYFAST_RETURN_URL,
-        cancelUrl: env.PAYFAST_CANCEL_URL,
+        publicBaseUrl: env.PAYFAST_PUBLIC_BASE_URL,
         notifyUrl: env.PAYFAST_NOTIFY_URL,
         trustedProxyAddresses,
         timeoutMs: parsePositiveInteger(env.PAYFAST_TIMEOUT_MS, 10000, "PAYFAST_TIMEOUT_MS"),
@@ -398,11 +434,12 @@ class DefaultPayFastGateway {
         if (!formattedAmount) {
             return createSafeGatewayFailure(context, providerReference, context.operation, ["PayFast hosted payment amount must be a positive, finite ZAR amount with at most two decimal places."], payments_1.PaymentStatus.CREATED);
         }
+        const callbacks = createJourneyCallbackUrls(this.config.publicBaseUrl, context.gatewayRequest.journeyId, providerReference.reference);
         const customPaymentRequest = {
             merchant_id: this.config.merchantId,
             merchant_key: this.config.merchantKey,
-            return_url: this.config.returnUrl,
-            cancel_url: this.config.cancelUrl,
+            return_url: callbacks.returnUrl,
+            cancel_url: callbacks.cancelUrl,
             notify_url: this.config.notifyUrl,
             m_payment_id: providerReference.reference || paymentReference.paymentId,
             amount: formattedAmount,

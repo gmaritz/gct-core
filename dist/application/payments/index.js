@@ -23,6 +23,7 @@ __exportStar(require("./engine"), exports);
 __exportStar(require("./presentation"), exports);
 __exportStar(require("./integration"), exports);
 __exportStar(require("./payment-initiation-service"), exports);
+__exportStar(require("./payment-callback-service"), exports);
 __exportStar(require("./payment-attempt"), exports);
 __exportStar(require("./verified-payfast-notification-transition"), exports);
 //# sourceMappingURL=index.js.map

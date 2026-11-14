@@ -19,11 +19,14 @@ import {
   PaymentAttemptEnvironment,
   PaymentAttemptRepository,
 } from "./payment-attempt";
+import { PaymentSnapshot } from "../reservations/models";
 
 export type PaymentInitiationStatus = "INITIATED" | "PENDING" | "FAILED" | "INVALID" | "UNAVAILABLE" | "COMPLETED" | "CANCELLED" | "UNKNOWN";
 
 export interface PaymentInitiationRequest {
+  readonly journeyId: string;
   readonly reservationId: string;
+  readonly reservationPaymentSnapshot?: PaymentSnapshot;
   readonly engineRequest: PaymentEngineRequest;
   readonly providerReference: PaymentGatewayProviderReference;
   readonly simulatedSupplierFulfilment?: boolean;
@@ -142,6 +145,7 @@ export class DefaultPaymentInitiationService implements PaymentInitiationService
       gatewayResult = await this.integration.authorize({
         engineResult,
         providerReference: { ...request.providerReference, reference: paymentReference },
+        journeyId: request.journeyId,
       });
     } catch {
       await this.paymentAttemptRepository.updateStatus(
@@ -236,7 +240,9 @@ export class CanonicalReservationPaymentContextResolver implements PaymentContex
     const paymentId = `payment-${reservation.identity.id}`;
 
     return {
+      journeyId,
       reservationId: reservation.identity.id,
+      reservationPaymentSnapshot: reservation.paymentSnapshot,
       simulatedSupplierFulfilment: reservation.supplierReferences.some((reference) => reference.isSimulated === true),
       providerReference: {
         providerIdentifier: "payfast",

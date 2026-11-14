@@ -6,6 +6,7 @@ export interface PaymentProviderIntegrationRequest {
     readonly engineResult: PaymentEngineResult;
     readonly providerReference: PaymentGatewayProviderReference;
     readonly amount?: number;
+    readonly journeyId?: string;
 }
 export declare class PaymentProviderIntegrationService {
     private readonly gateway;

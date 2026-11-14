@@ -8,6 +8,7 @@ export interface PaymentGatewayRequestMetadata {
     readonly source: string;
 }
 export interface PaymentGatewayRequest {
+    readonly journeyId?: string;
     readonly paymentReference: PaymentReference;
     readonly reservationReference: string;
     readonly providerReference: PaymentGatewayProviderReference;

@@ -748,7 +748,9 @@ An unset environment SHALL use the safe SANDBOX default; any other environment v
 
 Endpoint overrides SHALL use HTTPS on the corresponding official PayFast host and SHALL NOT contain embedded credentials, query parameters, fragments, or a nonstandard port. Overrides that cross environment hosts or target a different API host SHALL fail configuration validation.
 
-The return, cancel, and notify callback URLs SHALL be absolute HTTPS URLs without embedded credentials. HTTP callback URLs SHALL fail PayFast configuration loading.
+`PAYFAST_PUBLIC_BASE_URL` SHALL be an absolute HTTPS origin without credentials, path, query, or fragment. The application SHALL construct journey-specific return and cancel URLs from this validated origin and fixed routes; browser input SHALL NOT control callback hosts or paths. The separately configured `PAYFAST_NOTIFY_URL` SHALL be an absolute HTTPS endpoint and publicly reachable by PayFast.
+
+The browser return and cancellation callbacks SHALL resolve the supplied GCT payment reference against the journey's canonical Reservation and matching PayFast PaymentAttempt. These callbacks are read-only and SHALL NOT transition payment state. The central ITN endpoint remains the only provider callback that can apply verified payment transitions.
 
 Do not hard-code environment-specific URLs inside business/application services.
 
@@ -762,20 +764,19 @@ The implementation reads the following variables from `process.env`:
 | `PAYFAST_ENVIRONMENT` | Optional outside production; defaults to `SANDBOX`. Only `SANDBOX` and `LIVE` are accepted. Production requires explicit `LIVE`. |
 | `PAYFAST_MERCHANT_ID` | Required; merchant identifier. |
 | `PAYFAST_MERCHANT_KEY` | Required; included in the hosted payment form as required by PayFast. |
-| `PAYFAST_PASSPHRASE` | Required; server-side security passphrase for hosted-form, API, and ITN signatures. |
+| `PAYFAST_PASSPHRASE` | Required; server-side security passphrase for hosted-form, API, and ITN signatures. It is not the Merchant Key and is never sent in the hosted form. |
 | `PAYFAST_PAYMENT_URL` | Optional hosted-payment endpoint override; must use the official host for the selected environment. |
 | `PAYFAST_API_URL` | Optional API base URL override; must use the official API host. |
 | `PAYFAST_PAYMENT_QUERY_URL` | Optional payment-query endpoint override; defaults under `PAYFAST_API_URL`. |
 | `PAYFAST_REFUND_QUERY_URL` | Optional refund-query endpoint override; defaults under `PAYFAST_API_URL`. |
 | `PAYFAST_REFUND_URL` | Optional refund endpoint override; defaults under `PAYFAST_API_URL`. |
-| `PAYFAST_RETURN_URL` | Required absolute HTTPS customer-return URL. |
-| `PAYFAST_CANCEL_URL` | Required absolute HTTPS customer-cancel URL. |
-| `PAYFAST_NOTIFY_URL` | Required absolute HTTPS ITN URL, publicly reachable by PayFast in the target environment. |
+| `PAYFAST_PUBLIC_BASE_URL` | Required HTTPS origin used to construct `/ui/journeys/:journeyId/payment/return` and `/ui/journeys/:journeyId/payment/cancel` with the GCT payment reference query parameter. |
+| `PAYFAST_NOTIFY_URL` | Required absolute HTTPS central ITN URL, publicly reachable by PayFast in the target environment; the route is `POST /api/v1/payfast/itn`. |
 | `PAYFAST_ITN_TRUSTED_PROXY_IPS` | Optional comma-separated list of exact reverse-proxy IPv4 or IPv6 peer addresses. Individual addresses only; CIDR ranges are rejected. Forwarded addresses are used only when the immediate socket peer matches this list. |
 | `PAYFAST_TIMEOUT_MS` | Optional positive timeout in milliseconds; defaults to `10000`. |
 | `PAYFAST_API_VERSION` | Optional; only `v1` is accepted and is the default. |
 
-These settings are validated when PayFast configuration is loaded by a payment or ITN flow; they are not validated by the general application startup configuration loader. The repository development script does not itself load `.env`; provide variables through the runtime or deployment environment, or explicitly load a dotenv file in the launch environment.
+These settings are validated when PayFast configuration is loaded by a payment or ITN flow; they are not validated by the general application startup configuration loader. The repository development script does not itself load `.env`; provide variables through the runtime or deployment environment, or explicitly load a dotenv file in the launch environment. A reverse proxy must reach the ITN route over HTTPS; configure `PAYFAST_ITN_TRUSTED_PROXY_IPS` only with the exact socket peer addresses of trusted proxies. Forwarded headers from other peers are not trusted.
 
 ITN server-to-server validation uses `https://sandbox.payfast.co.za/eng/query/validate` in SANDBOX and `https://www.payfast.co.za/eng/query/validate` in LIVE; this endpoint is selected from `PAYFAST_ENVIRONMENT`, not configured separately.
 

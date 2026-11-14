@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createPaymentGatewayRequest = createPaymentGatewayRequest;
 function createPaymentGatewayRequest(request) {
     return Object.freeze({
+        journeyId: request.journeyId,
         paymentReference: Object.freeze({
             paymentId: request.paymentReference.paymentId,
             reservationId: request.paymentReference.reservationId,

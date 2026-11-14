@@ -58,8 +58,7 @@ describe("PayFast ITN route", () => {
       PAYFAST_MERCHANT_ID: "10000100",
       PAYFAST_MERCHANT_KEY: "merchant-key",
       PAYFAST_PASSPHRASE: "passphrase",
-      PAYFAST_RETURN_URL: "https://merchant.example.test/return",
-      PAYFAST_CANCEL_URL: "https://merchant.example.test/cancel",
+      PAYFAST_PUBLIC_BASE_URL: "https://merchant.example.test",
       PAYFAST_NOTIFY_URL: "https://merchant.example.test/notify",
       PAYFAST_ITN_TRUSTED_PROXY_IPS: "10.20.0.5",
     });
