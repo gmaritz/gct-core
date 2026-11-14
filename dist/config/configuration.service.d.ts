@@ -4,6 +4,7 @@ import { PlatformConfig } from "./platform.config";
 import { SecurityConfig } from "./security.config";
 import { ServerConfig } from "./server.config";
 import { AccommodationFulfilmentMode } from "../application/reservations/service/accommodation-fulfilment-mode";
+import { DevelopmentIngressConfig } from "./development-ingress.config";
 export interface ApplicationConfiguration {
     platform: PlatformConfig;
     server: ServerConfig;
@@ -11,6 +12,7 @@ export interface ApplicationConfiguration {
     logging: LoggingConfig;
     security: SecurityConfig;
     accommodationFulfilmentMode: AccommodationFulfilmentMode;
+    developmentIngress?: DevelopmentIngressConfig;
 }
 export declare class ConfigurationService {
     private readonly configuration;
@@ -19,6 +21,7 @@ export declare class ConfigurationService {
     private createConfiguration;
     private parsePort;
     private parseBoolean;
+    private parseTrustedProxy;
     private parseBoundedInteger;
 }
 export declare function loadConfiguration(): ApplicationConfiguration;

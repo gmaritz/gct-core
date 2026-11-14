@@ -42,7 +42,7 @@ export async function receivePayFastItn(request: Request, response: Response): P
     const config = loadPayFastIntegrationConfig();
     await createPayFastItnProcessor(config).process(
       request.body,
-      resolvePayFastItnPeerAddress(request, config.trustedProxyAddresses),
+      request.developmentPayFastSource ?? resolvePayFastItnPeerAddress(request, config.trustedProxyAddresses),
     );
     getLogger().info("payfast_itn_processed", { requestId: requestCorrelationId(request), outcome: "accepted" });
     response.status(200).type("text/plain").send("OK");

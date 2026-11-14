@@ -1,0 +1,48 @@
+{
+  "on_http_request": [
+    {
+      "actions": [
+        {
+          "type": "remove-headers",
+          "config": {
+            "headers": ["x-gct-ingress-token", "x-gct-itn-source-ip"]
+          }
+        }
+      ]
+    },
+    {
+      "expressions": [
+        "req.method == 'POST' && req.url.path == '/api/v1/payfast/itn'"
+      ],
+      "actions": [
+        {
+          "type": "restrict-ips",
+          "config": {
+            "enforce": true,
+            "allow": ["197.97.145.144/28", "41.74.179.192/27", "102.216.36.0/28", "102.216.36.128/28", "144.126.193.139/32"]
+          }
+        },
+        {
+          "type": "add-headers",
+          "config": {
+            "headers": {
+              "x-gct-ingress-token": "${secrets.get('gct-payfast-sandbox', 'ingress-token')}",
+              "x-gct-itn-source-ip": "${conn.client_ip}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "expressions": [
+        "!(req.method == 'POST' && (req.url.path == '/api/v1/payfast/itn' || req.url.path.matches('^/ui/journeys/[A-Za-z0-9-]{1,128}/(select|accommodation|guest-information|review|payment)$')) || req.method == 'GET' && (req.url.path == '/ui/placeholder' || req.url.path.matches('^/ui/journeys/[A-Za-z0-9-]{1,128}(/(accommodation|quote|guest-information|review|payment|payment/return|payment/cancel|confirmation))?$') || req.url.path.matches('^/css/(app[.]css|base/(reset|tokens|typography)[.]css|layouts/(container|site|header|footer)[.]css|components/(navigation|journey-card|homepage-showcase|button|card|forms|feedback|price-display|action-group)[.]css|pages/(placeholder|journey-detail|accommodation-selection|journey-quote|guest-information|reservation-review|payment-experience|booking-confirmation)[.]css|utilities/helpers[.]css)$') || req.url.path.matches('^/js/(app[.]js|cape-winelands-booking[.]js|cape-winelands-accommodation[.]js|components/(navigation|homepage-showcase)[.]js)$') || req.url.path.matches('^/images/(favicon[.]ico|hero/hero-cape-town-1600x900[.]webp|journeys/(cape-winelands|atlantic-seaboard|franschhoek-valley)-1600x900[.]webp)$')))"
+      ],
+      "actions": [
+        {
+          "type": "custom-response",
+          "config": { "status_code": 404, "body": "Not found." }
+        }
+      ]
+    }
+  ]
+}

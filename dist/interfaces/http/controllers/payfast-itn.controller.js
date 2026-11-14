@@ -34,7 +34,7 @@ async function receivePayFastItn(request, response) {
     }
     try {
         const config = (0, payfast_1.loadPayFastIntegrationConfig)();
-        await (0, payfast_itn_factory_1.createPayFastItnProcessor)(config).process(request.body, resolvePayFastItnPeerAddress(request, config.trustedProxyAddresses));
+        await (0, payfast_itn_factory_1.createPayFastItnProcessor)(config).process(request.body, request.developmentPayFastSource ?? resolvePayFastItnPeerAddress(request, config.trustedProxyAddresses));
         (0, logging_1.getLogger)().info("payfast_itn_processed", { requestId: requestCorrelationId(request), outcome: "accepted" });
         response.status(200).type("text/plain").send("OK");
     }

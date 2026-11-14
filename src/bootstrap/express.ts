@@ -5,6 +5,7 @@ import compression from "compression";
 import cors, { CorsOptions } from "cors";
 import express, { Express, NextFunction, Request, Response } from "express";
 import helmet from "helmet";
+import { createDevelopmentIngressMiddleware } from "../interfaces/http/middleware/development-ingress.middleware";
 
 import { Logger } from "./logging";
 import { createGlobalErrorMiddleware } from "../interfaces/http/middleware/error.middleware";
@@ -74,11 +75,11 @@ export function createExpressApplication(
 		lifetimeSeconds: configuration.security.anonymousSessionLifetimeSeconds,
 	};
 
-	app.set("trust proxy", true);
+	app.set("trust proxy", configuration.security.trustedProxy);
 	app.disable("x-powered-by");
 
 	app.use((request: Request, response: Response, next: NextFunction) => {
-		const requestId = resolveRequestId(request);
+		const requestId = configuration.developmentIngress ? randomUUID() : resolveRequestId(request);
 		const requestWithId = request as RequestWithId;
 		requestWithId.requestId = requestId;
 		response.setHeader("X-Request-Id", requestId);
@@ -94,7 +95,7 @@ export function createExpressApplication(
 			logger.info("HTTP request completed", {
 				requestId,
 				method: request.method,
-				url: request.originalUrl,
+				url: configuration.developmentIngress ? request.originalUrl.split("?", 1)[0] : request.originalUrl,
 				status: response.statusCode,
 				durationMs: Number(elapsedMs.toFixed(2)),
 			});
@@ -105,8 +106,13 @@ export function createExpressApplication(
 
 	app.set("view engine", "ejs");
 	app.set("views", path.join(process.cwd(), "src/interfaces/views"));
+	if (configuration.developmentIngress) {
+		app.use(createDevelopmentIngressMiddleware(configuration.developmentIngress));
+	}
 	app.use(express.static(path.join(process.cwd(), "public")));
-	app.use(helmet());
+	app.use(helmet(configuration.developmentIngress ? {
+		contentSecurityPolicy: { directives: { formAction: ["'self'", "https://sandbox.payfast.co.za"] } },
+	} : {}));
 	app.use(compression());
 	app.use(cors(corsOptions));
 	app.use(

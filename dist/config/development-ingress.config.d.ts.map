@@ -1,0 +1,1 @@
+{"version":3,"file":"development-ingress.config.d.ts","sourceRoot":"","sources":["../../src/config/development-ingress.config.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,wBAAwB;IACxC,QAAQ,CAAC,WAAW,EAAE,WAAW,CAAC;IAClC,QAAQ,CAAC,UAAU,EAAE,MAAM,CAAC;CAC5B;AAED,wBAAgB,4BAA4B,CAC3C,GAAG,EAAE,MAAM,CAAC,UAAU,EACtB,WAAW,EAAE,MAAM,GACjB,wBAAwB,GAAG,SAAS,CAgBtC"}

@@ -780,6 +780,48 @@ These settings are validated when PayFast configuration is loaded by a payment o
 
 ITN server-to-server validation uses `https://sandbox.payfast.co.za/eng/query/validate` in SANDBOX and `https://www.payfast.co.za/eng/query/validate` in LIVE; this endpoint is selected from `PAYFAST_ENVIRONMENT`, not configured separately.
 
+### 36.2 Development-only ngrok ingress
+
+This mode is for an explicitly trusted Windows development host and PayFast SANDBOX only. It does not configure or start ngrok. Startup fails unless all of the following are set:
+
+| Variable | Required value |
+|---|---|
+| `NODE_ENV` | `development`, explicitly set. |
+| `PAYFAST_ENVIRONMENT` | `SANDBOX`, explicitly set. |
+| `GCT_DEV_NGROK_INGRESS` | `true` (default: disabled). |
+| `GCT_DEV_INGRESS_PEER_IP` | `127.0.0.1`. The listener is bound to this address in this mode. |
+| `GCT_DEV_INGRESS_TOKEN` | 64 lowercase hexadecimal characters generated from 32 cryptographically random bytes. Set the same value in the ngrok vault below. Never commit or print it. |
+| `GCT_TRUST_PROXY` | Unset or `false` in this mode. |
+
+Set the non-secret values in the PowerShell process used for `npm run dev`, and load `GCT_DEV_INGRESS_TOKEN` into that process from an approved protected secret store without printing it. Set the usual Sandbox merchant and callback variables separately; the notify URL must be the public HTTPS origin plus `/api/v1/payfast/itn`. Set the public base URL to that same origin. The application does not load `.env` through `npm run dev`.
+
+```powershell
+$env:NODE_ENV = 'development'
+$env:PAYFAST_ENVIRONMENT = 'SANDBOX'
+$env:GCT_DEV_NGROK_INGRESS = 'true'
+$env:GCT_DEV_INGRESS_PEER_IP = '127.0.0.1'
+$env:GCT_TRUST_PROXY = 'false'
+$env:PORT = '3000'
+# Load GCT_DEV_INGRESS_TOKEN and the PayFast Sandbox settings securely before starting.
+npm run dev
+```
+
+In ngrok, provision vault `gct-payfast-sandbox` and secret `ingress-token` with the same credential, using an approved protected workflow. Avoid command-line secret values, shell history, transcripts and logs. After architectural approval and configuration, the proposed agent command is:
+
+```powershell
+ngrok http 127.0.0.1:3000 --traffic-policy-file scripts\payfast-sandbox-ngrok-policy.json --inspect=false
+```
+
+Use the designated public HTTPS hostname for the customer journey and both callback URLs. `Ctrl+C` stops the foreground tunnel. Restrict ngrok account, vault and policy access; disable traffic capture where possible and check account-level inspector settings, since ngrok warns that interpolated secrets may appear in full capture. Protect the local secret with Windows access controls and rotate both copies after exposure.
+
+The policy removes both custom headers on every incoming request, restricts the exact ITN route to the PayFast source ranges, and injects `x-gct-itn-source-ip` from ngrok `conn.client_ip` and `x-gct-ingress-token` from the vault. The Express ingress middleware checks the actual loopback socket peer, one raw instance of each header, the bearer in constant time, and the existing PayFast allowlist. It does not use `X-Forwarded-For` for the ITN in this mode. The normal signature, server-to-server, merchant, amount, environment and payment checks remain in force. `PAYFAST_ITN_TRUSTED_PROXY_IPS` is not used to resolve this mode's source.
+
+Both edge and application use a default-deny, case-sensitive method/path allowlist for `/ui/placeholder`, customer journey pages and form submissions, specifically required CSS, JavaScript and image assets, and `POST /api/v1/payfast/itn`. Unknown assets, platform/API endpoints, documentation and OpenAPI are denied. The application additionally checks the unnormalized request path, so encoded, traversal, extra-slash and case-variant paths are denied. Check the two allowlists together when the journey or assets change. Policy CEL parsing, path normalization, edge header ordering, the real agent socket peer, actual PayFast source ranges and public accessibility must be verified with a controlled tunnel before use. If another proxy connects to ngrok, `conn.client_ip` identifies that proxy rather than PayFast.
+
+The HTTPS-development session cookie is Secure, HttpOnly, SameSite=Lax and scoped to `/ui`; CSRF validation is unchanged. CSP adds only `https://sandbox.payfast.co.za` to `form-action` in this mode. Outside it, the existing listener, cookie and CSP behavior is unchanged. The existing default CSP is `form-action 'self'`, which does not permit the LIVE hosted form; LIVE deployment needs separate review. `GCT_TRUST_PROXY` outside this mode accepts `false`, `true`, or a single exact IP; its default remains `true` for compatibility with existing deployments and should be explicitly configured for their actual proxies.
+
+The token is a replayable bearer, not a signed envelope or nonce. Existing verified exact duplicate ITNs are acknowledged without a second financial credit; conflicts are rejected. Validation runs again on retries, and replay can still consume resources. The local ngrok-to-Express hop is plain loopback HTTP: another process with access to the bearer or the ability to inspect or alter that traffic can impersonate ingress. Same-user processes, administrators and a compromised host are inside the trusted boundary. Loopback and secret storage alone do not authenticate a process or protect local traffic integrity.
+
 ## 37. Sandbox
 
 The PayFast sandbox SHALL be the primary integration test environment.

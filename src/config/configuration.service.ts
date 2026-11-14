@@ -5,6 +5,8 @@ import { createSecurityConfig, SecurityConfig } from "./security.config";
 import { createServerConfig, ServerConfig } from "./server.config";
 import { loadAccommodationFulfilmentMode } from "./accommodation-fulfilment.config";
 import { AccommodationFulfilmentMode } from "../application/reservations/service/accommodation-fulfilment-mode";
+import { DevelopmentIngressConfig, loadDevelopmentIngressConfig } from "./development-ingress.config";
+import { isIP } from "net";
 
 export interface ApplicationConfiguration {
 	platform: PlatformConfig;
@@ -13,6 +15,7 @@ export interface ApplicationConfiguration {
 	logging: LoggingConfig;
 	security: SecurityConfig;
 	accommodationFulfilmentMode: AccommodationFulfilmentMode;
+	developmentIngress?: DevelopmentIngressConfig;
 }
 
 export class ConfigurationService {
@@ -28,6 +31,8 @@ export class ConfigurationService {
 
 	private createConfiguration(): ApplicationConfiguration {
 		const nodeEnv = process.env.NODE_ENV ?? "development";
+		const developmentIngress = loadDevelopmentIngressConfig(process.env, nodeEnv);
+		const trustedProxy = this.parseTrustedProxy(process.env.GCT_TRUST_PROXY, Boolean(developmentIngress));
 		const port = this.parsePort(process.env.PORT ?? "3000");
 		const databaseUrl = process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/gct_core";
 		const loggingLevel = process.env.LOG_LEVEL ?? "info";
@@ -43,8 +48,9 @@ export class ConfigurationService {
 			platform: createPlatformConfig("0.1.0", "local", nodeEnv),
 			database: createDatabaseConfig(databaseUrl),
 			logging: createLoggingConfig(loggingLevel),
-			security: createSecurityConfig(corsEnabled, nodeEnv, anonymousSessionLifetimeSeconds),
+			security: createSecurityConfig(corsEnabled, nodeEnv, anonymousSessionLifetimeSeconds, trustedProxy, Boolean(developmentIngress)),
 			server: createServerConfig(port, corsEnabled),
+			developmentIngress,
 			accommodationFulfilmentMode: loadAccommodationFulfilmentMode({
 				...process.env,
 				NODE_ENV: nodeEnv,
@@ -63,6 +69,19 @@ export class ConfigurationService {
 
 	private parseBoolean(value: string): boolean {
 		return value === "true";
+	}
+
+	private parseTrustedProxy(value: string | undefined, ingressEnabled: boolean): boolean | string {
+		if (ingressEnabled) {
+			if (value !== undefined && value !== "false") {
+				throw new Error("GCT_TRUST_PROXY must be false in development ingress mode.");
+			}
+			return false;
+		}
+		if (value === undefined || value === "true") return true;
+		if (value === "false") return false;
+		if (isIP(value)) return value;
+		throw new Error("GCT_TRUST_PROXY must be true, false, or one exact IP address.");
 	}
 
 	private parseBoundedInteger(value: string, name: string, minimum: number, maximum: number): number {

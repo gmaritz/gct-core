@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.bootstrapApplication = bootstrapApplication;
+exports.startHttpServer = startHttpServer;
 const configuration_service_1 = require("../config/configuration.service");
 const logging_1 = require("./logging");
 const lifecycle_1 = require("./lifecycle");
@@ -31,7 +32,7 @@ async function bootstrapApplication() {
     const expressApplication = (0, express_1.createExpressApplication)(configuration, logger);
     await runtimeManager.start();
     logger.info("[OK] Express Configured");
-    const httpServer = await startHttpServer(expressApplication, configuration.server.port);
+    const httpServer = await startHttpServer(expressApplication, configuration.server.port, configuration.developmentIngress?.peerAddress);
     logger.info("[OK] HTTP Server Listening");
     (0, lifecycle_1.registerLifecycleHandlers)(logger, {
         beforeShutdown: async () => {
@@ -46,9 +47,10 @@ async function bootstrapApplication() {
     logger.info("Platform Ready", startupInfo);
     logger.info("Listening", { address: `http://localhost:${configuration.server.port}` });
 }
-function startHttpServer(expressApplication, port) {
+function startHttpServer(expressApplication, port, host) {
     return new Promise((resolve, reject) => {
-        const server = expressApplication.listen(port, () => {
+        const server = host ? expressApplication.listen(port, host) : expressApplication.listen(port);
+        server.once("listening", () => {
             resolve(server);
         });
         server.on("error", (error) => {

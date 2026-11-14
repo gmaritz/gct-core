@@ -36,7 +36,7 @@ export async function bootstrapApplication(): Promise<void> {
 	await runtimeManager.start();
 	logger.info("[OK] Express Configured");
 
-	const httpServer = await startHttpServer(expressApplication, configuration.server.port);
+	const httpServer = await startHttpServer(expressApplication, configuration.server.port, configuration.developmentIngress?.peerAddress);
 	logger.info("[OK] HTTP Server Listening");
 
 	registerLifecycleHandlers(logger as Logger, {
@@ -53,9 +53,10 @@ export async function bootstrapApplication(): Promise<void> {
 	logger.info("Listening", { address: `http://localhost:${configuration.server.port}` });
 }
 
-function startHttpServer(expressApplication: ReturnType<typeof createExpressApplication>, port: number): Promise<Server> {
+export function startHttpServer(expressApplication: ReturnType<typeof createExpressApplication>, port: number, host?: string): Promise<Server> {
 	return new Promise((resolve, reject) => {
-		const server = expressApplication.listen(port, () => {
+		const server = host ? expressApplication.listen(port, host) : expressApplication.listen(port);
+		server.once("listening", () => {
 			resolve(server);
 		});
 

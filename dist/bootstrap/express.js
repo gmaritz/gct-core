@@ -10,6 +10,7 @@ const compression_1 = __importDefault(require("compression"));
 const cors_1 = __importDefault(require("cors"));
 const express_1 = __importDefault(require("express"));
 const helmet_1 = __importDefault(require("helmet"));
+const development_ingress_middleware_1 = require("../interfaces/http/middleware/development-ingress.middleware");
 const error_middleware_1 = require("../interfaces/http/middleware/error.middleware");
 const routes_1 = require("../interfaces/http/routes");
 const errors_1 = require("../interfaces/http/errors");
@@ -56,10 +57,10 @@ function createExpressApplication(configuration, logger, configure, anonymousSes
         secure: configuration.security.anonymousSessionCookieSecure,
         lifetimeSeconds: configuration.security.anonymousSessionLifetimeSeconds,
     };
-    app.set("trust proxy", true);
+    app.set("trust proxy", configuration.security.trustedProxy);
     app.disable("x-powered-by");
     app.use((request, response, next) => {
-        const requestId = resolveRequestId(request);
+        const requestId = configuration.developmentIngress ? (0, crypto_1.randomUUID)() : resolveRequestId(request);
         const requestWithId = request;
         requestWithId.requestId = requestId;
         response.setHeader("X-Request-Id", requestId);
@@ -73,7 +74,7 @@ function createExpressApplication(configuration, logger, configure, anonymousSes
             logger.info("HTTP request completed", {
                 requestId,
                 method: request.method,
-                url: request.originalUrl,
+                url: configuration.developmentIngress ? request.originalUrl.split("?", 1)[0] : request.originalUrl,
                 status: response.statusCode,
                 durationMs: Number(elapsedMs.toFixed(2)),
             });
@@ -82,8 +83,13 @@ function createExpressApplication(configuration, logger, configure, anonymousSes
     });
     app.set("view engine", "ejs");
     app.set("views", path_1.default.join(process.cwd(), "src/interfaces/views"));
+    if (configuration.developmentIngress) {
+        app.use((0, development_ingress_middleware_1.createDevelopmentIngressMiddleware)(configuration.developmentIngress));
+    }
     app.use(express_1.default.static(path_1.default.join(process.cwd(), "public")));
-    app.use((0, helmet_1.default)());
+    app.use((0, helmet_1.default)(configuration.developmentIngress ? {
+        contentSecurityPolicy: { directives: { formAction: ["'self'", "https://sandbox.payfast.co.za"] } },
+    } : {}));
     app.use((0, compression_1.default)());
     app.use((0, cors_1.default)(corsOptions));
     app.use("/api/v1/payfast/itn", express_1.default.raw({ type: "application/x-www-form-urlencoded", limit: "16kb" }), (error, _request, response, next) => {

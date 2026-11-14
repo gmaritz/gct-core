@@ -1,6 +1,6 @@
 export interface SecurityConfig {
 	corsEnabled: boolean;
-	trustedProxy: boolean;
+	trustedProxy: boolean | string;
 	anonymousSessionLifetimeSeconds: number;
 	anonymousSessionCookieSecure: boolean;
 }
@@ -9,11 +9,13 @@ export function createSecurityConfig(
 	corsEnabled: boolean,
 	environment: string,
 	anonymousSessionLifetimeSeconds: number,
+	trustedProxy: boolean | string = true,
+	developmentIngress: boolean = false,
 ): SecurityConfig {
 	return {
 		corsEnabled,
-		trustedProxy: false,
+		trustedProxy,
 		anonymousSessionLifetimeSeconds,
-		anonymousSessionCookieSecure: environment === "production",
+		anonymousSessionCookieSecure: environment === "production" || developmentIngress,
 	};
 }

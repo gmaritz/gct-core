@@ -170,6 +170,41 @@ describe("PaymentAttemptPrismaRepository", () => {
     await expect(repository.associateProviderTransaction("gct-pay-1", "pf-shared"))
       .rejects.toThrow("already associated with another payment attempt");
   });
+
+  it("applies an exact verified retry only once and rejects a conflicting retry", async () => {
+    const capturedAt = new Date("2026-11-05T00:00:00.000Z");
+    const initial: PaymentSnapshot = {
+      snapshotId: "snapshot-1", capturedAt, version: "1.0.0", paymentStatus: "CREATED",
+      amountReceived: 0, balanceOutstanding: 64990.09,
+    };
+    const input: ApplyVerifiedPayFastNotificationInput = {
+      paymentReference: "gct-pay-1", reservationId: "reservation-1", providerTransactionId: "12345",
+      notificationHash: "a".repeat(64), providerStatus: "COMPLETE", paymentStatus: PaymentStatus.COMPLETED,
+      expectedPaymentSnapshot: initial,
+      nextPaymentSnapshot: { ...initial, paymentStatus: "COMPLETED", amountReceived: 64990.09, balanceOutstanding: 0 },
+      nextReservationMetadata: { createdAt: capturedAt, updatedAt: capturedAt, version: "1.0.0" },
+    };
+    let record = createRecord({ status: PaymentStatus.AUTHORIZATION_REQUESTED });
+    const attemptUpdate = jest.fn().mockImplementation(async ({ data }) => {
+      record = { ...record, ...data };
+      return { count: 1 };
+    });
+    const reservationUpdate = jest.fn().mockResolvedValue({ count: 1 });
+    const transaction = {
+      paymentAttempt: { findUnique: jest.fn().mockImplementation(async () => record), updateMany: attemptUpdate },
+      reservation: { updateMany: reservationUpdate },
+    };
+    const repository = new PaymentAttemptPrismaRepository({
+      $transaction: async (operation: (value: typeof transaction) => Promise<unknown>) => operation(transaction),
+    } as unknown as PrismaClient);
+
+    await expect(repository.applyVerifiedPayFastNotification(input)).resolves.toBe("APPLIED");
+    await expect(repository.applyVerifiedPayFastNotification(input)).resolves.toBe("DUPLICATE");
+    await expect(repository.applyVerifiedPayFastNotification({ ...input, notificationHash: "b".repeat(64) }))
+      .rejects.toThrow("conflicting notification");
+    expect(attemptUpdate).toHaveBeenCalledTimes(1);
+    expect(reservationUpdate).toHaveBeenCalledTimes(1);
+  });
 });
 
 const databaseConcurrencyDescribe = process.env.PAYMENT_ATTEMPT_DATABASE_INTEGRATION === "true" ? describe : describe.skip;
