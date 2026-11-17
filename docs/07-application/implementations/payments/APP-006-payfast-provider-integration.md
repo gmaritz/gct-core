@@ -752,6 +752,8 @@ Endpoint overrides SHALL use HTTPS on the corresponding official PayFast host an
 
 The browser return and cancellation callbacks SHALL resolve the supplied GCT payment reference against the journey's canonical Reservation and matching PayFast PaymentAttempt. These callbacks are read-only and SHALL NOT transition payment state. The central ITN endpoint remains the only provider callback that can apply verified payment transitions.
 
+The initial payment page displays the canonical outstanding balance and uses a session- and CSRF-protected POST to initiate payment. The hosted form is rendered only after the existing initiation service returns a hosted action. Since the current initiation service charges the full price, initiation is unavailable when the outstanding balance differs from that price; partial-payment initiation requires separate support.
+
 Do not hard-code environment-specific URLs inside business/application services.
 
 ### 36.1 Environment variables

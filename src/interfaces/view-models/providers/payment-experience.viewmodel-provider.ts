@@ -52,6 +52,11 @@ export class PaymentExperienceViewModelProvider {
     const reservationConfirmed = paymentAttempt
       ? paymentAttempt.reservationPaymentStatus === "COMPLETED"
       : status === "COMPLETED";
+    const canInitiate = !paymentAttempt
+      && result.status === "PENDING"
+      && result.paymentStatus === PaymentStatus.CREATED
+      && !result.paymentAttemptId
+      && !result.hostedPaymentAction;
     return Object.freeze({
       journeyId,
       amount: result.amount,
@@ -59,15 +64,22 @@ export class PaymentExperienceViewModelProvider {
       status,
       message: paymentAttempt?.status === PaymentStatus.CANCELLED
         ? "This payment attempt was cancelled. The reservation payment balance remains unchanged until verified payment processing."
-        : messageFor(status),
+        : canInitiate
+          ? "Your reservation is ready for secure payment."
+          : status === "UNAVAILABLE" && result.amount !== undefined
+            ? "Payment is unavailable for this outstanding balance. Please review your reservation."
+            : messageFor(status),
       paymentAttemptStatus: paymentAttempt?.status,
       reservationPaymentStatus: paymentAttempt?.reservationPaymentStatus,
       balanceOutstanding: paymentAttempt?.balanceOutstanding,
       supplierFulfilmentNotice: simulatedSupplierFulfilment
         ? "Test only: accommodation supplier fulfilment was simulated. No Hotelbeds booking was created."
         : undefined,
-      providerAction: result.status === "INITIATED" || result.status === "PENDING"
-        ? Object.freeze({ label: "Proceed to secure payment", href: "#secure-payment", style: "primary" })
+      initiationAction: canInitiate
+        ? Object.freeze({ label: "Proceed to secure payment", href: `/ui/journeys/${journeyId}/payment`, style: "primary" })
+        : undefined,
+      providerAction: result.hostedPaymentAction && (result.status === "INITIATED" || result.status === "PENDING")
+        ? Object.freeze({ label: "Proceed to secure payment", href: result.hostedPaymentAction.action, style: "primary" })
         : undefined,
       hostedPaymentAction: result.hostedPaymentAction
         ? Object.freeze({

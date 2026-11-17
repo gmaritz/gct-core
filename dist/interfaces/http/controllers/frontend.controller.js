@@ -474,10 +474,12 @@ function paymentStateResult(context) {
         : request.status === "CANCELLED"
             ? "CANCELLED"
             : "PENDING";
+    const outstanding = context.reservationPaymentSnapshot?.balanceOutstanding;
+    const canPayFullAmount = outstanding !== undefined && outstanding > 0 && outstanding === request.paymentAmount;
     return {
-        status,
+        status: status === "PENDING" && request.status === payments_1.PaymentStatus.CREATED && !canPayFullAmount ? "UNAVAILABLE" : status,
         reservationId: context.reservationId,
-        amount: request.paymentAmount ?? undefined,
+        amount: outstanding ?? undefined,
         currency: request.currency ?? undefined,
         paymentStatus: request.status ?? undefined,
         errors: [],
@@ -564,6 +566,10 @@ async function initiatePayment(request, response) {
     if (!context) {
         (0, logging_1.getLogger)().warn("payment_initiation_unavailable", diagnostic(request, "payment_initiation", "context_unavailable"));
         result = unavailablePaymentResult(request.params.journeyId);
+    }
+    else if (paymentStateResult(context).status === "UNAVAILABLE") {
+        (0, logging_1.getLogger)().warn("payment_initiation_unavailable", diagnostic(request, "payment_initiation", "balance_unavailable"));
+        result = paymentStateResult(context);
     }
     else {
         try {

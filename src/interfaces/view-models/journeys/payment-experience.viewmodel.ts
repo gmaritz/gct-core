@@ -13,6 +13,7 @@ export interface PaymentExperienceViewModel {
   readonly reservationPaymentStatus?: string;
   readonly balanceOutstanding?: number;
   readonly supplierFulfilmentNotice?: string;
+  readonly initiationAction?: CTAViewModel;
   readonly providerAction?: CTAViewModel;
   readonly hostedPaymentAction?: {
     readonly method: "GET" | "POST";

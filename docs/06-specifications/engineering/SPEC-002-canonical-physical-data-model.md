@@ -6,12 +6,14 @@
 |---------|---------|
 | Document ID | SPEC-002 |
 | Title | Canonical Physical Data Model |
-| Version | 1.0.0 |
+| Version | 1.1.0 |
 | Status | Approved |
 | Classification | Normative Engineering Specification |
 | Owner | Platform Engineering |
 | Parent Authority | ARCH-000 – Architecture Manifest |
 | Governing Standard | SPEC-000 – Engineering Specification Standard |
+| Governing Process | [GOV-DEV-001 – Development Process Governance](../../09-governance/GOV-DEV-001-DEVELOPMENT-PROCESS.md) |
+| Architectural Authority for Amendment | [ADR-003 v0.2](../../decisions/ADR-003-durable-journey-workflow-state.md); [Durable Journey Workflow State Architecture v0.2](../../04-software-architecture/10-durable-journey-workflow-state-proposal.md) |
 
 ---
 
@@ -21,6 +23,7 @@
 |----------|------|--------|---------|
 | 0.1.0 | YYYY-MM-DD | Platform Engineering | Initial working draft |
 | 1.0.0 | YYYY-MM-DD | Platform Engineering | First approved release of the Canonical Physical Data Model |
+| 1.1.0 | 2026-11-17 | Not recorded | Application-owned Journey workflow-state persistence and traceability amendment, approved by Project Owner |
 
 ---
 
@@ -63,6 +66,8 @@ The purpose of this specification is to ensure that all persistence implementati
 This specification defines **how** approved domain concepts SHALL be persisted.
 
 This specification SHALL NOT define the domain concepts themselves.
+
+The application-owned Journey workflow-state capability governed by section 8.10 has an application-level persistence boundary and remains aligned with the approved Canonical Domain Model.
 
 ---
 
@@ -175,6 +180,8 @@ Persistence SHALL support the domain model.
 
 Persistence SHALL NOT redefine the domain model.
 
+The application-owned Journey workflow-state capability governed by section 8.10 has its own application-level persistence boundary. It SHALL NOT become a Domain Aggregate or change the ownership of an existing Domain Aggregate.
+
 ---
 
 ## 5.3 Technology Independence
@@ -202,9 +209,11 @@ Cross-Aggregate relationships SHALL respect approved ownership boundaries.
 
 ## 5.5 Traceability
 
-Every persistent representation SHALL be traceable to an approved domain concept.
+Every persistent representation SHALL have authoritative traceability. Every representation other than the application-owned Journey workflow state specifically governed by section 8.10 SHALL be traceable to an approved domain concept.
 
-Persistent structures SHALL NOT be introduced without an authoritative business definition.
+For that specific capability only, the formally recognised application-state traceability basis SHALL be: ADR-003 -> application capability -> persistence port -> physical representation -> Prisma mapping and infrastructure adapter. This basis satisfies the representation-level traceability requirement without classifying the workflow state as a Domain Concept or Aggregate. Associated domain concepts and Aggregate boundaries remain subject to the approved Canonical Domain Model.
+
+Persistent structures SHALL NOT be introduced without an authoritative business definition. For the section 8.10 capability only, the approved architectural decision and application capability SHALL provide the authoritative definition for its workflow-state representation.
 
 ---
 
@@ -427,17 +436,27 @@ Aggregate boundaries SHALL remain the primary mechanism for maintaining consiste
 
 ## 8.9 Traceability Requirements
 
-Every persistent representation SHALL be traceable to:
+Every persistent representation SHALL be traceable to the governing Architecture Documents and applicable Engineering Specifications. Every representation other than the application-owned Journey workflow state specifically governed by section 8.10 SHALL also be traceable to an approved Domain Concept, an approved Aggregate and the Canonical Domain Model.
 
-- an approved Domain Concept;
-- an approved Aggregate;
-- the Canonical Domain Model;
-- the governing Architecture Documents;
-- the governing Engineering Specifications where applicable.
+For the section 8.10 capability only, the formally recognised application-state traceability basis SHALL be: ADR-003 -> application capability -> persistence port -> physical representation -> Prisma mapping and infrastructure adapter. This basis fulfils the universal representation-level traceability requirement for that capability; it does not make the workflow state a Domain Concept, Domain Aggregate Root or Domain Entity. Any associated domain concepts and Aggregate boundaries SHALL independently satisfy the ordinary Canonical Domain Model and Aggregate Root requirements.
 
-Persistent structures SHALL NOT exist without authoritative traceability.
+Persistent structures SHALL NOT exist without authoritative traceability. Traceability SHALL be maintained throughout the lifecycle of the Platform.
 
-Traceability SHALL be maintained throughout the lifecycle of the Platform.
+## 8.10 Application-Owned Journey Workflow State
+
+This section applies only to the durable anonymous Journey workflow-state capability approved by ADR-003 and its approved architecture. It SHALL NOT be used as authority for another application-state capability.
+
+Journey workflow state is an application-owned persistence capability, not a Domain Aggregate Root, Domain Entity or alternative canonical business model. The application workflow service SHALL own lifecycle, ownership coordination, revision, review consistency and retry orchestration. Domain services SHALL retain their existing business rules and validation responsibilities; existing application services retain their established responsibilities.
+
+The application layer SHALL define a persistence-neutral port for this capability. Its infrastructure adapter SHALL implement that port, including representation mapping, atomic persistence mechanics, conditional revision enforcement and infrastructure error translation. The port SHALL express the required outcomes without exposing Prisma, SQL, database-specific types or transaction implementation details to application or domain contracts.
+
+This port and adapter SHALL NOT be classified as a Domain Repository. Domain Repositories and Domain Aggregate persistence SHALL continue to follow the existing Aggregate Root ownership and persistence rules, including sections 8.2 and 8.3.
+
+The canonical Reservation Aggregate owns Reservation lifecycle, Reservation state and its historical PaymentSnapshot, and remains authoritative for its transition to CONFIRMED. The separate canonical Payment Financial Aggregate owns the financial transaction and payment lifecycle and remains authoritative for payment status and financial transaction outcomes. PaymentAttempt remains a separate Reservation-linked persistence entity representing individual payment attempts; it does not replace the Payment Aggregate. Application orchestration coordinates payment and Reservation, evaluates the authoritative payment outcome against applicable Reservation confirmation requirements and coordinates the Reservation confirmation transition. Reservation persistence SHALL NOT modify the Payment Aggregate or retrieve live payment status.
+
+The workflow-state representation SHALL NOT be an alternative Reservation, Customer, Journey or payment model and SHALL NOT independently establish ownership of those domain concepts.
+
+The formally recognised application-state traceability basis under sections 5.5 and 8.9 SHALL follow: ADR-003 -> application capability -> persistence port -> physical representation -> Prisma mapping and infrastructure adapter. The application capability, persistence port, physical representation and mapping SHALL be approved through their relevant specifications before implementation. Applicable domain references and ownership boundaries SHALL remain traceable to the Canonical Domain Model. This section does not prescribe a physical schema, table structure, relationship or Prisma implementation.
 
 
 # 9. Relationship Standards
@@ -536,12 +555,9 @@ Cascade rules SHALL be explicit and SHALL NOT rely upon implementation defaults.
 
 ## 9.10 Relationship Traceability
 
-Every relationship SHALL be traceable to:
+Every relationship SHALL have authoritative traceability. Every relationship other than an application-state persistence association specific to the section 8.10 capability SHALL be traceable to an approved Domain Concept, an approved Aggregate, the Canonical Domain Model and applicable Engineering Specifications.
 
-- an approved Domain Concept;
-- an approved Aggregate;
-- the Canonical Domain Model;
-- applicable Engineering Specifications.
+For an application-state persistence association specific to that capability, the formally recognised application-state traceability basis of section 8.10 fulfils this section's universal traceability requirement. An association does not, merely by existing in persistence, become a Domain Model relationship or alter Domain Aggregate ownership. Any actual domain relationship and affected Aggregate boundary SHALL continue to satisfy the ordinary Domain Model and Aggregate traceability requirements. Actual physical relationships and lifecycle behaviour SHALL be defined and approved through the relevant logical and physical specifications.
 
 Relationship definitions SHALL remain consistent with the approved Domain Architecture.
 
@@ -912,12 +928,16 @@ Verification SHALL produce objective evidence of compliance.
 
 ## 12.5 Traceability Verification
 
-Every persistent representation SHALL be traceable to:
+Every persistent representation SHALL be verified as traceable to the governing Architecture Documents, the applicable Engineering Specifications and approved Architecture Decision Records where exceptions exist. Every representation other than the application-owned Journey workflow state specifically governed by section 8.10 SHALL also be verified as traceable to the approved Canonical Domain Model.
 
-- the approved Canonical Domain Model;
-- the governing Architecture Documents;
-- the applicable Engineering Specifications;
-- approved Architecture Decision Records where exceptions exist.
+For the section 8.10 capability, verification SHALL establish the formally recognised application-state traceability basis: ADR-003 -> application capability -> persistence port -> physical representation -> Prisma mapping and infrastructure adapter. Objective evidence SHALL establish that:
+
+- approved ADR-003 covers the workflow capability;
+- the application capability and persistence-neutral port are defined and approved;
+- the physical representation and Prisma mapping are approved through the relevant specifications;
+- the infrastructure adapter implements the approved port;
+- applicable Domain Model references and Aggregate ownership boundaries remain intact;
+- the Reservation, Payment and PaymentAttempt authority boundaries in section 8.10 remain unchanged.
 
 Traceability SHALL be maintained throughout the lifecycle of the Platform.
 
@@ -1050,5 +1070,9 @@ Changes SHALL preserve consistency with:
 This specification is the authoritative Platform Engineering Standard and is approved in accordance with the Engineering Governance Framework.
 
 **Approval Status:** Approved
+
+Version 1.1.0 incorporates the application-owned Journey workflow-state amendment approved by the Project Owner on 2026-11-17. Version 1.0.0 remains the historical first approved baseline, as recorded in the revision history and version control.
+
+This approval does not approve a physical representation, Prisma model, migration or workflow-state implementation. The applicable logical and physical specifications, SPEC-026 and SPEC-027, and the Prisma mapping specification, SPEC-028, must be reconciled and approved separately before dependent implementation. SPEC-029 remains the authority for Aggregate repository and infrastructure persistence boundaries.
 
 ---
