@@ -3,9 +3,16 @@
 **Specification ID:** CUR-001  
 **Title:** Supplier Currency Preservation and Pricing Boundary Integrity  
 **Status:** Approved for implementation  
+**Version:** 1.0.1\
 **Type:** Focused application implementation  
 **Priority:** High  
 **Scope:** Hotelbeds supplier currency handling and APP-005 pricing integrity
+
+## Revision History
+
+| Version | Date | Change |
+|---|---|---|
+| 1.0.1 | 2026-11-18 | Clarifies that existing ZAR pricing rules do not reapply accommodation margin already included in supplier rates. |
 
 ## 1. Objective
 
@@ -178,6 +185,8 @@ Verify that:
 - No additional exchange-rate calculation is introduced.
 
 No change to the normal ZAR pricing calculation should be necessary for this specification.
+
+Preserving existing ZAR pricing behaviour does not authorise reapplication of an accommodation margin already included in the received supplier rate. Accommodation pricing SHALL follow the approved supplier-rate treatment defined in APP-005 §9. All other independently approved markup, pricing, rounding and package-calculation rules remain unchanged.
 
 ## 5. Currency Architecture Rules
 

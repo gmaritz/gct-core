@@ -6,12 +6,18 @@
 |---|---|
 | Document ID | APP-005 |
 | Title | Accommodation-to-Package Pricing Integration |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Status | Implementation Specification |
 | Capability | APP-005 Pricing |
 | Related Capabilities | APP-003 Journey, APP-004 Reservation, APP-008 Accommodation |
 | Governing Process | GOV-DEV-001 |
 | Scope | Integration of selected package-stop accommodation into GCT package pricing |
+
+## Revision History
+
+| Version | Date | Change |
+|---|---|---|
+| 1.0.1 | 2026-11-18 | Clarifies embedded accommodation margin treatment and production pricing parity in §9. |
 
 ## 1. Purpose
 
@@ -230,6 +236,20 @@ The supplier price SHALL NOT automatically become:
 - the package selling price.
 
 The existing APP-005 pricing rules remain authoritative for deriving the customer-facing package price.
+
+### Accommodation Rate and Embedded Margin Treatment
+
+Where a selected supplier accommodation rate already includes an approved accommodation margin, APP-005 SHALL use the received rate without applying that same margin again.
+
+Under the confirmed Hotelbeds commercial arrangement, the rate received by GCT Core already includes Go Cape Tours' 10% accommodation profit margin.
+
+The received Hotelbeds rate is therefore the commercially applicable accommodation amount. GCT Core SHALL NOT apply an additional 10% accommodation markup.
+
+This treatment SHALL remain identical in the current integration environment and production.
+
+APP-005 remains responsible for the final customer-facing package price and SHALL continue to apply other independently approved GCT pricing and quotation rules.
+
+The accommodation profit margin does not establish or determine the overall package profit margin.
 
 ## 10. Currency
 
