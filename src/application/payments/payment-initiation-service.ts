@@ -19,7 +19,10 @@ import {
   PaymentAttemptEnvironment,
   PaymentAttemptRepository,
 } from "./payment-attempt";
-import { PaymentSnapshot } from "../reservations/models";
+import {
+  initialPaymentRequirementMatchesPricingSnapshot,
+  PaymentSnapshot,
+} from "../reservations/models";
 
 export type PaymentInitiationStatus = "INITIATED" | "PENDING" | "FAILED" | "INVALID" | "UNAVAILABLE" | "COMPLETED" | "CANCELLED" | "UNKNOWN";
 
@@ -64,6 +67,33 @@ function failure(request: PaymentInitiationRequest, status: PaymentInitiationSta
   return Object.freeze({ status, reservationId: request.reservationId, errors: Object.freeze([...errors]) });
 }
 
+function validateAuthorizedPaymentAmount(request: PaymentInitiationRequest): string | undefined {
+  const paymentRequest = request.engineRequest.paymentRequest;
+  const pricingSnapshot = paymentRequest.pricingSnapshot;
+  const requirement = request.reservationPaymentSnapshot?.initialRequirement;
+  if (!pricingSnapshot) {
+    return requirement ? "The accepted initial payment requirement has no matching pricing snapshot." : undefined;
+  }
+  if (requirement) {
+    if (!initialPaymentRequirementMatchesPricingSnapshot(requirement, {
+      snapshotId: pricingSnapshot.pricingId,
+      currency: pricingSnapshot.currency,
+      totalPrice: pricingSnapshot.total,
+    })) {
+      return "The accepted initial payment requirement does not match the Reservation pricing snapshot.";
+    }
+    if (paymentRequest.paymentAmount !== requirement.amountPayableAtBooking.amount
+      || paymentRequest.currency !== requirement.amountPayableAtBooking.currency) {
+      return "The requested transaction amount does not match the accepted initial payment requirement.";
+    }
+    return undefined;
+  }
+  if (typeof paymentRequest.paymentAmount === "number" && paymentRequest.paymentAmount !== pricingSnapshot.total) {
+    return "A payment without an accepted initial requirement must equal the full Reservation total.";
+  }
+  return undefined;
+}
+
 export class DefaultPaymentInitiationService implements PaymentInitiationService {
   private readonly integration: PaymentProviderIntegrationService;
 
@@ -80,6 +110,8 @@ export class DefaultPaymentInitiationService implements PaymentInitiationService
     if (!request.reservationId.trim() || request.engineRequest.paymentRequest.reservationSnapshot?.reservationId !== request.reservationId) {
       return failure(request, "INVALID", ["A valid reservation context is required."]);
     }
+    const amountContextError = validateAuthorizedPaymentAmount(request);
+    if (amountContextError) return failure(request, "INVALID", [amountContextError]);
 
     const existingStatus = request.engineRequest.paymentRequest.status;
     if (existingStatus === PaymentStatus.COMPLETED) {
@@ -104,6 +136,10 @@ export class DefaultPaymentInitiationService implements PaymentInitiationService
     if (!Number.isFinite(payment.paymentAmount) || payment.paymentAmount <= 0 || payment.currency !== "ZAR") {
       return failure(request, "INVALID", ["PayFast requires a positive authoritative ZAR payment amount."]);
     }
+    if (request.engineRequest.paymentRequest.paymentAmount !== undefined
+      && payment.paymentAmount !== request.engineRequest.paymentRequest.paymentAmount) {
+      return failure(request, "INVALID", ["The Payment engine amount differs from the authorized transaction amount."]);
+    }
 
     let paymentAttemptId: string;
     let paymentReference: string;
@@ -120,6 +156,9 @@ export class DefaultPaymentInitiationService implements PaymentInitiationService
         currency: payment.currency,
         status: PaymentStatus.CREATED,
       });
+      if (attempt.amount !== payment.paymentAmount || attempt.currency !== payment.currency) {
+        return failure(request, "INVALID", ["The persisted PaymentAttempt amount does not match the authorized transaction amount."]);
+      }
       paymentAttemptId = attempt.attemptId;
       paymentReference = attempt.paymentReference;
       const claimed = await this.paymentAttemptRepository.claimInitiation(paymentReference);
@@ -228,16 +267,20 @@ export class CanonicalReservationPaymentContextResolver implements PaymentContex
     const reservations = await this.reservationRepository.findByJourneyId(journeyId);
     const reservation = reservations.find((candidate) => candidate.status !== ReservationStatus.CANCELLED);
     const pricing = reservation?.pricingSnapshot;
-    if (!reservation || !pricing || pricing.totalPrice <= 0 || !pricing.currency) {
+    if (!reservation || !reservation.journeySnapshot || reservation.journeySnapshot.journeyId !== journeyId
+      || !pricing || pricing.totalPrice <= 0 || !pricing.currency) {
       return null;
     }
 
     const paymentSnapshot = reservation.paymentSnapshot;
+    const requirement = paymentSnapshot?.initialRequirement;
+    if (requirement && !initialPaymentRequirementMatchesPricingSnapshot(requirement, pricing)) return null;
     const paymentStatus = paymentSnapshot?.paymentStatus as PaymentStatus | undefined;
     const paymentMethod = paymentSnapshot?.paymentMethod as PaymentMethod | undefined;
     const effectiveStatus = paymentStatus ?? PaymentStatus.CREATED;
     const effectiveMethod = paymentMethod ?? PaymentMethod.CARD;
     const paymentId = `payment-${reservation.identity.id}`;
+    const paymentAmount = requirement?.amountPayableAtBooking.amount ?? pricing.totalPrice;
 
     return {
       journeyId,
@@ -269,7 +312,7 @@ export class CanonicalReservationPaymentContextResolver implements PaymentContex
             snapshotId: reservation.pricingSnapshot.snapshotId,
             capturedAt: reservation.pricingSnapshot.capturedAt,
             version: reservation.pricingSnapshot.version,
-            pricingId: `pricing-${reservation.identity.id}`,
+            pricingId: reservation.pricingSnapshot.snapshotId,
             subtotal: reservation.pricingSnapshot.totalPrice,
             taxes: reservation.pricingSnapshot.taxes,
             discounts: reservation.pricingSnapshot.discounts,
@@ -277,7 +320,7 @@ export class CanonicalReservationPaymentContextResolver implements PaymentContex
             total: reservation.pricingSnapshot.totalPrice,
             currency: pricing.currency,
           },
-          paymentAmount: pricing.totalPrice,
+          paymentAmount,
           currency: pricing.currency,
           paymentMethod: effectiveMethod,
           status: effectiveStatus,

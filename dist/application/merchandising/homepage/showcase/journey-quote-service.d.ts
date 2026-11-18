@@ -15,6 +15,11 @@ export interface JourneyQuoteResult {
     };
     readonly selections: ReadonlyArray<AccommodationSelectionInput>;
 }
+export declare const SIGNATURE_CAPE_WINELANDS_GCT_COSTING_SOURCE: Readonly<{
+    costingSourceId: "INT-004";
+    costingSourceVersion: "1.0.0";
+    costingSourceEffectiveDate: "2026-11-18";
+}>;
 export interface JourneyQuoteService {
     priceJourney(ownerId: string, journeyId: string, selections: ReadonlyArray<AccommodationSelectionInput>): Promise<JourneyQuoteResult>;
     priceCurrentJourney(ownerId: string, journeyId: string): Promise<JourneyQuoteResult>;

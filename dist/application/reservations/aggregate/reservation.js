@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Reservation = exports.ReservationStatus = void 0;
+const models_1 = require("../models");
 var ReservationStatus;
 (function (ReservationStatus) {
     ReservationStatus["CREATED"] = "CREATED";
@@ -147,6 +148,9 @@ function freezePaymentSnapshot(snapshot) {
         paymentMethod: snapshot.paymentMethod,
         amountReceived: snapshot.amountReceived,
         balanceOutstanding: snapshot.balanceOutstanding,
+        initialRequirement: snapshot.initialRequirement === undefined
+            ? undefined
+            : (0, models_1.parseInitialPaymentRequirementSnapshot)(snapshot.initialRequirement),
     });
 }
 function isBlank(value) {

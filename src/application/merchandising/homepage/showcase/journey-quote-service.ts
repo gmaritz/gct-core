@@ -35,6 +35,12 @@ export interface JourneyQuoteResult {
   readonly groupComponent?: { readonly amount: number; readonly currency: string };
   readonly selections: ReadonlyArray<AccommodationSelectionInput>;
 }
+
+export const SIGNATURE_CAPE_WINELANDS_GCT_COSTING_SOURCE = Object.freeze({
+  costingSourceId: "INT-004",
+  costingSourceVersion: "1.0.0",
+  costingSourceEffectiveDate: "2026-11-18",
+});
 import {
   PricingValidationPipeline,
   PricingRequestValidator,
@@ -119,6 +125,9 @@ function createPricingRequest(
         unitAmount: createMoney({ amount: groupTotal, currency }),
         totalAmount: createMoney({ amount: groupTotal, currency }),
         quantity: 1,
+        ...(journey.identity.id === CAPE_WINELANDS_JOURNEY_ID
+          ? { metadata: SIGNATURE_CAPE_WINELANDS_GCT_COSTING_SOURCE }
+          : {}),
       })],
     }),
     taxes: createTaxBreakdown({

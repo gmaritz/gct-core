@@ -9,6 +9,7 @@ import {
   ReservationTimelineEntry,
   SupplierReference,
   TravellerSnapshot,
+  parseInitialPaymentRequirementSnapshot,
 } from "../models";
 
 export enum ReservationStatus {
@@ -185,6 +186,9 @@ function freezePaymentSnapshot(snapshot: PaymentSnapshot): PaymentSnapshot {
     paymentMethod: snapshot.paymentMethod,
     amountReceived: snapshot.amountReceived,
     balanceOutstanding: snapshot.balanceOutstanding,
+    initialRequirement: snapshot.initialRequirement === undefined
+      ? undefined
+      : parseInitialPaymentRequirementSnapshot(snapshot.initialRequirement),
   });
 }
 

@@ -37,11 +37,11 @@ class SettlementReadinessValidator {
         }
         if (request.pricingSnapshot &&
             typeof request.paymentAmount === "number" &&
-            request.paymentAmount !== request.pricingSnapshot.total) {
+            request.paymentAmount > request.pricingSnapshot.total) {
             errors.push((0, models_2.createPaymentValidationError)({
                 stage: models_2.PaymentValidationStage.SETTLEMENT_READINESS,
                 code: models_2.PaymentValidationErrorCode.AMOUNT_INCONSISTENT,
-                message: "Payment amount must equal pricing total.",
+                message: "Payment amount cannot exceed pricing total.",
                 severity: "CRITICAL",
             }));
         }

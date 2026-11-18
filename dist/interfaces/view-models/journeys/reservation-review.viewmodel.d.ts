@@ -27,6 +27,14 @@ export interface ReservationReviewViewModel {
             readonly value: string;
         }>;
     };
+    readonly paymentTerms?: {
+        readonly reservationTotal: string;
+        readonly amountPayableNow: string;
+        readonly classification: "PARTIAL_PAYMENT" | "FULL_PAYMENT";
+        readonly futureBalance?: string;
+        readonly futureDueDate?: string;
+    };
+    readonly acceptanceToken?: string;
     readonly status: "READY" | "INVALID" | "RECHECK_REQUIRED" | "UNAVAILABLE";
     readonly errors: ReadonlyArray<string>;
     readonly confirmationAction?: CTAViewModel;

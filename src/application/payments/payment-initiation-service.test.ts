@@ -24,12 +24,56 @@ describe("DefaultPaymentInitiationService", () => {
     engineRequest: { paymentRequest: { reservationSnapshot: { reservationId: "reservation-1" }, status: PaymentStatus.CREATED } },
     providerReference: { providerIdentifier: "payfast", reference: "pf-1" },
   };
+  const initialRequirement = {
+    classification: "PARTIAL_PAYMENT" as const,
+    amountPayableAtBooking: { amount: 150, currency: "ZAR" },
+    contractualFutureBalance: { amount: { amount: 50, currency: "ZAR" }, dueDate: "2026-12-02" },
+    pricingSnapshotId: "pricing-1",
+    commercialPolicy: {
+      policyId: "SIGNATURE_CAPE_WINELANDS_INITIAL_PAYMENT",
+      version: "1.0.0",
+      appliedRate: "0.50",
+      scope: "SIGNATURE_CAPE_WINELANDS_MULTI_DAY_PACKAGE",
+      effectiveFrom: "2026-11-17",
+      leadTimeThresholdDays: 14,
+      commercialTimeZone: "Africa/Johannesburg",
+    },
+    calculationBasis: {
+      commercialPolicy: {
+        policyId: "SIGNATURE_CAPE_WINELANDS_INITIAL_PAYMENT",
+        version: "1.0.0",
+        appliedRate: "0.50",
+        scope: "SIGNATURE_CAPE_WINELANDS_MULTI_DAY_PACKAGE",
+        effectiveFrom: "2026-11-17",
+        leadTimeThresholdDays: 14,
+        commercialTimeZone: "Africa/Johannesburg",
+      },
+      bookingDate: "2026-11-18",
+      departureDate: "2026-12-03",
+      leadTimeDays: 15,
+      commercialTimeZone: "Africa/Johannesburg",
+      gctComponent: {
+        sourcePricingLineIdentifier: "BASE",
+        amount: { amount: 100, currency: "ZAR" },
+        costingSourceId: "INT-004",
+        costingSourceVersion: "1.0.0",
+        costingSourceEffectiveDate: "2026-11-18",
+      },
+      accommodationComponents: [{
+        packageStopId: "stop-1",
+        sourcePricingLineIdentifier: "ACCOMMODATION:stop-1",
+        amount: { amount: 100, currency: "ZAR" },
+      }],
+    },
+  };
 
   it("uses the gateway with authoritative payment amount and currency", async (): Promise<void> => {
     const repository = {
       createOrFind: jest.fn().mockResolvedValue({
         attemptId: "attempt-1",
         paymentReference: "gct-reference-1",
+        amount: 64990.09,
+        currency: "ZAR",
         status: PaymentStatus.CREATED,
       }),
       claimInitiation: jest.fn().mockResolvedValue(true),
@@ -65,6 +109,119 @@ describe("DefaultPaymentInitiationService", () => {
     expect(gateway.execute).toHaveBeenCalledWith(expect.objectContaining({
       gatewayRequest: expect.objectContaining({ amount: 64990.09, currency: "ZAR" }),
     }));
+  });
+
+  it("sends the accepted initial amount to PayFast and requires the persisted attempt to match", async (): Promise<void> => {
+    const partialPayment = { ...payment, paymentAmount: 150 };
+    const attempt = {
+      attemptId: "attempt-partial",
+      paymentReference: "gct-partial",
+      amount: 150,
+      currency: "ZAR",
+      status: PaymentStatus.CREATED,
+    };
+    const gateway = {
+      execute: jest.fn(async (context) => ({
+        success: true,
+        providerReference: context.gatewayRequest.providerReference,
+        transactionReference: null,
+        authorizationStatus: "APPROVED",
+        captureStatus: null,
+        settlementStatus: null,
+        paymentStatus: PaymentStatus.AUTHORIZED,
+        hostedPaymentAction: {
+          method: "POST" as const,
+          action: "https://sandbox.payfast.co.za/eng/process",
+          fields: { amount: context.gatewayRequest.amount.toFixed(2) },
+        },
+        warnings: [],
+        metadata: { completedAt: new Date(), version: "1.0.0", requestId: "request-1", source: "test", operation: "AUTHORIZE" },
+      })),
+    };
+    const repository = {
+      createOrFind: jest.fn().mockResolvedValue(attempt),
+      claimInitiation: jest.fn().mockResolvedValue(true),
+      updateStatus: jest.fn(),
+    };
+    const service = new DefaultPaymentInitiationService(
+      { execute: async () => ({ ...engineResult, payment: partialPayment }) } as never,
+      gateway as never,
+      repository as never,
+      "SANDBOX",
+    );
+    const partialRequest = {
+      ...request,
+      journeyId: "journey-homepage-journey-001",
+      reservationPaymentSnapshot: {
+        snapshotId: "payment-1",
+        capturedAt: new Date("2026-11-18T00:00:00.000Z"),
+        version: "1.0.0",
+        paymentStatus: PaymentStatus.CREATED,
+        amountReceived: 0,
+        balanceOutstanding: 200,
+        initialRequirement,
+      },
+      engineRequest: {
+        ...request.engineRequest,
+        paymentRequest: {
+          ...request.engineRequest.paymentRequest,
+          pricingSnapshot: { pricingId: "pricing-1", total: 200, currency: "ZAR" },
+          paymentAmount: 150,
+          currency: "ZAR",
+        },
+      },
+    };
+
+    const result = await service.initiatePayment(partialRequest as never);
+
+    expect(result.status).toBe("INITIATED");
+    expect(result.amount).toBe(150);
+    expect(result.hostedPaymentAction?.fields.amount).toBe("150.00");
+    expect(gateway.execute).toHaveBeenCalledWith(expect.objectContaining({
+      gatewayRequest: expect.objectContaining({ amount: 150, currency: "ZAR" }),
+    }));
+    expect(repository.createOrFind).toHaveBeenCalledWith(expect.objectContaining({ amount: 150, currency: "ZAR" }));
+  });
+
+  it("resolves the preserved initial amount without replacing the full Reservation total", async (): Promise<void> => {
+    const resolver = new CanonicalReservationPaymentContextResolver({
+      findByJourneyId: async () => [{
+        identity: { id: "reservation-partial" },
+        reservationNumber: "RES-PARTIAL",
+        status: "CONFIRMED",
+        journeySnapshot: { journeyId: "journey-homepage-journey-001" },
+        pricingSnapshot: {
+          snapshotId: "pricing-1",
+          capturedAt: new Date("2026-11-18T00:00:00.000Z"),
+          version: "1.0.0",
+          currency: "ZAR",
+          totalPrice: 200,
+          taxes: 0,
+          discounts: 0,
+          fees: 0,
+        },
+        paymentSnapshot: {
+          snapshotId: "payment-1",
+          capturedAt: new Date("2026-11-18T00:00:00.000Z"),
+          version: "1.0.0",
+          paymentStatus: PaymentStatus.CREATED,
+          amountReceived: 0,
+          balanceOutstanding: 200,
+          initialRequirement,
+        },
+        supplierReferences: [],
+        metadata: {
+          createdAt: new Date("2026-11-18T00:00:00.000Z"),
+          updatedAt: new Date("2026-11-18T00:00:00.000Z"),
+          version: "1.0.0",
+        },
+      }] as never,
+    } as never);
+
+    const context = await resolver.resolveForJourney("journey-homepage-journey-001");
+
+    expect(context?.engineRequest.paymentRequest.paymentAmount).toBe(150);
+    expect(context?.engineRequest.paymentRequest.pricingSnapshot?.total).toBe(200);
   });
 
   it("does not create another transaction for an existing non-created payment", async (): Promise<void> => {
@@ -219,7 +376,13 @@ describe("DefaultPaymentInitiationService", () => {
   });
 
   it("preserves a persisted attempt when PayFast request construction fails", async (): Promise<void> => {
-    const attempt = { attemptId: "attempt-1", paymentReference: "gct-attempt-1", status: PaymentStatus.CREATED };
+    const attempt = {
+      attemptId: "attempt-1",
+      paymentReference: "gct-attempt-1",
+      amount: 64990.09,
+      currency: "ZAR",
+      status: PaymentStatus.CREATED,
+    };
     const repository = {
       createOrFind: jest.fn()
         .mockResolvedValueOnce(attempt)
@@ -281,6 +444,7 @@ describe("CanonicalReservationPaymentContextResolver", () => {
         identity: { id: "reservation-1" },
         reservationNumber: "RES-1",
         status: "CONFIRMED",
+        journeySnapshot: { journeyId: "journey-homepage-journey-001" },
         pricingSnapshot: {
           snapshotId: "pricing-1",
           capturedAt: new Date("2026-08-28T00:00:00.000Z"),

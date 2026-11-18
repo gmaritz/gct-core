@@ -68,11 +68,11 @@
         <div class="card payment-experience__action-card">
           <% if (paymentViewModel.amount !== undefined && paymentViewModel.currency) { %>
             <div class="payment-experience__pricing" aria-label="Authoritative payment total">
-              <p class="payment-experience__pricing-label">Total Amount Payable</p>
+              <p class="payment-experience__pricing-label"><%= paymentViewModel.status === "UNAVAILABLE" ? "Outstanding Balance" : "Amount Payable Now" %></p>
               <div class="price-display">
                 <span class="price-display__amount payment-experience__amount"><%= paymentViewModel.currency %> <%= paymentViewModel.amount.toFixed(2) %></span>
               </div>
-              <p class="payment-experience__pricing-subtext">Authoritative total payable for your confirmed reservation.</p>
+              <p class="payment-experience__pricing-subtext"><%= paymentViewModel.status === "UNAVAILABLE" ? "Current Reservation balance; payment is unavailable in this state." : "Authorized amount for this payment transaction." %></p>
             </div>
           <% } %>
 

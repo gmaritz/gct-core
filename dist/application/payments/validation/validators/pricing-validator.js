@@ -30,7 +30,7 @@ class PricingValidator {
                 severity: "CRITICAL",
             }));
         }
-        if (typeof request.paymentAmount !== "number" || request.paymentAmount <= 0) {
+        if (typeof request.paymentAmount !== "number" || !Number.isFinite(request.paymentAmount) || request.paymentAmount <= 0) {
             errors.push((0, models_1.createPaymentValidationError)({
                 stage: models_1.PaymentValidationStage.PRICING,
                 code: models_1.PaymentValidationErrorCode.INVALID_PAYABLE_AMOUNT,

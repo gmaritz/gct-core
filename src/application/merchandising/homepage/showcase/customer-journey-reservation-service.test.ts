@@ -14,6 +14,7 @@ import { Journey, JourneyLifecycle, JourneyStatus } from "../../../journeys";
 import { ReservationServiceRequest } from "../../../reservations/service/models/reservation-service-context";
 import { CustomerJourneyReservationService } from "./customer-journey-reservation-service";
 import { ReservationReviewResult } from "./reservation-review-service";
+import { InitialPaymentRequirement } from "./signature-cape-winelands-initial-payment-calculator";
 
 const stopIds = ["stop-1", "stop-2", "stop-3"] as const;
 const supplierAmounts = [596.68, 135.26, 100] as const;
@@ -36,8 +37,8 @@ function createJourney(): Journey {
         packageId: "journey-currency-snapshots",
         stopId,
         stopOrder: index + 1,
-        checkInDate: new Date(`2026-11-0${index + 1}T00:00:00.000Z`),
-        checkOutDate: new Date(`2026-11-0${index + 2}T00:00:00.000Z`),
+        checkInDate: new Date(`2026-12-0${index + 3}T00:00:00.000Z`),
+        checkOutDate: new Date(`2026-12-0${index + 4}T00:00:00.000Z`),
       },
       requestedOccupancy: { rooms: [{ adults: 2, children: 0, childAges: [] }] },
       roomOptions: [{
@@ -68,6 +69,11 @@ function createPricedQuote(): ReturnType<typeof createPricingEngineResult> {
       unitAmount: createMoney({ amount: 51376, currency: Currency.ZAR }),
       totalAmount: createMoney({ amount: 51376, currency: Currency.ZAR }),
       quantity: 1,
+      metadata: {
+        costingSourceId: "INT-004",
+        costingSourceVersion: "1.0.0",
+        costingSourceEffectiveDate: "2026-11-18",
+      },
     }),
     ...stopIds.map((stopId, index) => createPricingLineItem({
       code: `ACCOMMODATION:${stopId}`,
@@ -124,8 +130,46 @@ function createPricedQuote(): ReturnType<typeof createPricingEngineResult> {
   });
 }
 
+function createInitialPaymentRequirement(): InitialPaymentRequirement {
+  const commercialPolicy = {
+    policyId: "SIGNATURE_CAPE_WINELANDS_INITIAL_PAYMENT",
+    version: "1.0.0",
+    appliedRate: "0.50",
+    scope: "SIGNATURE_CAPE_WINELANDS_MULTI_DAY_PACKAGE" as const,
+    effectiveFrom: "2026-11-17",
+    leadTimeThresholdDays: 14,
+    commercialTimeZone: "Africa/Johannesburg" as const,
+  };
+  return {
+    classification: "PARTIAL_PAYMENT" as const,
+    amountPayableAtBooking: { amount: 39402.09, currency: Currency.ZAR },
+    contractualFutureBalance: { amount: { amount: 25688, currency: Currency.ZAR }, dueDate: "2026-11-19" },
+    pricingSnapshotId: "pricing-currency-snapshots",
+    commercialPolicy,
+    calculationBasis: {
+      commercialPolicy,
+      bookingDate: "2026-11-18",
+      departureDate: "2026-12-03",
+      leadTimeDays: 15,
+      commercialTimeZone: "Africa/Johannesburg" as const,
+      gctComponent: {
+        sourcePricingLineIdentifier: "BASE",
+        amount: { amount: 51376, currency: Currency.ZAR },
+        costingSourceId: "INT-004",
+        costingSourceVersion: "1.0.0",
+        costingSourceEffectiveDate: "2026-11-18",
+      },
+      accommodationComponents: stopIds.map((stopId, index) => ({
+        packageStopId: stopId,
+        sourcePricingLineIdentifier: `ACCOMMODATION:${stopId}`,
+        amount: { amount: [11098.25, 2515.84, 100][index]!, currency: Currency.ZAR },
+      })),
+    },
+  };
+}
+
 describe("CustomerJourneyReservationService currency conversion snapshots", () => {
-  it("copies each priced stop's conversion details and preserves supplier prices", async () => {
+  it("preserves the accepted initial requirement and full Reservation balance alongside priced stop details", async () => {
     let capturedRequest: ReservationServiceRequest | undefined;
     const customerResolutionService = {
       resolveOrCreate: async (): Promise<{ customerId: string }> => ({ customerId: "customer-1" }),
@@ -165,6 +209,7 @@ describe("CustomerJourneyReservationService currency conversion snapshots", () =
       },
       errors: [],
       confirmed: true,
+      initialPaymentRequirement: createInitialPaymentRequirement(),
     } satisfies ReservationReviewResult;
 
     await service.create(review);
@@ -182,5 +227,14 @@ describe("CustomerJourneyReservationService currency conversion snapshots", () =
       { fromCurrency: "EUR", toCurrency: "ZAR", exchangeRate: 18.6, convertedAmount: 2515.84, policyId: "CONFIGURED_FIXED_RATE" },
       undefined,
     ]);
+    expect(capturedRequest?.snapshots.pricingSnapshot).toMatchObject({
+      snapshotId: "pricing-currency-snapshots",
+      totalPrice: 65090.09,
+    });
+    expect(capturedRequest?.snapshots.paymentSnapshot).toMatchObject({
+      amountReceived: 0,
+      balanceOutstanding: 65090.09,
+      initialRequirement: createInitialPaymentRequirement(),
+    });
   });
 });

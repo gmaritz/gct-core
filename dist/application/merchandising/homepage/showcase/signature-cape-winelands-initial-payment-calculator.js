@@ -264,8 +264,14 @@ function calculateSignatureCapeWinelandsInitialPaymentRequirement(input) {
     }
     const bookingDate = calendarDateInTimeZone(input.bookingDate, input.policy?.commercialTimeZone ?? calendar_date_1.SIGNATURE_CAPE_WINELANDS_COMMERCIAL_TIME_ZONE, "Booking date");
     const policy = assertPolicy(input.policy, bookingDate);
-    const costingSource = assertCostingSource(input.costingSource, bookingDate);
     const components = validatePricingComponents(pricing, quote);
+    const costingSource = assertCostingSource(input.costingSource, bookingDate);
+    const gctLine = pricing.breakdown.lineItems.find((line) => line.code === components.gctLineCode);
+    if (gctLine?.metadata?.costingSourceId !== costingSource.costingSourceId
+        || gctLine.metadata.costingSourceVersion !== costingSource.costingSourceVersion
+        || gctLine.metadata.costingSourceEffectiveDate !== costingSource.costingSourceEffectiveDate) {
+        fail("GCT costing source identity must match the successful quote BASE component.");
+    }
     const departureDate = components.departureDate;
     const leadTimeDays = calendarDayNumber(departureDate) - calendarDayNumber(bookingDate);
     if (!Number.isInteger(leadTimeDays) || leadTimeDays < 0) {

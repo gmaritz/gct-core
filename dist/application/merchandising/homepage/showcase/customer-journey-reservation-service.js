@@ -4,6 +4,8 @@ exports.CustomerJourneyReservationService = void 0;
 const crypto_1 = require("crypto");
 const reservations_1 = require("../../../reservations");
 const journeys_1 = require("../../../journeys");
+const cape_winelands_journey_resolver_1 = require("./cape-winelands-journey-resolver");
+const payment_snapshot_1 = require("../../../reservations/models/snapshots/payment-snapshot");
 function currencyConversionForStop(pricing, stopId) {
     if (!stopId)
         return undefined;
@@ -46,6 +48,7 @@ function createReservationRequestId(review, stays, totalPrice) {
             email: traveller.email,
             dateOfBirth: traveller.dateOfBirth,
         })),
+        initialPaymentRequirement: review.initialPaymentRequirement,
     };
     const digest = (0, crypto_1.createHash)("sha256").update(JSON.stringify(fingerprint)).digest("hex").slice(0, 24);
     return `reservation-${review.journeyId}-${digest}`;
@@ -115,6 +118,15 @@ class CustomerJourneyReservationService {
         });
         const now = new Date();
         const pricing = review.quote.pricing.pricing;
+        const initialPaymentRequirement = review.initialPaymentRequirement;
+        if ((review.journey.identity.id === cape_winelands_journey_resolver_1.CAPE_WINELANDS_JOURNEY_ID && !initialPaymentRequirement)
+            || (initialPaymentRequirement && !(0, payment_snapshot_1.initialPaymentRequirementMatchesPricingSnapshot)(initialPaymentRequirement, {
+                snapshotId: pricing.identity.id,
+                currency: pricing.currency,
+                totalPrice: pricing.totals.grandTotal.amount,
+            }))) {
+            return { successful: false, errors: ["The accepted initial payment requirement does not match the successful quote."] };
+        }
         const reservationRequestId = createReservationRequestId(review, stays, pricing.totals.grandTotal.amount);
         const request = {
             query: {
@@ -187,7 +199,7 @@ class CustomerJourneyReservationService {
                     })),
                 })),
                 pricingSnapshot: {
-                    snapshotId: `pricing-${reservationRequestId}`,
+                    snapshotId: initialPaymentRequirement?.pricingSnapshotId ?? `pricing-${reservationRequestId}`,
                     capturedAt: now,
                     version: "1.0.0",
                     currency: pricing.currency,
@@ -203,6 +215,7 @@ class CustomerJourneyReservationService {
                     paymentStatus: "CREATED",
                     amountReceived: 0,
                     balanceOutstanding: pricing.totals.grandTotal.amount,
+                    initialRequirement: initialPaymentRequirement,
                 },
                 metadata: { createdAt: now, updatedAt: now, version: "1.0.0" },
             },

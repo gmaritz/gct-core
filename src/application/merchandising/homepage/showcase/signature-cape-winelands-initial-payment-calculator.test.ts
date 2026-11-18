@@ -92,6 +92,11 @@ function createQuote(options: QuoteOptions = {}): JourneyQuoteResult {
       unitAmount: createMoney({ amount: baseAmount, currency }),
       totalAmount: createMoney({ amount: baseAmount, currency }),
       quantity: 1,
+      metadata: {
+        costingSourceId: costingSource.costingSourceId,
+        costingSourceVersion: costingSource.costingSourceVersion,
+        costingSourceEffectiveDate: costingSource.costingSourceEffectiveDate,
+      },
     }),
     ...CAPE_WINELANDS_STOPS.map((stop, index) => {
       const amount = accommodationAmounts[index]!;

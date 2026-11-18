@@ -201,6 +201,25 @@ describe("SettlementReadinessValidator", () => {
     expect(result.success).toBe(true);
   });
 
+  it("allows an authorized individual payment below the full Reservation total", () => {
+    const result = new SettlementReadinessValidator().validate({
+      ...createValidRequest(),
+      paymentAmount: 8000,
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects an authorized payment above the full Reservation total", () => {
+    const result = new SettlementReadinessValidator().validate({
+      ...createValidRequest(),
+      paymentAmount: 13301,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.errors.some((error) => error.code === "AMOUNT_INCONSISTENT")).toBe(true);
+  });
+
   it("fails for unsupported currency", () => {
     const validator = new SettlementReadinessValidator();
     const request = createValidRequest();

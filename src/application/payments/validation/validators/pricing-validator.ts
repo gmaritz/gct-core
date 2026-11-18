@@ -43,7 +43,7 @@ export class PricingValidator {
       );
     }
 
-    if (typeof request.paymentAmount !== "number" || request.paymentAmount <= 0) {
+    if (typeof request.paymentAmount !== "number" || !Number.isFinite(request.paymentAmount) || request.paymentAmount <= 0) {
       errors.push(
         createPaymentValidationError({
           stage: PaymentValidationStage.PRICING,

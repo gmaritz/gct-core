@@ -1,7 +1,10 @@
 import { Reservation, ReservationStatus } from "@application/reservations/aggregate";
 import { createAccommodationReservationSnapshots } from "@application/reservations";
 import { JourneyAccommodationPricingInput, JourneyAccommodationReservationInput } from "@application/journeys/models";
-import { ReservationTimelineMilestone } from "@application/reservations/models";
+import {
+  InitialPaymentRequirementSnapshot,
+  ReservationTimelineMilestone,
+} from "@application/reservations/models";
 import { ReservationPersistenceContext } from "@application/reservations/repository";
 import { PrismaClient } from "@prisma/client";
 
@@ -39,7 +42,7 @@ type StoredBooking = {
   cancelledAt?: Date | null;
 };
 
-function createReservation(status: ReservationStatus = ReservationStatus.CREATED, id = "reservation-001", number = "RES-123456-ABCD", supplierCurrency = "ZAR", roomCount = 2, accommodationSnapshots?: Parameters<typeof Reservation.create>[0]["accommodationSnapshots"]): Reservation {
+function createReservation(status: ReservationStatus = ReservationStatus.CREATED, id = "reservation-001", number = "RES-123456-ABCD", supplierCurrency = "ZAR", roomCount = 2, accommodationSnapshots?: Parameters<typeof Reservation.create>[0]["accommodationSnapshots"], initialRequirement?: InitialPaymentRequirementSnapshot): Reservation {
   return Reservation.create({
     identity: { id },
     reservationNumber: number,
@@ -135,6 +138,7 @@ function createReservation(status: ReservationStatus = ReservationStatus.CREATED
       paymentStatus: "PENDING",
       amountReceived: 10000,
       balanceOutstanding: 36000,
+      initialRequirement,
     },
     supplierReferences: [
       {
@@ -323,6 +327,61 @@ function createPrismaMock(): {
 }
 
 describe("CanonicalReservationPrismaRepository", () => {
+  it("persists and reconstructs the accepted initial payment requirement in the existing snapshot", async () => {
+    const mock = createPrismaMock();
+    const repository = new CanonicalReservationPrismaRepository(mock.prisma as unknown as PrismaClient);
+    const commercialPolicy = {
+      policyId: "SIGNATURE_CAPE_WINELANDS_INITIAL_PAYMENT",
+      version: "1.0.0",
+      appliedRate: "0.50",
+      scope: "SIGNATURE_CAPE_WINELANDS_MULTI_DAY_PACKAGE",
+      effectiveFrom: "2026-01-01",
+      leadTimeThresholdDays: 14,
+      commercialTimeZone: "Africa/Johannesburg",
+    };
+    const initialRequirement: InitialPaymentRequirementSnapshot = {
+      classification: "PARTIAL_PAYMENT",
+      amountPayableAtBooking: { amount: 36000, currency: "ZAR" },
+      contractualFutureBalance: { amount: { amount: 10000, currency: "ZAR" }, dueDate: "2026-08-27" },
+      pricingSnapshotId: "pricing-snap-001",
+      commercialPolicy,
+      calculationBasis: {
+        commercialPolicy,
+        bookingDate: "2026-08-22",
+        departureDate: "2026-09-10",
+        leadTimeDays: 19,
+        commercialTimeZone: "Africa/Johannesburg",
+        gctComponent: {
+          sourcePricingLineIdentifier: "BASE",
+          amount: { amount: 20000, currency: "ZAR" },
+          costingSourceId: "INT-004",
+          costingSourceVersion: "1.0.0",
+          costingSourceEffectiveDate: "2026-08-01",
+        },
+        accommodationComponents: [{
+          packageStopId: "stop-001",
+          sourcePricingLineIdentifier: "ACCOMMODATION:stop-001",
+          amount: { amount: 26000, currency: "ZAR" },
+        }],
+      },
+    };
+
+    await repository.save(createReservation(
+      ReservationStatus.CREATED,
+      "reservation-initial",
+      "RES-INITIAL",
+      "ZAR",
+      2,
+      undefined,
+      initialRequirement,
+    ), createContext());
+
+    const restored = await repository.findById("reservation-initial");
+
+    expect(restored?.paymentSnapshot?.initialRequirement).toEqual(initialRequirement);
+    expect(restored?.pricingSnapshot?.totalPrice).toBe(46000);
+  });
+
   it("persists canonical reservation state through the Reservation root", async () => {
     const mock = createPrismaMock();
     const repository = new CanonicalReservationPrismaRepository(mock.prisma as unknown as PrismaClient);

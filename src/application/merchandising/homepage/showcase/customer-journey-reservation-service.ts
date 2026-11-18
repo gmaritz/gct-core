@@ -15,6 +15,8 @@ import { AccommodationBookingOrchestrationService } from "../../../reservations/
 import { Pricing } from "../../../pricing";
 import { ReservationReviewResult } from "./reservation-review-service";
 import { GuestTravellerInput } from "./guest-information-service";
+import { CAPE_WINELANDS_JOURNEY_ID } from "./cape-winelands-journey-resolver";
+import { initialPaymentRequirementMatchesPricingSnapshot } from "../../../reservations/models/snapshots/payment-snapshot";
 
 interface SelectedRoomRate {
   readonly roomSlotId?: string;
@@ -79,6 +81,7 @@ function createReservationRequestId(
       email: traveller.email,
       dateOfBirth: traveller.dateOfBirth,
     })),
+    initialPaymentRequirement: review.initialPaymentRequirement,
   };
   const digest = createHash("sha256").update(JSON.stringify(fingerprint)).digest("hex").slice(0, 24);
   return `reservation-${review.journeyId}-${digest}`;
@@ -162,6 +165,15 @@ export class CustomerJourneyReservationService {
     });
     const now = new Date();
     const pricing = review.quote.pricing.pricing;
+    const initialPaymentRequirement = review.initialPaymentRequirement;
+    if ((review.journey.identity.id === CAPE_WINELANDS_JOURNEY_ID && !initialPaymentRequirement)
+      || (initialPaymentRequirement && !initialPaymentRequirementMatchesPricingSnapshot(initialPaymentRequirement, {
+        snapshotId: pricing.identity.id,
+        currency: pricing.currency,
+        totalPrice: pricing.totals.grandTotal.amount,
+      }))) {
+      return { successful: false, errors: ["The accepted initial payment requirement does not match the successful quote."] };
+    }
     const reservationRequestId = createReservationRequestId(review, stays, pricing.totals.grandTotal.amount);
     const request: ReservationServiceRequest = {
       query: {
@@ -234,7 +246,7 @@ export class CustomerJourneyReservationService {
           })),
         })),
         pricingSnapshot: {
-          snapshotId: `pricing-${reservationRequestId}`,
+          snapshotId: initialPaymentRequirement?.pricingSnapshotId ?? `pricing-${reservationRequestId}`,
           capturedAt: now,
           version: "1.0.0",
           currency: pricing.currency,
@@ -250,6 +262,7 @@ export class CustomerJourneyReservationService {
           paymentStatus: "CREATED",
           amountReceived: 0,
           balanceOutstanding: pricing.totals.grandTotal.amount,
+          initialRequirement: initialPaymentRequirement,
         },
         metadata: { createdAt: now, updatedAt: now, version: "1.0.0" },
       },

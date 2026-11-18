@@ -59,6 +59,18 @@ export class ReservationReviewViewModelProvider {
           { label: "Discounts", value: pricingViewModel.displayLabels.discountsLabel },
         ].map((item) => Object.freeze(item))),
       }) : undefined,
+      paymentTerms: result.initialPaymentRequirement && result.quote?.pricing?.pricing
+        ? Object.freeze({
+            reservationTotal: `${result.quote.pricing.pricing.currency} ${result.quote.pricing.pricing.totals.grandTotal.amount.toFixed(2)}`,
+            amountPayableNow: `${result.initialPaymentRequirement.amountPayableAtBooking.currency} ${result.initialPaymentRequirement.amountPayableAtBooking.amount.toFixed(2)}`,
+            classification: result.initialPaymentRequirement.classification,
+            futureBalance: result.initialPaymentRequirement.contractualFutureBalance
+              ? `${result.initialPaymentRequirement.contractualFutureBalance.amount.currency} ${result.initialPaymentRequirement.contractualFutureBalance.amount.amount.toFixed(2)}`
+              : undefined,
+            futureDueDate: result.initialPaymentRequirement.contractualFutureBalance?.dueDate,
+          })
+        : undefined,
+      acceptanceToken: result.acceptanceToken,
       status: result.status,
       errors: Object.freeze([...result.errors]),
       confirmationAction: result.status === "READY"

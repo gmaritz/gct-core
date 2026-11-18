@@ -53,13 +53,13 @@ export class SettlementReadinessValidator {
     if (
       request.pricingSnapshot &&
       typeof request.paymentAmount === "number" &&
-      request.paymentAmount !== request.pricingSnapshot.total
+      request.paymentAmount > request.pricingSnapshot.total
     ) {
       errors.push(
         createPaymentValidationError({
           stage: PaymentValidationStage.SETTLEMENT_READINESS,
           code: PaymentValidationErrorCode.AMOUNT_INCONSISTENT,
-          message: "Payment amount must equal pricing total.",
+          message: "Payment amount cannot exceed pricing total.",
           severity: "CRITICAL",
         }),
       );

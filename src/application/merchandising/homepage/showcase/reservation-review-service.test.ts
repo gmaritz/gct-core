@@ -1,7 +1,9 @@
+import {
+  DefaultReservationReviewService,
+  ReservationReviewAcceptanceStore,
+} from "./reservation-review-service";
 import { DefaultDynamicHomepageJourneyResolver } from "./dynamic-homepage-journey-resolver";
-import { DefaultReservationReviewService } from "./reservation-review-service";
 import { GuestInformationInput } from "./guest-information-service";
-import { DefaultAccommodationSelectionService } from "./accommodation-selection-service";
 import { GuestInformationStore } from "./guest-information-store";
 
 const guestInformation: GuestInformationInput = {
@@ -15,28 +17,65 @@ const guestInformation: GuestInformationInput = {
 
 describe("DefaultReservationReviewService", () => {
   it("revalidates the journey, quote and guest information", async (): Promise<void> => {
-    const resolver = new DefaultDynamicHomepageJourneyResolver();
+    const journeyId = "journey-homepage-journey-002";
+    const journey = { identity: { id: journeyId } };
+    let total = 1000;
+    const resolver = {
+      resolve: async () => ({ status: "RESOLVED", journey }),
+    };
+    const quoteService = {
+      priceCurrentJourney: async () => ({
+        status: "PRICED",
+        journeyId,
+        journey,
+        selections: [],
+        pricing: {
+          pricing: {
+            identity: { id: "pricing-1" },
+            currency: "ZAR",
+            totals: { grandTotal: { amount: total } },
+            breakdown: { lineItems: [] },
+          },
+        },
+      }),
+    };
     const guestStore = new GuestInformationStore();
-    guestStore.save("owner-a", "journey-homepage-journey-001", guestInformation);
-    await new DefaultAccommodationSelectionService(resolver).selectAccommodation("owner-a", "journey-homepage-journey-001", [{
-      accommodationId: "cape-winelands",
-      roomReference: { provider: "curated", opaqueReference: "cape-winelands-room-1" },
-      rateReference: { provider: "curated", opaqueReference: "cape-winelands-rate-1" },
-    }]);
-    const result = await new DefaultReservationReviewService(
-      resolver,
-      undefined,
-      undefined,
+    guestStore.save("owner-a", journeyId, guestInformation);
+    const service = new DefaultReservationReviewService(
+      resolver as never,
+      { captureGuestInformation: async () => ({ status: "VALID", errors: [] }) } as never,
+      quoteService as never,
       guestStore,
-    ).review({
+      new ReservationReviewAcceptanceStore(),
+      () => new Date("2026-11-18T12:00:00.000Z"),
+    );
+    const result = await service.review({
       ownerId: "owner-a",
-      journeyId: "journey-homepage-journey-001",
+      journeyId,
     });
 
     expect(result.status).toBe("READY");
     expect(result.confirmed).toBe(false);
     expect(result.quote?.status).toBe("PRICED");
     expect(result.guestInformation).toEqual(guestInformation);
+
+    const acceptedReview = await service.review({
+      ownerId: "owner-a",
+      journeyId,
+      confirmed: true,
+      acceptanceToken: result.acceptanceToken,
+    });
+    expect(acceptedReview.confirmed).toBe(true);
+
+    total = 1100;
+    const changedReview = await service.review({
+      ownerId: "owner-a",
+      journeyId,
+      confirmed: true,
+      acceptanceToken: result.acceptanceToken,
+    });
+    expect(changedReview.confirmed).toBe(false);
+    expect(changedReview.errors).toContain("The quote or payment terms have changed since your review. Review and accept the current terms to continue.");
   });
 
   it("does not confirm invalid guest information", async (): Promise<void> => {

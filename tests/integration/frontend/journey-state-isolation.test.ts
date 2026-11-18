@@ -69,7 +69,7 @@ const cookiePolicy: AnonymousSessionCookiePolicy = {
 	lifetimeSeconds: 3600,
 };
 
-const journeyId = "journey-homepage-journey-001";
+const journeyId = "journey-homepage-journey-002";
 const bookingContext: JourneyBookingContext = {
 	startDate: "2026-11-01",
 	participants: 2,
@@ -153,7 +153,12 @@ function createTestApplication(sessionService: AnonymousSessionService) {
 	const pricingEngine = {
 		execute: async (pricingRequest: { requestId?: string }) => createPricingEngineResult({
 			successful: true,
-			pricing: {} as never,
+			pricing: {
+				identity: { id: "pricing-state-isolation" },
+				currency: "ZAR",
+				totals: { grandTotal: { amount: 1000 } },
+				breakdown: { lineItems: [] },
+			} as never,
 			metadata: {
 				completedAt: new Date(),
 				version: "test",

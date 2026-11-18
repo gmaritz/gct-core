@@ -4,6 +4,7 @@ exports.CanonicalReservationPrismaRepository = void 0;
 const client_1 = require("@prisma/client");
 const aggregate_1 = require("@application/reservations/aggregate");
 const prisma_1 = require("../../../bootstrap/prisma");
+const models_1 = require("@application/reservations/models");
 const VALID_LIFECYCLE = new Set(Object.values(aggregate_1.ReservationStatus));
 function toBookingItemData(item, reservationId) {
     if (!item.bookingId || !item.productId) {
@@ -304,6 +305,9 @@ function toDomain(booking) {
                 paymentMethod: typeof paymentSnapshot.paymentMethod === "string" ? paymentSnapshot.paymentMethod : undefined,
                 amountReceived: Number(paymentSnapshot.amountReceived ?? 0),
                 balanceOutstanding: Number(paymentSnapshot.balanceOutstanding ?? 0),
+                initialRequirement: paymentSnapshot.initialRequirement === undefined
+                    ? undefined
+                    : (0, models_1.parseInitialPaymentRequirementSnapshot)(paymentSnapshot.initialRequirement),
             }
             : undefined,
         supplierReferences: [

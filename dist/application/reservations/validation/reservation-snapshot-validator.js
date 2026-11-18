@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReservationSnapshotValidator = void 0;
+const payment_snapshot_1 = require("../models/snapshots/payment-snapshot");
 const models_1 = require("./models");
 function isBlank(value) {
     return typeof value !== "string" || value.trim().length === 0;
@@ -45,6 +46,11 @@ class ReservationSnapshotValidator {
         }
         if (snapshotSet.paymentSnapshot && (isBlank(snapshotSet.paymentSnapshot.snapshotId) || isBlank(snapshotSet.paymentSnapshot.paymentStatus))) {
             errors.push(createError(models_1.ReservationValidationErrorCode.INVALID_PAYMENT_SNAPSHOT, "Payment snapshot is invalid."));
+        }
+        if (snapshotSet.paymentSnapshot?.initialRequirement
+            && (!snapshotSet.pricingSnapshot
+                || !(0, payment_snapshot_1.initialPaymentRequirementMatchesPricingSnapshot)(snapshotSet.paymentSnapshot.initialRequirement, snapshotSet.pricingSnapshot))) {
+            errors.push(createError(models_1.ReservationValidationErrorCode.INVALID_PAYMENT_SNAPSHOT, "Initial payment requirement does not match the Reservation pricing snapshot."));
         }
         if (snapshotSet.metadata && (isBlank(snapshotSet.metadata.version) || !isValidDate(snapshotSet.metadata.createdAt) || !isValidDate(snapshotSet.metadata.updatedAt))) {
             errors.push(createError(models_1.ReservationValidationErrorCode.INVALID_METADATA, "Reservation metadata is invalid."));

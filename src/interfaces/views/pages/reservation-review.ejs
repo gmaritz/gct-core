@@ -90,6 +90,30 @@
             </div>
           </section>
         <% } %>
+        <% if (reservationReviewViewModel.paymentTerms) { %>
+          <section class="reservation-review__section" aria-labelledby="review-payment-terms-title">
+            <h2 id="review-payment-terms-title" class="reservation-review__section-title">Initial Payment Terms</h2>
+            <div class="card reservation-review__card">
+              <dl class="journey-quote__breakdown">
+                <dt>Full Reservation total</dt>
+                <dd><%= reservationReviewViewModel.paymentTerms.reservationTotal %></dd>
+                <dt>Amount payable now</dt>
+                <dd><%= reservationReviewViewModel.paymentTerms.amountPayableNow %></dd>
+                <dt>Payment requirement</dt>
+                <dd><%= reservationReviewViewModel.paymentTerms.classification === "PARTIAL_PAYMENT" ? "Partial payment" : "Full payment" %></dd>
+                <% if (reservationReviewViewModel.paymentTerms.futureBalance) { %>
+                  <dt>Contractual future balance</dt>
+                  <dd><%= reservationReviewViewModel.paymentTerms.futureBalance %></dd>
+                  <dt>Future balance due</dt>
+                  <dd><%= reservationReviewViewModel.paymentTerms.futureDueDate %></dd>
+                <% } %>
+              </dl>
+              <% if (reservationReviewViewModel.paymentTerms.futureBalance) { %>
+                <p>The future balance is a contractual amount due on the date shown; it is not collected automatically here.</p>
+              <% } %>
+            </div>
+          </section>
+        <% } %>
 
       </div>
 
@@ -98,11 +122,11 @@
         <div class="card reservation-review__action-card">
           <% if (reservationReviewViewModel.quote) { %>
             <div class="reservation-review__pricing" aria-label="Authoritative reservation total">
-              <p class="reservation-review__pricing-label">Total Amount Payable</p>
+              <p class="reservation-review__pricing-label"><%= reservationReviewViewModel.paymentTerms ? "Full Reservation Total" : "Total Amount Payable" %></p>
               <div class="price-display">
                 <span class="price-display__amount"><%= reservationReviewViewModel.quote.total %></span>
               </div>
-              <p class="reservation-review__pricing-subtext">All taxes, fees, and curated inclusions are calculated in this final review total.</p>
+              <p class="reservation-review__pricing-subtext"><%= reservationReviewViewModel.paymentTerms ? "The initial amount payable now is shown separately below." : "All taxes, fees, and curated inclusions are calculated in this final review total." %></p>
             </div>
           <% } %>
 
@@ -118,11 +142,14 @@
                 <input type="hidden" name="travellers[<%= index %>][travellerType]" value="<%= traveller.travellerType %>">
               <% }); %>
               <input type="hidden" name="leadTravellerIndex" value="0">
+              <% if (reservationReviewViewModel.acceptanceToken) { %>
+                <input type="hidden" name="acceptanceToken" value="<%= reservationReviewViewModel.acceptanceToken %>">
+              <% } %>
 
               <div class="form-group reservation-review__confirm-checkbox">
                 <label class="form-label checkbox-label">
                   <input type="checkbox" name="confirmed" required>
-                  <span>I confirm that the reviewed information is correct.</span>
+                  <span><%= reservationReviewViewModel.paymentTerms ? "I accept the initial payment terms shown above and confirm the reviewed information." : "I confirm that the reviewed information is correct." %></span>
                 </label>
               </div>
 

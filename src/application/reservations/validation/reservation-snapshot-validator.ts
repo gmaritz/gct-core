@@ -8,6 +8,7 @@ import {
   TravellerSnapshot,
   BookingItemSnapshot,
 } from "../models";
+import { initialPaymentRequirementMatchesPricingSnapshot } from "../models/snapshots/payment-snapshot";
 import { ReservationValidationErrorCode, createReservationValidationResult, ReservationValidationResult } from "./models";
 
 export interface ReservationSnapshotSet {
@@ -75,6 +76,14 @@ export class ReservationSnapshotValidator {
 
     if (snapshotSet.paymentSnapshot && (isBlank(snapshotSet.paymentSnapshot.snapshotId) || isBlank(snapshotSet.paymentSnapshot.paymentStatus))) {
       errors.push(createError(ReservationValidationErrorCode.INVALID_PAYMENT_SNAPSHOT, "Payment snapshot is invalid."));
+    }
+    if (snapshotSet.paymentSnapshot?.initialRequirement
+      && (!snapshotSet.pricingSnapshot
+        || !initialPaymentRequirementMatchesPricingSnapshot(snapshotSet.paymentSnapshot.initialRequirement, snapshotSet.pricingSnapshot))) {
+      errors.push(createError(
+        ReservationValidationErrorCode.INVALID_PAYMENT_SNAPSHOT,
+        "Initial payment requirement does not match the Reservation pricing snapshot.",
+      ));
     }
 
     if (snapshotSet.metadata && (isBlank(snapshotSet.metadata.version) || !isValidDate(snapshotSet.metadata.createdAt) || !isValidDate(snapshotSet.metadata.updatedAt))) {

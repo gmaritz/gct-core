@@ -1,12 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DefaultJourneyQuoteService = void 0;
+exports.DefaultJourneyQuoteService = exports.SIGNATURE_CAPE_WINELANDS_GCT_COSTING_SOURCE = void 0;
 exports.createDefaultPricingEngine = createDefaultPricingEngine;
 const journeys_1 = require("../../../journeys");
 const pricing_1 = require("../../../pricing");
 const journey_selection_store_1 = require("./journey-selection-store");
 const journey_state_ownership_1 = require("./journey-state-ownership");
 const cape_winelands_journey_resolver_1 = require("./cape-winelands-journey-resolver");
+exports.SIGNATURE_CAPE_WINELANDS_GCT_COSTING_SOURCE = Object.freeze({
+    costingSourceId: "INT-004",
+    costingSourceVersion: "1.0.0",
+    costingSourceEffectiveDate: "2026-11-18",
+});
 const pricing_2 = require("../../../pricing");
 function createDefaultPricingEngine() {
     return new pricing_1.PricingEngine(new pricing_2.PricingValidationPipeline({
@@ -60,6 +65,9 @@ function createPricingRequest(journey, pricingInputs, travellerCount, currencyPo
                     unitAmount: (0, pricing_1.createMoney)({ amount: groupTotal, currency }),
                     totalAmount: (0, pricing_1.createMoney)({ amount: groupTotal, currency }),
                     quantity: 1,
+                    ...(journey.identity.id === cape_winelands_journey_resolver_1.CAPE_WINELANDS_JOURNEY_ID
+                        ? { metadata: exports.SIGNATURE_CAPE_WINELANDS_GCT_COSTING_SOURCE }
+                        : {}),
                 })],
         }),
         taxes: (0, pricing_1.createTaxBreakdown)({

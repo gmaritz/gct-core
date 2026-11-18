@@ -6,7 +6,11 @@ import {
   ReservationRepository,
 } from "@application/reservations/repository";
 import { getPrismaClient } from "../../../bootstrap/prisma";
-import { BookingItemSnapshot, SupplierBookingSnapshot } from "@application/reservations/models";
+import {
+  BookingItemSnapshot,
+  parseInitialPaymentRequirementSnapshot,
+  SupplierBookingSnapshot,
+} from "@application/reservations/models";
 
 const VALID_LIFECYCLE = new Set<string>(Object.values(ReservationStatus));
 
@@ -418,6 +422,9 @@ function toDomain(booking: PersistedBooking | LegacyBooking): Reservation {
           paymentMethod: typeof paymentSnapshot.paymentMethod === "string" ? paymentSnapshot.paymentMethod : undefined,
           amountReceived: Number(paymentSnapshot.amountReceived ?? 0),
           balanceOutstanding: Number(paymentSnapshot.balanceOutstanding ?? 0),
+          initialRequirement: paymentSnapshot.initialRequirement === undefined
+            ? undefined
+            : parseInitialPaymentRequirementSnapshot(paymentSnapshot.initialRequirement),
         }
       : undefined,
     supplierReferences: [

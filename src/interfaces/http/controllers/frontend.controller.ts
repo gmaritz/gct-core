@@ -15,6 +15,7 @@ import {
 	CAPE_WINELANDS_JOURNEY_ID,
 	JourneyBookingContext,
 	journeySelectionStore,
+	reservationReviewAcceptanceStore,
 	validateBookingContext,
 	createDefaultPricingEngine,
 } from "../../../application/merchandising";
@@ -469,6 +470,7 @@ export async function confirmReservationReview(request: Request, response: Respo
 		ownerId,
 		journeyId: request.params.journeyId,
 		confirmed: request.body?.confirmed === "on" || request.body?.confirmed === true,
+		acceptanceToken: typeof request.body?.acceptanceToken === "string" ? request.body.acceptanceToken : undefined,
 	});
 
 	if (review.status !== "READY" || !review.confirmed) {
@@ -486,6 +488,7 @@ export async function confirmReservationReview(request: Request, response: Respo
 			await renderReservationReview(request, response, new ReservationReviewViewModelProvider().provide({ ...review, errors: reservation.errors }), 409);
 			return;
 		}
+		reservationReviewAcceptanceStore.consume(review.acceptanceToken, ownerId, review.journeyId);
 	} catch (error) {
 		getLogger().error("reservation_creation_failed", diagnostic(request, "reservation_creation", error instanceof Error ? "exception" : "unknown"));
 		await renderReservationReview(request, response, new ReservationReviewViewModelProvider().provide({
@@ -544,11 +547,15 @@ function paymentStateResult(
 			? "CANCELLED"
 			: "PENDING";
 	const outstanding = context.reservationPaymentSnapshot?.balanceOutstanding;
-	const canPayFullAmount = outstanding !== undefined && outstanding > 0 && outstanding === request.paymentAmount;
+	const canPayAuthorizedAmount = outstanding !== undefined
+		&& outstanding > 0
+		&& typeof request.paymentAmount === "number"
+		&& request.paymentAmount > 0
+		&& request.paymentAmount <= outstanding;
 	return {
-		status: status === "PENDING" && request.status === PaymentStatus.CREATED && !canPayFullAmount ? "UNAVAILABLE" : status,
+		status: status === "PENDING" && request.status === PaymentStatus.CREATED && !canPayAuthorizedAmount ? "UNAVAILABLE" : status,
 		reservationId: context.reservationId,
-		amount: outstanding ?? undefined,
+		amount: canPayAuthorizedAmount ? request.paymentAmount : outstanding ?? request.paymentAmount ?? undefined,
 		currency: request.currency ?? undefined,
 		paymentStatus: request.status ?? undefined,
 		errors: [],
