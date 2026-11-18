@@ -1,12 +1,9 @@
 import { Money } from "../../../pricing";
 import { JourneyQuoteResult } from "./journey-quote-service";
-declare const COMMERCIAL_TIME_ZONE = "Africa/Johannesburg";
-export interface SignatureCapeWinelandsPaymentPolicy {
-    readonly policyId: string;
-    readonly version: string;
-    readonly effectiveDate: string;
-    readonly gctCollectionRate: string;
-}
+import { SIGNATURE_CAPE_WINELANDS_COMMERCIAL_TIME_ZONE } from "./calendar-date";
+import type { ResolvedSignatureCapeWinelandsPaymentPolicy } from "./signature-cape-winelands-payment-policy";
+declare const PAYMENT_POLICY_SCOPE = "SIGNATURE_CAPE_WINELANDS_MULTI_DAY_PACKAGE";
+export type SignatureCapeWinelandsPaymentPolicy = ResolvedSignatureCapeWinelandsPaymentPolicy;
 export interface GctCostingSource {
     readonly costingSourceId: string;
     readonly costingSourceVersion: string;
@@ -24,12 +21,18 @@ export interface InitialPaymentRequirement {
         readonly policyId: string;
         readonly version: string;
         readonly appliedRate: string;
+        readonly scope: typeof PAYMENT_POLICY_SCOPE;
+        readonly effectiveFrom: string;
+        readonly effectiveTo?: string;
+        readonly leadTimeThresholdDays: number;
+        readonly commercialTimeZone: typeof SIGNATURE_CAPE_WINELANDS_COMMERCIAL_TIME_ZONE;
     };
     readonly calculationBasis: {
+        readonly commercialPolicy: InitialPaymentRequirement["commercialPolicy"];
         readonly bookingDate: string;
         readonly departureDate: string;
         readonly leadTimeDays: number;
-        readonly commercialTimeZone: typeof COMMERCIAL_TIME_ZONE;
+        readonly commercialTimeZone: typeof SIGNATURE_CAPE_WINELANDS_COMMERCIAL_TIME_ZONE;
         readonly gctComponent: {
             readonly sourcePricingLineIdentifier: string;
             readonly amount: Money;
@@ -47,7 +50,7 @@ export interface InitialPaymentRequirement {
 export interface CalculateSignatureCapeWinelandsInitialPaymentInput {
     readonly quote: JourneyQuoteResult;
     readonly bookingDate: Date;
-    readonly policy?: SignatureCapeWinelandsPaymentPolicy;
+    readonly policy: SignatureCapeWinelandsPaymentPolicy | undefined;
     readonly costingSource?: GctCostingSource;
 }
 export declare class InitialPaymentCalculationError extends Error {

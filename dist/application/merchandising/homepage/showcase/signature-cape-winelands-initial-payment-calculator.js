@@ -4,8 +4,9 @@ exports.InitialPaymentCalculationError = void 0;
 exports.calculateSignatureCapeWinelandsInitialPaymentRequirement = calculateSignatureCapeWinelandsInitialPaymentRequirement;
 const pricing_1 = require("../../../pricing");
 const cape_winelands_journey_resolver_1 = require("./cape-winelands-journey-resolver");
-const COMMERCIAL_TIME_ZONE = "Africa/Johannesburg";
+const calendar_date_1 = require("./calendar-date");
 const MAX_SAFE_INTEGER_BIGINT = BigInt(Number.MAX_SAFE_INTEGER);
+const PAYMENT_POLICY_SCOPE = "SIGNATURE_CAPE_WINELANDS_MULTI_DAY_PACKAGE";
 class InitialPaymentCalculationError extends Error {
     constructor(message) {
         super(message);
@@ -53,38 +54,27 @@ function assertCurrency(money, currency, label) {
     return toMinorUnits(money.amount, label);
 }
 function parseCalendarDate(value, label) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(value))
-        fail(`${label} must be a valid YYYY-MM-DD calendar date.`);
-    const parsed = new Date(`${value}T00:00:00.000Z`);
-    if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
-        fail(`${label} must be a valid YYYY-MM-DD calendar date.`);
+    try {
+        return (0, calendar_date_1.parseCalendarDate)(value, label);
     }
-    return value;
+    catch (error) {
+        if (error instanceof Error)
+            fail(error.message);
+        throw error;
+    }
 }
-function calendarDateInTimeZone(value, label) {
-    if (!(value instanceof Date) || Number.isNaN(value.getTime()))
-        fail(`${label} must be a valid date.`);
-    const parts = new Intl.DateTimeFormat("en-US", {
-        timeZone: COMMERCIAL_TIME_ZONE,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-    }).formatToParts(value);
-    const part = (type) => parts.find((item) => item.type === type)?.value;
-    const year = part("year");
-    const month = part("month");
-    const day = part("day");
-    if (!year || !month || !day)
-        fail(`${label} could not be resolved in ${COMMERCIAL_TIME_ZONE}.`);
-    return `${year.padStart(4, "0")}-${month}-${day}`;
+function calendarDateInTimeZone(value, timeZone, label) {
+    try {
+        return (0, calendar_date_1.calendarDateInTimeZone)(value, timeZone, label);
+    }
+    catch (error) {
+        if (error instanceof Error)
+            fail(error.message);
+        throw error;
+    }
 }
 function calendarDayNumber(value) {
     return new Date(`${value}T00:00:00.000Z`).getTime() / 86400000;
-}
-function subtractCalendarDays(value, days) {
-    const date = new Date(`${value}T00:00:00.000Z`);
-    date.setUTCDate(date.getUTCDate() - days);
-    return date.toISOString().slice(0, 10);
 }
 function getApplicableStops(quote) {
     const journey = quote.journey;
@@ -148,14 +138,24 @@ function assertPolicy(policy, bookingDate) {
         || !policy.policyId.trim()
         || typeof policy.version !== "string"
         || !policy.version.trim()
-        || typeof policy.effectiveDate !== "string"
-        || !policy.effectiveDate.trim()
+        || policy.journeyId !== cape_winelands_journey_resolver_1.CAPE_WINELANDS_JOURNEY_ID
+        || policy.scope !== PAYMENT_POLICY_SCOPE
+        || policy.status !== "ACTIVE"
+        || policy.commercialTimeZone !== calendar_date_1.SIGNATURE_CAPE_WINELANDS_COMMERCIAL_TIME_ZONE
+        || !Number.isInteger(policy.leadTimeThresholdDays)
+        || policy.leadTimeThresholdDays <= 0
         || typeof policy.gctCollectionRate !== "string") {
-        fail("A versioned Signature Cape Winelands commercial payment policy is required.");
+        fail("A resolved, active Signature Cape Winelands commercial payment policy is required.");
     }
-    const effectiveDate = parseCalendarDate(policy.effectiveDate, "Commercial policy effective date");
-    if (effectiveDate > bookingDate)
+    const effectiveFrom = parseCalendarDate(policy.effectiveFrom, "Commercial policy effective-from date");
+    const effectiveTo = policy.effectiveTo === undefined
+        ? undefined
+        : parseCalendarDate(policy.effectiveTo, "Commercial policy effective-to date");
+    if (effectiveTo && effectiveTo < effectiveFrom)
+        fail("Commercial policy effective-to date precedes its effective-from date.");
+    if (effectiveFrom > bookingDate || (effectiveTo && bookingDate > effectiveTo)) {
         fail("The commercial payment policy is not effective on the booking date.");
+    }
     const rate = parseRate(policy.gctCollectionRate);
     return { policy, rateNumerator: rate.numerator, rateDenominator: rate.denominator };
 }
@@ -249,7 +249,7 @@ function validatePricingComponents(pricing, quote) {
         gctLineCode: gctLine.code,
         gctAmount,
         accommodationComponents,
-        departureDate: calendarDateInTimeZone(stops[0].checkInDate, "Departure date"),
+        departureDate: calendarDateInTimeZone(stops[0].checkInDate, calendar_date_1.SIGNATURE_CAPE_WINELANDS_COMMERCIAL_TIME_ZONE, "Departure date"),
         total,
     };
 }
@@ -262,7 +262,7 @@ function calculateSignatureCapeWinelandsInitialPaymentRequirement(input) {
     if (typeof pricing.identity.id !== "string" || !pricing.identity.id.trim()) {
         fail("A PricingSnapshot identity is required.");
     }
-    const bookingDate = calendarDateInTimeZone(input.bookingDate, "Booking date");
+    const bookingDate = calendarDateInTimeZone(input.bookingDate, input.policy?.commercialTimeZone ?? calendar_date_1.SIGNATURE_CAPE_WINELANDS_COMMERCIAL_TIME_ZONE, "Booking date");
     const policy = assertPolicy(input.policy, bookingDate);
     const costingSource = assertCostingSource(input.costingSource, bookingDate);
     const components = validatePricingComponents(pricing, quote);
@@ -274,7 +274,7 @@ function calculateSignatureCapeWinelandsInitialPaymentRequirement(input) {
     let initialAmount;
     let futureBalance;
     let dueDate;
-    if (leadTimeDays > 14) {
+    if (leadTimeDays > policy.policy.leadTimeThresholdDays) {
         const gctPayable = roundHalfUp(components.gctAmount * policy.rateNumerator, policy.rateDenominator);
         futureBalance = roundHalfUp(components.gctAmount * (policy.rateDenominator - policy.rateNumerator), policy.rateDenominator);
         initialAmount = components.accommodationComponents.reduce((sum, component) => sum + component.amount, gctPayable);
@@ -282,7 +282,7 @@ function calculateSignatureCapeWinelandsInitialPaymentRequirement(input) {
             fail("Rounded initial payment and contractual future balance do not reconcile to the successful quote total.");
         }
         if (futureBalance > 0n)
-            dueDate = subtractCalendarDays(departureDate, 14);
+            dueDate = (0, calendar_date_1.subtractCalendarDays)(departureDate, policy.policy.leadTimeThresholdDays);
     }
     else {
         initialAmount = components.total;
@@ -296,6 +296,16 @@ function calculateSignatureCapeWinelandsInitialPaymentRequirement(input) {
         sourcePricingLineIdentifier: component.sourcePricingLineIdentifier,
         amount: moneyFromMinorUnits(component.amount, component.sourcePricingLineIdentifier),
     })));
+    const commercialPolicy = Object.freeze({
+        policyId: policy.policy.policyId,
+        version: policy.policy.version,
+        appliedRate: policy.policy.gctCollectionRate,
+        scope: policy.policy.scope,
+        effectiveFrom: policy.policy.effectiveFrom,
+        effectiveTo: policy.policy.effectiveTo,
+        leadTimeThresholdDays: policy.policy.leadTimeThresholdDays,
+        commercialTimeZone: policy.policy.commercialTimeZone,
+    });
     return Object.freeze({
         classification,
         amountPayableAtBooking: moneyFromMinorUnits(initialAmount, "Initial amount payable"),
@@ -306,16 +316,13 @@ function calculateSignatureCapeWinelandsInitialPaymentRequirement(input) {
             })
             : undefined,
         pricingSnapshotId: pricing.identity.id,
-        commercialPolicy: Object.freeze({
-            policyId: policy.policy.policyId,
-            version: policy.policy.version,
-            appliedRate: policy.policy.gctCollectionRate,
-        }),
+        commercialPolicy,
         calculationBasis: Object.freeze({
+            commercialPolicy,
             bookingDate,
             departureDate,
             leadTimeDays,
-            commercialTimeZone: COMMERCIAL_TIME_ZONE,
+            commercialTimeZone: policy.policy.commercialTimeZone,
             gctComponent: Object.freeze({
                 sourcePricingLineIdentifier: components.gctLineCode,
                 amount: moneyFromMinorUnits(components.gctAmount, "GCT BASE component"),

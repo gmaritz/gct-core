@@ -16,23 +16,32 @@ import {
   CalculateSignatureCapeWinelandsInitialPaymentInput,
   GctCostingSource,
   InitialPaymentCalculationError,
-  SignatureCapeWinelandsPaymentPolicy,
 } from "./signature-cape-winelands-initial-payment-calculator";
+import {
+  resolveSignatureCapeWinelandsPaymentPolicy,
+  ResolvedSignatureCapeWinelandsPaymentPolicy,
+  SIGNATURE_CAPE_WINELANDS_PAYMENT_POLICIES,
+  SignatureCapeWinelandsPaymentPolicyRecord,
+} from "./signature-cape-winelands-payment-policy";
 import { JourneyQuoteResult } from "./journey-quote-service";
 import { CAPE_WINELANDS_JOURNEY_ID, CAPE_WINELANDS_STOPS } from "./cape-winelands-journey-resolver";
 
-const policy: SignatureCapeWinelandsPaymentPolicy = {
-  policyId: "SIGNATURE-CW",
-  version: "2026-01",
-  effectiveDate: "2026-01-01",
-  gctCollectionRate: "0.50",
-};
+const defaultBookingDate = new Date("2026-12-01T10:00:00.000Z");
 
 const costingSource: GctCostingSource = {
   costingSourceId: "controlled-costing-fixture",
   costingSourceVersion: "fixture-v1",
-  costingSourceEffectiveDate: "2026-01-01",
+  costingSourceEffectiveDate: "2026-11-17",
 };
+
+function resolvePolicy(
+  bookingDate: Date,
+  overrides: Partial<SignatureCapeWinelandsPaymentPolicyRecord> = {},
+): ResolvedSignatureCapeWinelandsPaymentPolicy {
+  const record = SIGNATURE_CAPE_WINELANDS_PAYMENT_POLICIES[0]!;
+  const records = [{ ...record, ...overrides }];
+  return resolveSignatureCapeWinelandsPaymentPolicy(CAPE_WINELANDS_JOURNEY_ID, bookingDate, records);
+}
 
 interface QuoteOptions {
   readonly baseAmount?: number;
@@ -98,7 +107,7 @@ function createQuote(options: QuoteOptions = {}): JourneyQuoteResult {
   ];
   const componentTotal = lineItems.reduce((sum, line) => sum + line.totalAmount.amount, 0);
   const totalAmount = options.totalAmount ?? componentTotal;
-  const now = new Date("2026-01-01T00:00:00.000Z");
+  const now = new Date("2026-12-01T00:00:00.000Z");
   const pricing = Pricing.create({
     identity: { id: "pricing-signature-cw-1" },
     summary: createPricingSummary({
@@ -127,7 +136,7 @@ function createQuote(options: QuoteOptions = {}): JourneyQuoteResult {
     currency,
     metadata: createPricingMetadata({ createdAt: now, updatedAt: now, version: "1.0.0", source: "test" }),
   });
-  const journey = createJourney(options.departureDate ?? new Date("2026-01-16T10:00:00.000Z"));
+  const journey = createJourney(options.departureDate ?? new Date("2026-12-16T10:00:00.000Z"));
 
   return {
     status: "PRICED",
@@ -146,10 +155,11 @@ function createQuote(options: QuoteOptions = {}): JourneyQuoteResult {
 }
 
 function createInput(overrides: Partial<CalculateSignatureCapeWinelandsInitialPaymentInput> = {}): CalculateSignatureCapeWinelandsInitialPaymentInput {
+  const bookingDate = overrides.bookingDate ?? defaultBookingDate;
   return {
     quote: createQuote(),
-    bookingDate: new Date("2026-01-01T10:00:00.000Z"),
-    policy,
+    bookingDate,
+    policy: resolvePolicy(bookingDate),
     costingSource,
     ...overrides,
   };
@@ -162,12 +172,29 @@ describe("calculateSignatureCapeWinelandsInitialPaymentRequirement", () => {
     expect(result).toMatchObject({
       classification: "PARTIAL_PAYMENT",
       amountPayableAtBooking: { amount: 800, currency: Currency.ZAR },
-      contractualFutureBalance: { amount: { amount: 500, currency: Currency.ZAR }, dueDate: "2026-01-02" },
+      contractualFutureBalance: { amount: { amount: 500, currency: Currency.ZAR }, dueDate: "2026-12-02" },
       pricingSnapshotId: "pricing-signature-cw-1",
-      commercialPolicy: { policyId: "SIGNATURE-CW", version: "2026-01", appliedRate: "0.50" },
+      commercialPolicy: {
+        policyId: "SIGNATURE_CAPE_WINELANDS_INITIAL_PAYMENT",
+        version: "1.0.0",
+        appliedRate: "0.50",
+        scope: "SIGNATURE_CAPE_WINELANDS_MULTI_DAY_PACKAGE",
+        effectiveFrom: "2026-11-17",
+        leadTimeThresholdDays: 14,
+        commercialTimeZone: "Africa/Johannesburg",
+      },
       calculationBasis: {
-        bookingDate: "2026-01-01",
-        departureDate: "2026-01-16",
+        commercialPolicy: {
+          policyId: "SIGNATURE_CAPE_WINELANDS_INITIAL_PAYMENT",
+          version: "1.0.0",
+          appliedRate: "0.50",
+          scope: "SIGNATURE_CAPE_WINELANDS_MULTI_DAY_PACKAGE",
+          effectiveFrom: "2026-11-17",
+          leadTimeThresholdDays: 14,
+          commercialTimeZone: "Africa/Johannesburg",
+        },
+        bookingDate: "2026-12-01",
+        departureDate: "2026-12-16",
         leadTimeDays: 15,
         commercialTimeZone: "Africa/Johannesburg",
         gctComponent: {
@@ -175,7 +202,7 @@ describe("calculateSignatureCapeWinelandsInitialPaymentRequirement", () => {
           amount: { amount: 1000, currency: Currency.ZAR },
           costingSourceId: "controlled-costing-fixture",
           costingSourceVersion: "fixture-v1",
-          costingSourceEffectiveDate: "2026-01-01",
+          costingSourceEffectiveDate: "2026-11-17",
         },
         accommodationComponents: [
           { packageStopId: CAPE_WINELANDS_STOPS[0]!.stopId, sourcePricingLineIdentifier: `ACCOMMODATION:${CAPE_WINELANDS_STOPS[0]!.stopId}`, amount: { amount: 100, currency: Currency.ZAR } },
@@ -186,8 +213,8 @@ describe("calculateSignatureCapeWinelandsInitialPaymentRequirement", () => {
   });
 
   it.each([
-    ["exactly 14 days", "2026-01-02T10:00:00.000Z"],
-    ["fewer than 14 days", "2026-01-03T10:00:00.000Z"],
+    ["exactly 14 days", "2026-12-02T10:00:00.000Z"],
+    ["fewer than 14 days", "2026-12-03T10:00:00.000Z"],
   ])("collects the full quote total %s before departure", (_label, bookingDate) => {
     const result = calculateSignatureCapeWinelandsInitialPaymentRequirement(createInput({
       bookingDate: new Date(bookingDate),
@@ -199,15 +226,15 @@ describe("calculateSignatureCapeWinelandsInitialPaymentRequirement", () => {
   });
 
   it("uses calendar dates in Johannesburg across a UTC date boundary", () => {
-    const quote = createQuote({ departureDate: new Date("2026-01-16T21:59:00.000Z") });
+    const quote = createQuote({ departureDate: new Date("2026-12-16T21:59:00.000Z") });
     const result = calculateSignatureCapeWinelandsInitialPaymentRequirement(createInput({
       quote,
-      bookingDate: new Date("2026-01-01T22:30:00.000Z"),
+      bookingDate: new Date("2026-12-01T22:30:00.000Z"),
     }));
 
     expect(result.calculationBasis).toMatchObject({
-      bookingDate: "2026-01-02",
-      departureDate: "2026-01-16",
+      bookingDate: "2026-12-02",
+      departureDate: "2026-12-16",
       leadTimeDays: 14,
     });
     expect(result.classification).toBe("FULL_PAYMENT");
@@ -215,22 +242,26 @@ describe("calculateSignatureCapeWinelandsInitialPaymentRequirement", () => {
 
   it("uses the configured policy rate and rounds the initial GCT share half-up to ZAR cents", () => {
     const quote = createQuote({ baseAmount: 100.03, accommodationAmounts: [100, 200] });
+    const bookingDate = new Date("2026-12-01T10:00:00.000Z");
     const result = calculateSignatureCapeWinelandsInitialPaymentRequirement(createInput({
       quote,
-      policy: { ...policy, gctCollectionRate: "0.51" },
+      bookingDate,
+      policy: resolvePolicy(bookingDate, { gctCollectionRate: "0.51" }),
     }));
 
     expect(result.amountPayableAtBooking).toEqual({ amount: 351.02, currency: Currency.ZAR });
     expect(result.contractualFutureBalance).toEqual({
       amount: { amount: 49.01, currency: Currency.ZAR },
-      dueDate: "2026-01-02",
+      dueDate: "2026-12-02",
     });
     expect(result.calculationBasis.gctComponent.amount).toEqual({ amount: 100.03, currency: Currency.ZAR });
   });
 
   it("classifies a 100% GCT collection rate as full payment with no future balance", () => {
+    const bookingDate = new Date("2026-12-01T10:00:00.000Z");
     const result = calculateSignatureCapeWinelandsInitialPaymentRequirement(createInput({
-      policy: { ...policy, gctCollectionRate: "1" },
+      bookingDate,
+      policy: resolvePolicy(bookingDate, { gctCollectionRate: "1" }),
     }));
 
     expect(result.classification).toBe("FULL_PAYMENT");
@@ -313,17 +344,19 @@ describe("calculateSignatureCapeWinelandsInitialPaymentRequirement", () => {
 
   it("requires a versioned policy and controlled costing provenance", () => {
     expect(() => calculateSignatureCapeWinelandsInitialPaymentRequirement(createInput({ policy: undefined })))
-      .toThrow("versioned Signature Cape Winelands commercial payment policy");
+      .toThrow("resolved, active Signature Cape Winelands commercial payment policy");
     expect(() => calculateSignatureCapeWinelandsInitialPaymentRequirement(createInput({ costingSource: undefined })))
       .toThrow("Controlled GCT costing source identity, version, and effective date are required");
   });
 
   it("rejects a policy that is not effective on the booking date or has an invalid rate", () => {
+    const bookingDate = new Date("2026-12-01T10:00:00.000Z");
+    const resolvedPolicy = resolvePolicy(bookingDate);
     expect(() => calculateSignatureCapeWinelandsInitialPaymentRequirement(createInput({
-      policy: { ...policy, effectiveDate: "2026-01-02" },
+      policy: { ...resolvedPolicy, effectiveFrom: "2026-12-02" },
     }))).toThrow("not effective on the booking date");
     expect(() => calculateSignatureCapeWinelandsInitialPaymentRequirement(createInput({
-      policy: { ...policy, gctCollectionRate: "1.01" },
+      policy: { ...resolvedPolicy, gctCollectionRate: "1.01" },
     }))).toThrow("GCT collection rate");
   });
 

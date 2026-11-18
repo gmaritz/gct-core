@@ -5,6 +5,7 @@ export * from "./dynamic-homepage-journey-selection";
 export * from "./accommodation-selection-service";
 export * from "./journey-quote-service";
 export * from "./signature-cape-winelands-initial-payment-calculator";
+export * from "./signature-cape-winelands-payment-policy";
 export * from "./guest-information-service";
 export * from "./reservation-review-service";
 export * from "./journey-selection-store";
