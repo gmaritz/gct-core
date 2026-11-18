@@ -1266,6 +1266,6 @@ No implementation is authorised by SPEC-027 alone.
 
 **Version:** 2.0
 
-**Status:** Draft — Architect Review Required
+**Status:** Approved
 
 **Next Specification:** SPEC-028 — Prisma Data Model

@@ -451,5 +451,6 @@ The capability is complete when all implementation milestones have been approved
 - APP-001F – Cross-Capability Architecture Patterns
 - APP-004 – Reservation Capability Summary
 - APP-005 – Pricing Capability Summary
+- APP-006.9 – PayFast Provider Integration (provider-specific; Implementation Specification)
 - ENG-001 – Engineering Development Lifecycle
 - ENG-002 – Engineering Verification Standard

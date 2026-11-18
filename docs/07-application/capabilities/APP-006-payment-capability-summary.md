@@ -310,6 +310,8 @@ Uses the canonical PaymentGateway abstraction.
 
 No provider-specific logic exists within the Application Layer.
 
+The concrete PayFast adapter is specified separately in [APP-006.9 — PayFast Provider Integration](../implementations/payments/APP-006.9-payfast-provider-integration.md), whose status remains Implementation Specification. APP-006.8 remains the approved provider-neutral contract.
+
 ---
 
 # Public Interfaces
