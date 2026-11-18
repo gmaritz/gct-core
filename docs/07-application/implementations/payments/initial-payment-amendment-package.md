@@ -6,13 +6,17 @@
 | --- | --- |
 | Identifier | Pending governance assignment |
 | Version | 0.1.0 |
-| Status | Draft — Proposed Amendment, Pending Owner Approval |
+| Status | Historical Draft — Superseded by Subsequent Controlled Amendments |
 | Date | 2026-11-18 |
 | Scope | Initial payment requirement handoff for the Signature Cape Winelands four-day package |
 | Controlling draft | [Initial Payment Requirement Handoff Proposal](initial-payment-requirement-handoff-proposal.md) |
-| Authority | Review package only; no amendment or implementation is approved |
+| Authority | Historical review package; subsequent OR-01–OR-08 approvals are recorded below. No application implementation is authorized. |
 
-This package presents isolated proposed amendments for the exact target documents below. It does not edit or supersede any target. The proposals preserve B01–B04, D02, and D04 as recorded. They do not authorize code, schema, migration, payment, outcome, confirmation, or customer-access changes.
+At preparation, this package presented isolated proposed amendments and did not edit or supersede its target documents. It preserves B01–B04, D02, and D04 as recorded. The approvals and specification amendments recorded later do not authorize code, schema, migration, payment, outcome, confirmation, or customer-access changes.
+
+### Approval supersession note — 2026-11-18
+
+The Project Owner subsequently approved OR-01–OR-08, subject to each decision's recorded qualifications. That approval supersedes the pending-owner-review state and proposed approval sequence below; do not treat those decisions as currently pending. OR-03 remains subject to D01 identity, collision, legacy and consumer checks. OR-04 remains conditional on verification of the successful quote components, controlled costing source/version, production parity and no second 10% Hotelbeds markup. OR-06 approves in principle preserving existing selected-rate cancellation and supplier-payment conditions. OR-08 approves the individual-transaction and PayFast boundary, subject to the corrected APP-006.9 identity and technical contract. This note does not authorize implementation or any decision outside OR-01–OR-08.
 
 ## 1. Verified authority and target inventory
 
@@ -20,17 +24,17 @@ This package presents isolated proposed amendments for the exact target document
 | --- | --- | --- | --- |
 | AR-003.4 — Project Owner Architecture Decision Review | [AR-003.4](AR-003.4-project-owner-architecture-decision-review.md) | AR-003.4 / 0.1.5 / Draft — For Project Owner Decision; decision preparation only | No amendment proposed. Source of B01–B04 and D01/D02/D04 decisions. |
 | AR-003.6 — Dynamic Payment Requirement Reconciliation | [AR-003.6](AR-003.6-deposit-and-full-payment-reconciliation-design.md) | AR-003.6 / 0.1.3 / Draft — Architect Review Accepted; not implementation authorization | No amendment proposed. Controlling analysis and proposed-amendment source. |
-| INT-004 — Cape Winelands Dynamic Availability & Package Pricing | [INT-004](../../../08-integration/INT-004-cape-winelands-dynamic-availability-pricing.md) | INT-004 / version not stated / Architect Approved | §5 Go Cape Tours Pricing; add journey-specific initial-requirement handoff subsection. |
-| APP-004.1 — Reservation Aggregate | [APP-004.1](../reservation/APP-004.1-reservation-aggregate.md) | APP-004.1 / 2.0 / Approved | `# Snapshot Principle`; `# Responsibilities`. |
-| APP-004.2 — Reservation Snapshot Model Library | [APP-004.2](../reservation/APP-004.2-reservation-snapshot-model-library.md) | APP-004.2 / 2.0 / Approved | `# Accommodation Snapshot`, `# Payment Snapshot`, and `# Versioning`. |
-| APP-004.4 — Reservation Policy Framework | [APP-004.4](../reservation/APP-004.4-reservation-policy-framework.md) | APP-004.4 / 2.0 / Approved | `## Reservation Payment Policy`. |
-| APP-005 — Accommodation-to-Package Pricing Integration | [APP-005](../pricing/APP-005-accommodation-to-package-pricing-integration.md) | APP-005 / 1.0.1 / Implementation Specification | §§9, 20, 22, and 25. The existing embedded-margin rule is retained. |
-| APP-005.8 — Quote Integration | [APP-005.8](../pricing/APP-005.8-quote-integration.md) | APP-005.8 / 2.0 / Approved | `# Quote Integration Service` and `# QuoteFactory`. |
-| APP-006.3 — Payment Validation Pipeline | [APP-006.3](APP-006.3-payment-validation-pipeline.md) | APP-006.3 / 1.0 / Approved | `## PRICING`, `## SETTLEMENT_READINESS`, and settlement-readiness acceptance criteria. |
-| APP-006.4 — Payment Policy Framework | [APP-006.4](APP-006.4-payment-policy-framework.md) | APP-006.4 / 1.0 / Approved | `## Settlement Policy` and `# Policy Context`. |
-| APP-006.9 — PayFast Provider Integration | [APP-006.9](APP-006.9-payfast-provider-integration.md) | APP-006.9 / 1.0.0 / Implementation Specification | §§8, 18, 19, and AC-09. Its identifier is distinct from approved, provider-neutral APP-006.8. |
-| SPEC-027 — Physical Data Model | [SPEC-027](../../../06-specifications/engineering/SPEC-027-physical-data-model%20v2.0.md) | SPEC-027 / 2.0 / Approved | §§15 and 32. No status change proposed. |
-| SPEC-028 — Prisma Data Model | [SPEC-028](../../../06-specifications/engineering/SPEC-028-prisma-data-model%20v2.0.md) | SPEC-028 / 2.0 / Approved | §§18 and 30. No status change proposed. |
+| INT-004 — Cape Winelands Dynamic Availability & Package Pricing | [INT-004](../../../08-integration/INT-004-cape-winelands-dynamic-availability-pricing.md) | INT-004 / 1.0.0 / Architect Approved | §5 Go Cape Tours Pricing and initial-requirement handoff. |
+| APP-004.1 — Reservation Aggregate | [APP-004.1](../reservation/APP-004.1-reservation-aggregate.md) | APP-004.1 / 2.1 / Approved | `# Snapshot Principle`; `# Responsibilities`. |
+| APP-004.2 — Reservation Snapshot Model Library | [APP-004.2](../reservation/APP-004.2-reservation-snapshot-model-library.md) | APP-004.2 / 2.1 / Approved | `# Accommodation Snapshot`, `# Payment Snapshot`, and `# Versioning`. |
+| APP-004.4 — Reservation Policy Framework | [APP-004.4](../reservation/APP-004.4-reservation-policy-framework.md) | APP-004.4 / 2.1 / Approved | `## Reservation Payment Policy`. |
+| APP-005 — Accommodation-to-Package Pricing Integration | [APP-005](../pricing/APP-005-accommodation-to-package-pricing-integration.md) | APP-005 / 1.0.2 / Implementation Specification | §§3, 9, 16, 20, 22, and 25. The existing embedded-margin rule is retained. |
+| APP-005.8 — Quote Integration | [APP-005.8](../pricing/APP-005.8-quote-integration.md) | APP-005.8 / 2.1 / Approved | Quote component identity, amount/currency preservation and final total. |
+| APP-006.3 — Payment Validation Pipeline | [APP-006.3](APP-006.3-payment-validation-pipeline.md) | APP-006.3 / 1.1 / Approved | `## SETTLEMENT_READINESS` and amount-consistency acceptance criteria. |
+| APP-006.4 — Payment Policy Framework | [APP-006.4](APP-006.4-payment-policy-framework.md) | APP-006.4 / 1.1 / Approved | `## Settlement Policy` and `# Policy Context`. |
+| APP-006.9 — PayFast Provider Integration | [APP-006.9](APP-006.9-payfast-provider-integration.md) | APP-006.9 / 1.1.0 / Implementation Specification | §§8, 18, 19, 36, and AC-09. Its identifier is distinct from approved, provider-neutral APP-006.8. |
+| SPEC-027 — Physical Data Model | [SPEC-027 v2.1](../../../06-specifications/engineering/SPEC-027-physical-data-model%20v2.1.md) | SPEC-027 / 2.1 / Approved | §§15 and 32. Version 2.0 is preserved. |
+| SPEC-028 — Prisma Data Model | [SPEC-028 v2.1](../../../06-specifications/engineering/SPEC-028-prisma-data-model%20v2.1.md) | SPEC-028 / 2.1 / Approved | §§18 and 30. Version 2.0 is preserved. |
 
 The PayFast document is distinct from the approved provider-neutral APP-006.8 Payment Provider Integration. Its unique identifier is now APP-006.9; its status remains Implementation Specification and is not changed to Approved by this package.
 
@@ -118,7 +122,7 @@ Each block below is independent and remains subject to the owner and governance 
 
 ### B. APP-005 §§9, 20, 22 and 25 — pricing inputs, not payment calculation
 
-**Target:** APP-005 v1.0.1, §9 “Supplier Price Semantics,” §20 “Pricing Request Construction,” §22 “Package-Level Aggregation,” and §25 “APP-004 Boundary.” Status is Implementation Specification, not Approved.
+**Target:** APP-005 v1.0.2, §§3, 9, 16, 20, 22, and 25. Status remains Implementation Specification, not Approved.
 
 **Existing wording:** §9 says the supplier price is an input and prohibits reapplying the Hotelbeds-included 10% accommodation margin. §§20/22 define accommodation inputs and package aggregation. §25 says APP-004 consumes the resulting priced package.
 
@@ -134,7 +138,7 @@ Each block below is independent and remains subject to the owner and governance 
 
 ### B.1 APP-005.8 Quote Integration — preserve successful quote inputs
 
-**Target:** APP-005.8 v2.0 Approved, `# Quote Integration Service` and `# QuoteFactory`.
+**Target:** APP-005.8 v2.1 Approved, `# Quote Integration Service`, `# QuoteFactory`, and quote component preservation.
 
 **Existing wording:** Quote Integration consumes a successful PricingEngineResult, creates an immutable Quote and preserves the pricing snapshot; QuoteFactory performs no pricing calculations.
 
@@ -148,7 +152,7 @@ Each block below is independent and remains subject to the owner and governance 
 
 ### C. APP-004.4 §Reservation Payment Policy — consumer/evaluator boundary
 
-**Target:** APP-004.4 v2.0 Approved, `## Reservation Payment Policy`.
+**Target:** APP-004.4 v2.1 Approved, `## Reservation Payment Policy`.
 
 **Existing wording:** The policy “Evaluates payment-related rules” and lists deposit requirements, outstanding balances, and payment-status compatibility as examples; the initial implementation defines the contract only.
 
@@ -164,7 +168,7 @@ Each block below is independent and remains subject to the owner and governance 
 
 ### D. APP-004.1 `# Snapshot Principle` and `# Responsibilities` — preserve, do not calculate
 
-**Target:** APP-004.1 v2.0 Approved, `# Snapshot Principle` and `# Responsibilities`.
+**Target:** APP-004.1 v2.1 Approved, `# Snapshot Principle` and `# Responsibilities`.
 
 **Existing wording:** Reservation owns immutable snapshots that preserve booking state at creation or amendment; the Aggregate does not orchestrate, calculate pricing, validate, or evaluate policy.
 
@@ -182,7 +186,7 @@ Each block below is independent and remains subject to the owner and governance 
 
 ### E. APP-004.2 `# Accommodation Snapshot`, `# Payment Snapshot`, and `# Versioning`
 
-**Target:** APP-004.2 v2.0 Approved, the named sections.
+**Target:** APP-004.2 v2.1 Approved, the named sections.
 
 **Existing wording:** `Accommodation Snapshot` lists identity, property, room, meal basis and stay dates. `Payment Snapshot` lists status, method, amount received and balance outstanding. §Versioning says amendments create new snapshots without modifying historical snapshots.
 
@@ -219,7 +223,7 @@ Each block below is independent and remains subject to the owner and governance 
 
 ### F. APP-006.3 `## PRICING` and `## SETTLEMENT_READINESS`
 
-**Target:** APP-006.3 v1.0 Approved, the named validation stages and their acceptance criteria.
+**Target:** APP-006.3 v1.1 Approved, the named validation stages and their acceptance criteria.
 
 **Existing wording:** PRICING validates that a pricing snapshot exists, totals are present, payable amount is positive and currency is consistent. SETTLEMENT_READINESS validates amount consistency, among other settlement conditions. The approved text does not state that the individual transaction must equal the Reservation total; the current implementation's equality check is stricter than that text.
 
@@ -240,7 +244,7 @@ Each block below is independent and remains subject to the owner and governance 
 
 ### G. APP-006.4 `## Settlement Policy` and `# Policy Context`
 
-**Target:** APP-006.4 v1.0 Approved, the named sections.
+**Target:** APP-006.4 v1.1 Approved, the named sections.
 
 **Existing wording:** Settlement Policy determines whether settlement is permitted under current business rules. The policy context contains Reservation snapshot, pricing snapshot, payment request, payment method and metadata; policies read context only.
 
@@ -258,7 +262,7 @@ Each block below is independent and remains subject to the owner and governance 
 
 ### H. PayFast §§8, 18, 19 and AC-09 — expected individual transaction amount
 
-**Target:** APP-006.9 — PayFast Provider Integration, version 1.0.0, status Implementation Specification. APP-006.8 remains the separate approved provider-neutral specification.
+**Target:** APP-006.9 — PayFast Provider Integration, version 1.1.0, status Implementation Specification. APP-006.8 remains the separate approved provider-neutral specification.
 
 **Existing wording:** §8 maps the canonical APP-006 request's `amount`; §18 compares ITN amount with the expected APP-006 payment amount; §19 says the authoritative GCT amount is supplied upstream; AC-09 requires notification amounts to be checked against the expected payment amount.
 
@@ -278,7 +282,7 @@ Each block below is independent and remains subject to the owner and governance 
 
 ### I. SPEC-027 §15/§32 and SPEC-028 §18/§30 — physical snapshot mapping
 
-**Target:** SPEC-027 v2.0 and SPEC-028 v2.0, the named sections. Both documents' headers and footers state Approved. The proposed physical mapping still requires review and approval before implementation.
+**Target:** SPEC-027 v2.1 and SPEC-028 v2.1, the named sections. Version 2.0 remains preserved; the new versions retain Approved status under OR-07.
 
 **Existing wording:** SPEC-027 §15 requires Reservation-owned snapshots to be reconstructable and says JSONB structures must follow the canonical application contract. §32 permits JSONB only for a defined historical snapshot contract. SPEC-028 §18 requires the Prisma representation to follow SPEC-027; §30 permits Prisma `Json` only for structures explicitly defined in SPEC-027.
 
@@ -306,6 +310,8 @@ This register is limited to the outstanding approvals identified in §8 of the c
 
 `OR` means **Owner Review** in the identifiers below; these package-local identifiers are distinct from architectural decisions D01–D11.
 
+The decision questions and consequences below record the review package as prepared; they are not current open approvals. The Project Owner's 2026-11-18 approvals and qualifications are recorded in the supersession note above.
+
 | ID | Decision required | Responsible owner | Recommended wording / question for approval | Approval/rejection consequence | Blocks this implementation? |
 | --- | --- | --- | --- | --- | --- |
 | OR-01 | Date semantics and monetary precision for the 14-day rule and GCT percentage | Project Owner, with Finance/Pricing input | “Approve comparing the booking and departure as calendar dates in the Signature Cape Winelands commercial timezone (`Africa/Johannesburg` proposed), using `D > 14` versus `D <= 14`; approve exact decimal calculation and ZAR cent rounding (`ROUND_HALF_UP` proposed). Reject or specify alternatives.” | Approval makes the exact boundary and amount reproducible. Rejection requires a replacement rule; no implementation may guess. | Yes |
@@ -320,6 +326,8 @@ This register is limited to the outstanding approvals identified in §8 of the c
 The approvals do not change B01–B04. D02 and D04 are deliberately not submitted for reconsideration. No D03–D11 decision is requested or made here.
 
 ## 5. Dependency and approval sequence
+
+The numbered sequence below is the original pre-approval recommendation and is retained as historical review context. OR-01–OR-08 are approved; the applicable verification conditions and the D01 checks remain prerequisites to implementation.
 
 1. **Project Owner decisions OR-01 through OR-03:** close date/precision, effective commercial policy, and D01 partial-identity scope. Keep B01–B04 and existing D01 conditions intact.
 2. **Pricing owner decision OR-04:** verify the actual successful quote component mapping and no double accommodation margin. This can run in parallel with OR-01 through OR-03.
@@ -342,11 +350,12 @@ The relevant gaps and authority tensions are:
 - APP-006.3 requires positive payable amount and amount consistency but does not state in its approved text that the transaction must equal the Reservation total. The current implementation's stricter equality check is an implementation/specification mismatch, not a reason to reinterpret B01.
 - The PayFast specification already requires comparison against the expected APP-006 payment amount and upstream authority. It does not clearly distinguish an individual authorized initial amount from the full Reservation total. Its identity is now APP-006.9; its status remains Implementation Specification.
 - INT-004 calls its group totals authoritative for this iteration, while AR-003.6 notes that the underlying costing workbook/source and production implementation verification are not evidenced. The proposed handoff consumes the successful quote and does not copy those static totals; the Pricing owner verification in OR-04 is limited to that actual output and margin parity.
+- The checked-in Signature quote path produces a `BASE` Go Cape Tours line, `ACCOMMODATION:<packageStopId>` lines and a final total with currencies. The quote maps line code and amount into existing Quote items. The current GCT group totals are hard-coded in the journey pricing service; the repository does not identify their controlled costing source, version or effective date, and the source metadata is not present in the existing quote. The path supplies no accommodation markup and adds the selected accommodation components once; no separate production runtime was exercised. Therefore OR-04's verification condition is not complete: initial-requirement calculation must fail closed until the Pricing owner verifies and makes the controlled costing provenance available through the existing pricing/quote contract. No source or parallel pricing representation is authorized here.
 - SPEC-027/028 require JSON snapshot structures to be defined and mapped consistently. Their v2.0 headers and footers now agree on Approved status; the proposed physical mapping still requires explicit approval.
 
 No amendment here expands into Payment persistence, Payment–Reservation relationships, ITN lifecycle, Reservation confirmation, or later balance collection.
 
-## 7. Final status
+## 7. Final status at package preparation
 
 - One review-ready amendment package has been prepared with separately identified target sections, existing wording/behavior, proposed text, rationale, dependencies, and owner approvals.
 - The eight required owner decisions and their consequences are explicit.

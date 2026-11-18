@@ -6,7 +6,7 @@
 |---|---|
 | Document ID | APP-005 |
 | Title | Accommodation-to-Package Pricing Integration |
-| Version | 1.0.1 |
+| Version | 1.0.2 |
 | Status | Implementation Specification |
 | Capability | APP-005 Pricing |
 | Related Capabilities | APP-003 Journey, APP-004 Reservation, APP-008 Accommodation |
@@ -17,6 +17,7 @@
 
 | Version | Date | Change |
 |---|---|---|
+| 1.0.2 | 2026-11-18 | Defines quote-component traceability and the initial-payment calculation boundary in §§3, 16, and 25. |
 | 1.0.1 | 2026-11-18 | Clarifies embedded accommodation margin treatment and production pricing parity in §9. |
 
 ## 1. Purpose
@@ -88,6 +89,8 @@ APP-005 owns:
 - discounts;
 - taxes and fees where already defined by the existing pricing architecture;
 - final GCT package price.
+
+For the Signature Cape Winelands initial-payment handoff, APP-005 SHALL expose the existing successful quote's Go Cape Tours group line, final accommodation line per package stop, currencies, source line identities and final total. APP-005 SHALL NOT calculate the initial-payment requirement, contractual future balance or payment classification.
 
 ### APP-004 Reservation
 
@@ -349,6 +352,8 @@ If the existing pricing implementation requires an additional adapter or mapping
 
 ## 16. Pricing Traceability
 
+For the Signature Cape Winelands quote, the Go Cape Tours group component is represented by the existing `BASE` line and each accommodation component by its existing `ACCOMMODATION:<packageStopId>` line. The line amount, currency and code are the source for the tour/package commercial calculation; do not reconstruct an amount from supplier input or the INT-004 reference table. Preserve existing quote and line metadata needed to trace the controlled GCT costing source/version. If that source/version is unavailable or component values cannot be reconciled to the successful quote total, report the gap and do not calculate an initial requirement.
+
 The resulting package price SHALL remain traceable to the accommodation selections that contributed to it.
 
 At minimum, the implementation SHALL be capable of identifying:
@@ -488,6 +493,8 @@ This iteration SHALL stop at the APP-005 pricing boundary.
 APP-004 reservation integration is the next planned dependency iteration.
 
 APP-005 SHALL produce the information required for APP-004 to consume the priced package without implementing reservation persistence in this iteration.
+
+For the Signature Cape Winelands initial-payment handoff, tour/package commercial logic calculates the requirement from the successful quote. APP-004.4 consumes and evaluates it; neither APP-005 nor APP-004.4 independently recalculates pricing components or payment amounts.
 
 Do not modify APP-004 unless a minimal compatibility change is demonstrably required to expose the existing pricing result.
 

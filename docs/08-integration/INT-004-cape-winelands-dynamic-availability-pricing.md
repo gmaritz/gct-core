@@ -11,6 +11,13 @@
 | Governing Process | `docs/09-governance/GOV-DEV-001-DEVELOPMENT-PROCESS.md` |
 | Target Journey | SIGNATURE Cape Winelands Journey |
 | Scope | Dynamic dates, journey-specific Hotelbeds availability, room allocation and package pricing |
+| Version | 1.0.0 |
+
+## Revision History
+
+| Version | Date | Change |
+|---|---|---|
+| 1.0.0 | 2026-11-18 | Incorporates the approved initial-payment calculation and quote-to-Reservation handoff contract. |
 
 ## 2. Purpose
 
@@ -105,7 +112,7 @@ No children are included in this initial journey configuration.
 
 ## 5. Go Cape Tours Pricing
 
-The following group totals are authoritative for this iteration.
+The following group totals are the existing pricing baseline for this journey iteration. They do not identify the controlled costing source, version or effective date. The initial-payment calculation SHALL consume the successful quote component and SHALL NOT copy or reconstruct a GCT amount from this table. The accountable commercial source and version must be traceable from the quote before an initial requirement can be accepted.
 
 | Participants | Cost per person | Go Cape Tours group total |
 |---:|---:|---:|
@@ -130,6 +137,29 @@ Use the existing APP-005 pricing contracts and engine.
 Do not introduce additional markup, fees, taxes or currency-conversion rules without an existing approved rule requiring them.
 
 The Go Cape Tours component is selected by group size. It must not be multiplied by the participant count again.
+
+### 5.1 Initial-payment requirement from the successful quote
+
+The Signature Cape Winelands tour/package commercial logic owns calculation of the initial-payment requirement. APP-005 supplies the successful quote components; it does not calculate the payment requirement. APP-004.4 evaluates the supplied requirement and does not calculate it. Application orchestration passes the calculated, customer-accepted result to Reservation and Payment without changing its ownership.
+
+The calculation SHALL consume, without rebuilding prices, the components of one successful quote:
+
+- `G`: the single Go Cape Tours group line, including its amount and currency. It is already a group total and SHALL NOT be multiplied by participant count again.
+- `A_i`: the final accommodation line for each selected package stop, including all rooms/rates contributing to that stop. Use the line's final customer amount, not a reconstructed supplier amount.
+- `T`: the final quote total and currency, which become the Reservation total in PricingSnapshot.
+
+For the existing journey pricing contract, `BASE` identifies the Go Cape Tours line and `ACCOMMODATION:<packageStopId>` identifies each final per-stop accommodation line. Preserve each line's amount, currency and source identity. The amount in each accommodation line includes the selected Hotelbeds rate once. The received Hotelbeds rate already includes the 10% accommodation profit margin; no additional 10% markup is permitted.
+
+Let `D` be the departure calendar date minus the booking calendar date in `Africa/Johannesburg`, and `r` the effective collection rate from the version-controlled Signature Cape Winelands commercial policy:
+
+- When `D > 14`, the initial amount payable is `sum(A_i) + ROUND_HALF_UP(r × G)` and the contractual future balance is `ROUND_HALF_UP((1 - r) × G)`, due 14 calendar days before departure.
+- When `D <= 14`, the initial amount payable is `T`; no future balance is due under this initial requirement.
+
+The standard rate is 50% for `D > 14`; `r` remains configurable policy, not a Payment constant. Preserve the policy ID, version and applied rate, the controlled GCT costing source ID/version/effective basis, booking and departure dates, lead time, quote/pricing snapshot identity, and each component's source line identity and amount.
+
+Use calendar dates rather than elapsed hours, exact decimal arithmetic and `ROUND_HALF_UP` to ZAR cents. Do not use floating-point arithmetic for financial calculation or introduce currency conversion outside the existing approved pricing treatment. Before accepting the requirement, verify that component currencies are compatible and that the calculated terms reconcile to `T`. If the successful quote is unsuccessful, a component or controlled costing source/version is missing, currencies or totals do not reconcile, or rounded initial and future amounts do not reconcile to the quote, fail closed; do not create an initial requirement from the static table or Reservation total.
+
+Classify the requirement before payment: `PARTIAL_PAYMENT` when the initial amount is positive and less than `T`; `FULL_PAYMENT` when it equals `T`. Zero, negative or greater-than-total initial amounts are invalid. Classification is commercial requirement data, not a Payment lifecycle status or evidence of receipt.
 
 ## 6. Dynamic Journey Dates
 
