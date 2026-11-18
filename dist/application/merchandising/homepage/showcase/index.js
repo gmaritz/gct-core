@@ -20,6 +20,7 @@ __exportStar(require("./dynamic-homepage-journey-resolver"), exports);
 __exportStar(require("./dynamic-homepage-journey-selection"), exports);
 __exportStar(require("./accommodation-selection-service"), exports);
 __exportStar(require("./journey-quote-service"), exports);
+__exportStar(require("./signature-cape-winelands-initial-payment-calculator"), exports);
 __exportStar(require("./guest-information-service"), exports);
 __exportStar(require("./reservation-review-service"), exports);
 __exportStar(require("./journey-selection-store"), exports);
