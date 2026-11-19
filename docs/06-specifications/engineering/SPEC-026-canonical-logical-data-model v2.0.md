@@ -6,16 +6,27 @@
 |---|---|
 | Document ID | SPEC-026 |
 | Title | Canonical Logical Data Model |
-| Version | 2.0 |
-| Status | Approved |
+| Version | 3.0.0 |
+| Status | Draft — Architect and specification-owner review required |
 | Classification | Internal |
 | Owner | GCT Core System Architecture |
 | Project | GCT Core |
 | Governing Process | GOV-DEV-001-DEVELOPMENT-PROCESS.md |
 | Architectural Authority | ARCH-000 |
 | Related Decision | ADR-001 — Booking, Reservation and Supplier Booking Semantics |
-| Previous Version | SPEC-026 v1.0 |
+| Previous Version | SPEC-026 v2.0 |
 | Downstream | SPEC-027 — Physical Data Model |
+
+---
+
+# Revision History
+
+| Version | Date | Change | Status |
+|---|---|---|---|
+| 3.0.0 | 2026-11-19 | Proposed D02–D05 Payment association, ownership, persistence and evidence alignment. | Draft; approvals outstanding |
+| 2.0 | Previous | Booking, Reservation and Supplier Booking semantic baseline. | Approved baseline; historical footer discrepancy noted |
+
+This working file retains its historical v2.0 filename. The proposed revision is not approved, does not supersede the approved v2.0 baseline and authorises no implementation. The historical v2.0 footer stated Draft despite its Approved header; that document-control discrepancy remains for governance confirmation. Project Owner decisions in AR-003.4 v0.1.6 approve directions and conditions, not these amendments.
 
 ---
 
@@ -38,7 +49,7 @@ It establishes:
 
 The model is technology independent.
 
-It is the logical authority for subsequent physical data modelling, Prisma modelling, repository design and application implementation.
+The approved v2.0 baseline is the logical authority for subsequent physical data modelling, Prisma modelling, repository design and application implementation. This v3.0.0 revision is proposed and has no such authority until approved.
 
 This revision reconciles the Booking, Reservation and Supplier Booking semantics established by ADR-001 while preserving unrelated established architecture.
 
@@ -50,7 +61,7 @@ This specification is produced under:
 
 `GOV-DEV-001-DEVELOPMENT-PROCESS.md`
 
-The specification is the architectural contract for the subsequent physical-model work.
+The approved logical-model baseline is the architectural contract for subsequent physical-model work; this proposed revision remains subject to review.
 
 This document does not authorise implementation.
 
@@ -63,7 +74,7 @@ Specification
 → Architect Acceptance  
 → User Commit
 
-No implementation specification or Copilot implementation prompt shall override this logical model without an explicit architecture decision.
+No implementation specification or Copilot implementation prompt shall override the approved logical model without an explicit architecture decision.
 
 ---
 
@@ -652,7 +663,17 @@ The Reservation may own a `PaymentSnapshot` as historical Reservation state wher
 
 The Payment aggregate remains the authoritative financial transaction.
 
-The snapshot and Financial aggregate SHALL NOT be treated as the same concept.
+The Reservation-owned PaymentSnapshot and the independent Financial Payment Aggregate SHALL NOT be treated as the same concept. Neither Aggregate owns the other; each retains its own lifecycle and persistence boundary.
+
+### Proposed Payment alignment — D02, D03 and D05
+
+Payment is one individual financial transaction and a distinct Aggregate Root, persisted independently of Reservation. It does not calculate the commercial initial-payment requirement; Reservation retains its own lifecycle and historical PaymentSnapshot. Completion of an individual transaction does not imply full Reservation settlement.
+
+The persisted canonical Payment is associated explicitly and restrictively with the canonical Reservation ID. Its domain Reservation reference and immutable Reservation snapshot are retained and must agree with that association. This is not a one-to-one relationship and establishes no PaymentAttempt cardinality. The existing mandatory Booking association and legacy treatment require owner review; no Booking-derived substitute for the canonical Reservation association is approved.
+
+Existing Payment and its owned Refund representation are the financial source of truth for the Aggregate; no parallel Payment Aggregate or financial ledger is introduced. Complete reconstruction, exact money, legacy treatment and repository boundaries are proposed in SPEC-027–029 and APP-006.1/006.2, subject to approval.
+
+Verified provider evidence, canonical Payment lifecycle state and Reservation state are distinct. A verified PayFast `COMPLETE` is evidence, not an authorised Payment transition or proof of full Reservation settlement. Do not fabricate authorisation, capture, settlement, events, amounts or timestamps; preserve evidence with Payment status unchanged until a separately approved provider-neutral transition and PayFast mapping define meaning, evidence, status, event and timestamp semantics. No automatic Reservation confirmation follows that notification while the transition is unresolved.
 
 ---
 
@@ -738,12 +759,14 @@ Examples of valid references include:
 
 - Reservation → Product;
 - Reservation → Supplier Product;
-- Reservation → Payment;
+- Payment → Reservation, by the proposed explicit restrictive association to the canonical Reservation ID under D02;
 - Reservation → Itinerary;
 - Itinerary → Product;
 - Itinerary → Supplier Product.
 
 Direct ownership of another domain's child entities is prohibited.
+
+Any Reservation reference to a Payment, where established by its own contract, is distinct from the Payment-owned association above and does not make either Aggregate a child of the other. Reservation's PaymentSnapshot is Reservation-owned historical state, not the Payment Aggregate or a substitute for Payment's Reservation association. No one-to-one relationship or PaymentAttempt cardinality is implied.
 
 ---
 
@@ -939,6 +962,8 @@ Components:
 
 `Booking` is not the parent aggregate of Reservation.
 
+The Payment Snapshot is Reservation-owned historical state; it is not the independent Payment Aggregate and does not make Payment a Reservation child.
+
 ---
 
 ## Catalogue
@@ -1001,6 +1026,8 @@ Supplier Booking fulfilment associated with a Reservation Booking Item SHALL NOT
 Root:
 
 `Payment`
+
+Payment is independent of Reservation. Under the proposed D02 alignment it references the canonical Reservation ID through an explicit restrictive association consistent with its domain reference and immutable Reservation snapshot; neither Aggregate owns the other.
 
 Children:
 
@@ -1267,13 +1294,13 @@ The following remain preserved:
 - existing application Reservation contract;
 - established cross-domain ownership principles.
 
-Only the Booking/Reservation/Supplier Booking semantic boundary is reconciled here.
+The historical v2.0 reconciliation addressed the Booking/Reservation/Supplier Booking semantic boundary; the Payment alignment above is a separate proposal.
 
 ---
 
 # 37. Acceptance Criteria
 
-SPEC-026 v2.0 is ready for architecture approval when:
+The historical v2.0 Reservation reconciliation was ready for architecture approval when:
 
 - [ ] Booking is defined as the commercial transaction/process.
 - [ ] Reservation is defined as the canonical GCT Aggregate Root.
@@ -1297,7 +1324,7 @@ SPEC-026 v2.0 is ready for architecture approval when:
 
 # 38. Next Step
 
-After architect approval of SPEC-026 v2.0:
+The historical v2.0 Reservation follow-up was:
 
 1. Reconcile SPEC-027 against this logical model.
 2. Determine the correct physical representation of Reservation.
@@ -1316,8 +1343,8 @@ No implementation is authorised by SPEC-026 alone.
 
 **Document:** SPEC-026 — Canonical Logical Data Model
 
-**Version:** 2.0
+**Version:** 3.0.0
 
-**Status:** Draft — Architect Review Required
+**Status:** Draft — Architect and specification-owner review required
 
 **Next Specification:** SPEC-027 — Physical Data Model

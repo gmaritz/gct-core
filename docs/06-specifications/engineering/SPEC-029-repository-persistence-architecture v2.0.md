@@ -6,18 +6,29 @@
 |---|---|
 | Document ID | SPEC-029 |
 | Title | Repository & Persistence Architecture |
-| Version | 2.0 |
-| Status | Approved |
+| Version | 3.0.0 |
+| Status | Draft — Architect and specification-owner review required |
 | Classification | Implementation Specification |
 | Owner | GCT Core System Architecture |
 | Project | GCT Core |
 | Governing Process | GOV-DEV-001-DEVELOPMENT-PROCESS.md |
 | Architectural Authority | ARCH-000 |
 | Semantic Decision | ADR-001 — Booking, Reservation and Supplier Booking Semantics |
-| Logical Model | SPEC-026 v2.0 |
-| Physical Model | SPEC-027 v2.0 |
-| Prisma Model | SPEC-028 v2.0 |
+| Logical Model | SPEC-026 v2.0 baseline; proposed v3.0.0 |
+| Physical Model | SPEC-027 v2.1 baseline; proposed v3.0.0 |
+| Prisma Model | SPEC-028 v2.1 baseline; proposed v3.0.0 |
 | Downstream | Reservation Persistence Implementation Specification |
+
+---
+
+# Revision History
+
+| Version | Date | Change | Status |
+|---|---|---|---|
+| 3.0.0 | 2026-11-19 | Proposed D04 Payment repository and D02/D03 persistence contract; D05 evidence separation. | Draft; approvals outstanding |
+| 2.0 | Previous | Reservation repository architecture baseline. | Header stated Approved; footer stated Draft; governance confirmation outstanding |
+
+This working file retains its historical v2.0 filename. This proposed revision is not approved and does not supersede the existing baseline or authorise implementation. AR-003.4 D02–D05 approve directions subject to conditions, not this detailed contract; specification-owner and architecture-governance approvals remain outstanding.
 
 ---
 
@@ -82,8 +93,8 @@ Repository implementation SHALL follow this authority order:
 
 1. ADR-001
 2. SPEC-026 v2.0
-3. SPEC-027 v2.0
-4. SPEC-028 v2.0
+3. SPEC-027 v2.1 baseline
+4. SPEC-028 v2.1 baseline
 5. Accepted application contracts
 6. Existing repository conventions where they do not conflict with the above
 
@@ -167,6 +178,8 @@ The domain layer SHALL have no dependency on:
 - database models;
 - database-specific errors.
 
+**Proposed D04 exception:** the existing Payment Aggregate and its narrow, persistence-neutral `PaymentRepository` contract remain in Application; Infrastructure implements that contract and Application services depend on it. Domain must not import Application. This Payment-specific dependency direction reconciles the proposed SPEC-001 exception; it does not move Payment or create a second Aggregate. Existing Reservation repository ownership is unchanged.
+
 ---
 
 # 7. Repository Interface Rules
@@ -187,6 +200,16 @@ They SHALL NOT expose:
 - SQL;
 - database transactions;
 - database-specific error types.
+
+## 7.1 Proposed PaymentRepository contract — D02–D05
+
+The repository persists and reconstructs the complete canonical Payment, including its owned Refund records, in one Payment-local consistency boundary. It validates the explicit Reservation association against the domain reference and immutable snapshot; it does not load or mutate the Reservation Aggregate. Reconstruction uses the approved SPEC-027/028 mappings and exact-money contract, not fabricated stage records or incomplete legacy defaults. Read-by-identity returns the complete Aggregate and a persistence-neutral revision, not a partial success; missing, invalid and unmappable records must be distinguishable and surfaced.
+
+Creation must detect identity or business-reference conflicts rather than overwrite existing state. A conditional save supplies the revision read with the Aggregate; the entire Payment-owned write, including Refund changes, succeeds atomically only if the persisted revision still matches. Success returns a new revision; a stale revision produces an explicit conflict and no partial writes, while an absent record and persistence failure are not reported as success. Callers must reload and re-evaluate after a conflict. The revision is repository concurrency state, not the Aggregate metadata version.
+
+The interface exposes no Prisma, database entities, database errors, transaction clients or provider types. Provider calls and other Aggregate writes are outside its transaction. Verified provider evidence must remain distinguishable from canonical status; its storage and recovery contract remains subject to later owner review and is not specified as a new repository method here.
+
+Exact interface signatures, result/error types, revision representation, create-versus-save protocol, uniqueness handling, Refund deletion/history semantics and evidence storage remain for architect and specification-owner approval. Existing `Payment.version` is evidence of a candidate mechanism, not approval of a particular API or a migration. D06–D11 and their coordination/recovery details are outside this package.
 
 ---
 
@@ -1121,8 +1144,9 @@ SPEC-029 v2.0 is ready for architect approval when:
 | ARCH-000 | Architecture authority |
 | ADR-001 | Booking/Reservation/Supplier Booking semantics |
 | SPEC-026 v2.0 | Canonical logical model |
-| SPEC-027 v2.0 | Canonical physical model |
-| SPEC-028 v2.0 | Canonical Prisma model |
+| SPEC-027 v2.1 | Canonical physical model baseline |
+| SPEC-028 v2.1 | Canonical Prisma model baseline |
+| SPEC-026–028 proposed v3.0.0 | Payment alignment under review; not approved authority |
 | APP-004.1 | Reservation Aggregate |
 | 3K-C | Canonical Reservation contract |
 
@@ -1216,8 +1240,8 @@ After implementation, the iteration is complete only when the Copilot report has
 
 **Document:** SPEC-029 — Repository & Persistence Architecture
 
-**Version:** 2.0
+**Version:** 3.0.0
 
-**Status:** Draft — Architect Review Required
+**Status:** Draft — Architect and specification-owner review required
 
 **Next:** Reservation Persistence Implementation Specification

@@ -6,14 +6,15 @@
 |---|---|
 | Document ID | SPEC-027 |
 | Title | Physical Data Model |
-| Version | 2.1 |
-| Status | Approved |
+| Version | 3.0.0 |
+| Status | Draft — Architect and specification-owner review required |
 | Classification | Internal |
 | Owner | GCT Core System Architecture |
 | Project | GCT Core |
 | Governing Process | GOV-DEV-001-DEVELOPMENT-PROCESS.md |
 | Architectural Authority | ARCH-000 |
-| Logical Model | SPEC-026 v2.0 |
+| Logical Model | SPEC-026 v2.0 approved baseline; SPEC-026 v3.0.0 proposed revision under review |
+| Physical Model Baseline | SPEC-027 v2.1 approved baseline; SPEC-027 v3.0.0 proposed revision under review |
 | Related Decision | ADR-001 — Booking, Reservation and Supplier Booking Semantics |
 | Downstream Specification | SPEC-028 — Prisma Data Model |
 
@@ -23,9 +24,14 @@
 
 | Version | Date | Author | Description |
 |---|---|---|---|
+| 3.0.0 | 2026-11-19 | Copilot, for owner review | Proposed D02/D03 Payment association and Refund reconstruction, exact money and migration gates; baseline and review status clarified; not approved. |
 | 2.1 | 2026-11-18 | GCT Core System Architecture | Defines the initial-payment requirement within the existing Reservation payment snapshot; no physical schema changes. |
 | 2.0 | 2026-08-22 | GCT Core System Architecture | Reconciled physical model following ADR-001 and SPEC-026 v2.0 |
 | 1.0 | Previous | Enterprise Architecture | Original physical data model |
+
+---
+
+This working file retains its historical v2.1 filename. SPEC-026 v2.0 is the approved logical-model baseline and SPEC-027 v2.1 is the approved physical-model baseline. Proposed SPEC-026 v3.0.0 and this proposed SPEC-027 v3.0.0 are under review and are not approved authorities. The historical SPEC-026 v2.0 footer discrepancy remains for governance confirmation. AR-003.4 D02 is approved in principle and D03 is approved subject to conditions; neither approves these physical amendments, a migration or implementation. Specification-owner and architecture-governance approvals remain outstanding.
 
 ---
 
@@ -33,9 +39,9 @@
 
 This specification defines the canonical physical PostgreSQL data model for GCT Core.
 
-It translates the canonical logical model defined by SPEC-026 v2.0 into a relational persistence model.
+The approved SPEC-027 v2.1 baseline translates the approved SPEC-026 v2.0 logical baseline into a relational persistence model. This proposed v3.0.0 revision also aligns with the proposed SPEC-026 v3.0.0 Payment relationship, subject to review and approval of both revisions.
 
-This revision specifically reconciles:
+The approved baseline reconciles:
 
 - Booking;
 - Reservation;
@@ -43,9 +49,11 @@ This revision specifically reconciles:
 - Supplier Booking;
 - Go Cape internal fulfilment.
 
+This proposed revision additionally addresses the Payment-to-Reservation association described in §20.1.
+
 The physical model SHALL preserve the canonical Reservation Aggregate Root established by APP-004.1 and 3K-C.
 
-This specification is the physical persistence authority for SPEC-028.
+The approved SPEC-027 v2.1 baseline remains the physical persistence authority for SPEC-028. This proposed revision is not an approved authority.
 
 ---
 
@@ -754,6 +762,37 @@ Reservation may retain a PaymentSnapshot representing historical Reservation sta
 
 The Payment aggregate and PaymentSnapshot SHALL NOT be treated as the same physical business object.
 
+## 20.1 Proposed Payment and Refund reconstruction contract — D02/D03
+
+Extend the existing `payment` and `refund` representations; do not create a parallel Payment table or independently mutable duplicate financial facts. Under the proposed D02 alignment, a canonical Payment must have an explicit restrictive foreign-key association to the canonical Reservation ID, consistent with its domain reference and immutable Reservation snapshot. Payment and Reservation remain independently owned and persisted; Reservation's own PaymentSnapshot is historical Reservation state, not the Payment Aggregate. The association does not imply one-to-one cardinality or establish PaymentAttempt cardinality. Booking cannot substitute for the canonical Reservation association. Physical mapping, field names, constraints and indexes remain subject to approval. The current required Booking relationship, legacy nullability and reference compatibility must be assessed; neither nullable Booking nor a legacy backfill is approved by this draft.
+
+The following is a required logical reconstruction path, **not an approved physical field or JSON design**. Existing fields are evidence, not proof that the mapping is complete:
+
+| Aggregate state | Reconstruction source and unresolved physical decisions |
+|---|---|
+| Payment identity and business reference | Existing `payment` identity and unique business reference; review legacy references, collisions and their relationship to the domain reference and optional quotation number. |
+| Reservation association and snapshot | Proposed restrictive canonical Reservation association plus Payment-owned immutable snapshot; map and validate the same Reservation ID and reference. Physical columns, representation and legacy mapping require approval. |
+| Optional Quote and required Pricing snapshots | Persist the complete historical values required by APP-006.1, including identity, version and capture time; do not reconstruct from mutable live records or recalculate. Physical representation requires approval. |
+| Transaction reference and optional instrument | Preserve all canonical reference details and permitted instrument information. Existing transaction-reference field is incomplete; representation, privacy and legacy mapping require approval. |
+| Transaction amount and currency | Existing `payment.amount` and currency relation are candidate authoritative sources; apply the exact-money contract below and approve lookup/code mapping. Historical Pricing snapshot amounts are distinct facts, not another independently mutable transaction amount. |
+| Method and canonical lifecycle status | Existing method and status relations are candidates; approved code maps and invalid/unknown legacy treatment are required. Provider evidence is not canonical status. |
+| Authorisation, capture and settlement | Restore each optional evidenced record in full, including its identity, amount/currency, status, references and timestamps as defined by APP-006.1/006.2. The current model lacks complete stage records; choose and approve representations without fabricating missing evidence. |
+| Refunds | Load all Refund records belonging to the Payment, including the treatment of soft-deleted history. Reconstruct each `refundId`, `requestedAt`, optional `refundedAt`, amount, currency, reason, status and complete provider reference. Existing refund ID, Payment relation, amount, reason, status and `refundedAt` are candidates, but missing currency, request time and provider reference, required `refundedAt`, identity/business-reference semantics, ordering and legacy treatment require approval. The existing Refund records are the refund ledger; no second mutable refund ledger. |
+| Timeline, metadata and audit | Restore complete ordered timeline and metadata, including required timestamps, version, source and optional audit context. Determine representation, ordering and mapping of existing audit fields without conflating Aggregate metadata version and persistence concurrency revision. |
+| Verified provider evidence | Preserve verified evidence separately from canonical lifecycle state. Its precise representation, retention, access and recovery contract remain unresolved; do not infer verification from an existing provider response. |
+
+Unknown codes, invalid/incomplete required state, conflicting identity or unverifiable legacy data must produce an explicit reconstruction failure, not a fabricated complete Aggregate. Owners must specify how affected legacy records remain accessible and are reconciled. This table identifies the required path but is not yet a complete implementable physical mapping.
+
+### Exact money
+
+For existing `Decimal(19,4)` transaction and Refund columns, persist and reconstruct the exact base-10 value and currency using decimal arithmetic and decimal text or an equivalent exact decimal type, never a binary floating-point conversion. Decimal text uses an optional minus sign, one or more base-10 integer digits and an optional decimal point followed by one or more digits; exponent notation, whitespace and grouping separators are invalid. Values must be exactly representable within 15 integral digits and four fractional digits; reject overflow or excess non-zero fractional precision rather than round or truncate. Compare values numerically in exact decimal form; scale-only differences do not change value. Preserve applicable currency and business precision rules separately; no currency conversion is implied. Other historical amounts must likewise round-trip exactly under their approved storage precision; their physical precision remains an owner decision.
+
+If a later approved Payment-owned JSON structure contains money, its defined schema must use decimal strings, not JSON numbers, and specify validation, precision and currency. This paragraph authorises **no new JSON structure** and does not change the existing Reservation snapshot contract. APP-006.1/006.2 currently expose JavaScript `number`; converting persisted decimals through those types cannot guarantee exact reconstruction. An approved application and affected Reservation/APP-004.2 precision contract is required before implementation; do not silently round or claim the existing contract already meets this requirement.
+
+### Migration and rollback gates
+
+Before implementation, owners must approve a complete physical mapping, reference-data and constraint changes, assessment of existing Payment/Refund records and consumers, evidence-based legacy classification and backfill, and a tested staged migration and rollback strategy. Preserve existing IDs, references and financial history; never infer missing facts. Define reconciliation, compatibility and failure handling, rollback data preservation and irreversible-change contingencies before deployment. An incomplete legacy record must not be presented as a fully reconstructed canonical Payment.
+
 ---
 
 # 21. Operations Domain
@@ -829,6 +868,8 @@ The canonical physical relationship is:
 
 Booking remains the originating commercial transaction and may reference the Reservation through the established application/persistence relationship.
 
+Separately, the proposed D02 Payment-to-Reservation association references the canonical Reservation ID as described in §20.1. It is not ownership and does not place Payment under the Reservation in the diagram.
+
 ---
 
 # 24. Cross-Domain Foreign Key Rules
@@ -852,6 +893,8 @@ Examples:
 - `itinerary.reservation_id → reservation.id` where established by the Operations architecture.
 
 Exact relationships SHALL remain consistent with the approved logical model.
+
+**Proposed D02 relationship:** Payment has an explicit restrictive foreign-key association to the canonical Reservation ID, consistent with its domain reference and immutable Reservation snapshot, subject to the physical mapping and legacy compatibility approvals in §20.1. No field name, index or additional constraint is approved here. The association does not imply one-to-one cardinality or substitute Booking for Reservation.
 
 ---
 
@@ -1168,7 +1211,7 @@ If existing data cannot be mapped safely, implementation SHALL stop and identify
 
 # 43. Physical Model Acceptance Criteria
 
-SPEC-027 v2.1 is ready for architect acceptance when:
+Proposed SPEC-027 v3.0.0 remains **Draft — Architect and specification-owner review required**. It is ready for architect acceptance only when the following criteria and outstanding owner/governance reviews are satisfied:
 
 - [ ] PostgreSQL remains the authoritative relational store.
 - [ ] Reservation is the canonical physical Aggregate Root.
@@ -1187,12 +1230,13 @@ SPEC-027 v2.1 is ready for architect acceptance when:
 - [ ] Day Tours do not require accommodation persistence.
 - [ ] Package Tours can persist accommodation components.
 - [ ] Financial Payment remains a separate aggregate.
+- [ ] The proposed restrictive Payment-to-canonical-Reservation association is consistent with the Payment reference and immutable Reservation snapshot, without implying ownership or one-to-one cardinality.
 - [ ] Operations resources remain separate aggregates.
 - [ ] Cross-domain foreign keys preserve aggregate boundaries.
 - [ ] The historical `reservation` supplier concept is not confused with GCT Reservation.
 - [ ] JSONB is not used to make Booking impersonate Reservation.
 - [ ] No unrelated physical architecture is redesigned.
-- [ ] SPEC-026 v2.0 is preserved as the logical authority.
+- [ ] Approved SPEC-026 v2.0 remains the logical baseline; the proposed SPEC-026 v3.0.0 alignment is not treated as approved authority.
 - [ ] ADR-001 is preserved as the semantic authority.
 
 ---
@@ -1204,7 +1248,9 @@ SPEC-027 v2.1 is ready for architect acceptance when:
 | GOV-DEV-001 | Development process |
 | ARCH-000 | Architecture authority |
 | ADR-001 | Booking/Reservation/Supplier Booking semantics |
-| SPEC-026 v2.0 | Canonical logical data model |
+| SPEC-026 v2.0 | Approved logical-model baseline |
+| SPEC-026 v3.0.0 | Proposed logical-model revision under review; not approved authority |
+| SPEC-027 v2.1 | Approved physical-model baseline |
 | APP-004 | Reservation capability |
 | APP-004.1 | Reservation Aggregate |
 | 3K-C | Canonical Reservation contract |
@@ -1248,13 +1294,13 @@ The following remain preserved unless explicitly changed by a later approved spe
 - existing reference-data architecture;
 - existing index and integrity principles.
 
-Only the physical Booking/Reservation/Supplier Booking boundary is materially reconciled by this revision.
+The historical v2.1 baseline retained the earlier Booking/Reservation/Supplier Booking reconciliation and added the initial-payment snapshot contract; the Payment association alignment above is a separate proposal.
 
 ---
 
 # 47. Next Specification
 
-After SPEC-027 v2.1 approval:
+The historical follow-up after the approved SPEC-027 v2.1 baseline was:
 
 1. Reconcile SPEC-028 — Prisma Data Model.
 2. Align Prisma models to the corrected physical Reservation boundary.
@@ -1273,8 +1319,8 @@ No implementation is authorised by SPEC-027 alone.
 
 **Document:** SPEC-027 — Physical Data Model
 
-**Version:** 2.1
+**Version:** 3.0.0
 
-**Status:** Approved
+**Status:** Draft — Architect and specification-owner review required
 
 **Next Specification:** SPEC-028 — Prisma Data Model
