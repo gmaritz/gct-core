@@ -14,9 +14,9 @@
 | Governing Process | GOV-DEV-001-DEVELOPMENT-PROCESS.md |
 | Architectural Authority | ARCH-000 |
 | Semantic Decision | ADR-001 — Booking, Reservation and Supplier Booking Semantics |
-| Logical Model | SPEC-026 v2.0 baseline; proposed v3.0.0 |
-| Physical Model | SPEC-027 v2.1 baseline; proposed v3.0.0 |
-| Downstream | SPEC-029 — Repository & Persistence Architecture |
+| Logical Model | SPEC-026 v2.0 approved baseline; SPEC-026 v3.0.0 proposed revision under review |
+| Physical Model | SPEC-027 v2.1 approved baseline; SPEC-027 v3.0.0 proposed revision under review |
+| Downstream | SPEC-029 — Repository & Persistence Architecture; proposed v3.0.0 under review |
 
 ---
 
@@ -24,18 +24,18 @@
 
 | Version | Date | Author | Description |
 |---|---|---|---|
-| 3.0.0 | 2026-11-19 | Copilot, for owner review | Proposed D02/D03 Payment and Refund mapping and exact-money gates; no schema or JSON changes authorised. |
+| 3.0.0 | 2026-11-19 | Copilot, for owner review | Proposed D02/D03 Payment and Refund mapping, cross-domain reference clarification, exact-money gates and baseline/revision reference alignment; no schema or JSON changes authorised. |
 | 2.1 | 2026-11-18 | GCT Core System Architecture | Maps the approved initial-payment requirement into the existing Reservation `paymentSnapshot` Json field; no Prisma schema changes. |
 
 ---
 
-This working file retains its historical v2.1 filename. The v2.1 approved baseline remains applicable until the proposed revision is approved. AR-003.4 D02/D03 provide conditional architectural direction, not approval of this Prisma amendment or a migration. Specification-owner and architecture-governance approvals are outstanding.
+This working file retains its historical v2.1 filename. The approved SPEC-028 v2.1 baseline remains applicable until proposed SPEC-028 v3.0.0 is approved. SPEC-026 v2.0 and SPEC-027 v2.1 are the approved logical and physical baselines; their proposed v3.0.0 revisions are under review and are not approved authorities. AR-003.4 D02/D03 provide conditional architectural direction, not approval of this Prisma amendment or a migration. Specification-owner and architecture-governance approvals are outstanding.
 
 ---
 
 # 1. Purpose
 
-This specification defines the canonical Prisma implementation of the PostgreSQL physical data model defined by SPEC-027 v2.1.
+The approved SPEC-028 v2.1 baseline defines the Prisma implementation of the approved SPEC-027 v2.1 physical model. Proposed SPEC-028 v3.0.0 includes Payment alignment with proposed SPEC-026 v3.0.0 and SPEC-027 v3.0.0; all three proposed revisions remain under review and are not approved implementation authority.
 
 Prisma SHALL be a faithful implementation of:
 
@@ -49,13 +49,15 @@ Prisma SHALL be a faithful implementation of:
 
 SPEC-028 SHALL NOT introduce business concepts, aggregate boundaries or persistence structures that are not supported by SPEC-026 and SPEC-027.
 
-The primary reconciliation in this revision is the distinction between:
+The approved baseline reconciles the distinction between:
 
 - Booking;
 - Reservation;
 - Booking Item;
 - Supplier Booking;
 - Go Cape internal fulfilment.
+
+The proposed revision additionally addresses the Payment alignment described in §§27 and 30.
 
 ---
 
@@ -65,7 +67,7 @@ This specification is produced under:
 
 `GOV-DEV-001-DEVELOPMENT-PROCESS.md`
 
-The specification is the implementation contract for the Prisma model.
+The approved SPEC-028 v2.1 baseline is the implementation contract for the Prisma model. Proposed SPEC-028 v3.0.0 is not an implementation contract until approved.
 
 Implementation SHALL NOT begin until this specification has been architecturally approved.
 
@@ -134,14 +136,16 @@ This specification does not define:
 Prisma SHALL follow the following authority order:
 
 1. ADR-001 — Booking, Reservation and Supplier Booking Semantics
-2. SPEC-026 v2.0 — Canonical Logical Data Model
-3. SPEC-027 v2.1 — Physical Data Model
+2. SPEC-026 v2.0 — approved Canonical Logical Data Model baseline
+3. SPEC-027 v2.1 — approved Physical Data Model baseline
 4. Existing accepted application contracts
 5. Existing repository conventions where they do not conflict with the above
 
 A historical Prisma model SHALL NOT override an approved architectural decision.
 
-Where the current Prisma schema conflicts with SPEC-027 v2.1, the schema SHALL be corrected rather than the specification silently changed.
+Proposed SPEC-026 v3.0.0, SPEC-027 v3.0.0 and SPEC-028 v3.0.0 are reviewed together but are not approved sources of implementation authority. Unless explicitly identified as a proposal, references to SPEC-026 or SPEC-027 in this document refer to their approved baselines above.
+
+Where the current Prisma schema conflicts with an approved specification, including the approved SPEC-027 v2.1 baseline, the conflict SHALL be reported and resolved through the applicable specification and architectural decision process. Implementation SHALL NOT proceed on the basis of an unresolved architectural conflict, and Copilot SHALL NOT independently resolve or reinterpret the conflict. Proposed SPEC-027 v3.0.0 remains under review and, like any proposed specification revision, does not authorise implementation.
 
 ---
 
@@ -562,7 +566,7 @@ If SPEC-027 defines a relational child structure, Prisma SHALL represent the rel
 
 Copilot SHALL NOT convert one representation to the other without an approved specification change.
 
-The existing `Reservation.paymentSnapshot` Prisma `Json?` property SHALL carry the immutable `initialRequirement` defined by APP-004.2 and SPEC-027 v2.1. It SHALL preserve classification; booking payable amount and currency; optional contractual future balance, currency and calendar due date; pricing snapshot identity; commercial policy ID, version and applied rate; booking date, departure date, lead time and commercial timezone; the GCT pricing-line identity, amount and controlled costing source/version/effective date; and each final per-stop accommodation pricing-line identity and amount.
+The existing `Reservation.paymentSnapshot` Prisma `Json?` property SHALL carry the immutable `initialRequirement` defined by APP-004.2 and the approved SPEC-027 v2.1 baseline. It SHALL preserve classification; booking payable amount and currency; optional contractual future balance, currency and calendar due date; pricing snapshot identity; commercial policy ID, version and applied rate; booking date, departure date, lead time and commercial timezone; the GCT pricing-line identity, amount and controlled costing source/version/effective date; and each final per-stop accommodation pricing-line identity and amount.
 
 Reservation total and currency remain in `pricingSnapshot`; they SHALL NOT be duplicated as independently mutable values in `paymentSnapshot.initialRequirement`. Verified amount received and balance outstanding remain separate from the contractual future balance. The JSON structure SHALL remain reconstructable through the APP-004.2 application contract and SHALL NOT contain a Payment Aggregate, Payment-to-Reservation relationship, provider payload or future collection command.
 
@@ -747,7 +751,6 @@ Approved relationship examples include:
     Reservation → Customer
     Reservation → Product
     Reservation → SupplierProduct
-    Reservation → Payment
     Reservation → Itinerary
 
 and:
@@ -757,6 +760,14 @@ and:
     SupplierBooking → SupplierProduct
 
 Direct cross-domain ownership of child entities is prohibited.
+
+Under the D02 direction approved in principle, the proposed Payment-to-Reservation reference is:
+
+    Payment → Reservation
+
+It is an explicit restrictive association to the canonical Reservation ID, not Aggregate ownership or an embedded Payment. Payment and Reservation remain independent Aggregate Roots with separate lifecycles and persistence boundaries. The association must agree with the Payment domain reference and its immutable Reservation snapshot. Reservation owns its separate historical PaymentSnapshot, which records Reservation-level payment outcomes; that snapshot is not the Payment Aggregate.
+
+This direction does not establish a one-to-one relationship or PaymentAttempt cardinality. Physical mapping and legacy compatibility remain subject to the approvals described in §30. This clarification introduces no new relationship, field, constraint, schema mapping or migration requirement.
 
 ---
 
@@ -842,15 +853,15 @@ The following principles are mandatory:
 - JSON structures SHALL remain reconstructable by the application contract.
 - No provider-specific payload SHALL become an uncontrolled canonical domain structure.
 
-For Reservation `paymentSnapshot`, the permitted `initialRequirement` structure is the APP-004.2 contract defined by SPEC-027 v2.1. Prisma SHALL map it through the existing `Reservation.paymentSnapshot Json?` property only. No new JSON payload or duplicate Reservation total is authorized.
+For Reservation `paymentSnapshot`, the permitted `initialRequirement` structure is the APP-004.2 contract defined by the approved SPEC-027 v2.1 baseline. Prisma SHALL map it through the existing `Reservation.paymentSnapshot Json?` property only. No new JSON payload or duplicate Reservation total is authorized.
 
 **Proposed D02/D03 clarification:** no additional Payment, Refund, evidence, snapshot or timeline JSON structure is authorised by this draft. A structure must first be explicitly defined and approved in SPEC-027 before a corresponding Prisma `Json` mapping may be approved here. Exact monetary values in any subsequently approved Payment-owned JSON structure must use decimal strings under that structure's approved contract, never JSON numbers; the existing Reservation snapshot contract is unchanged. JSON must not conceal foreign-key relationships or duplicate independently mutable financial facts.
 
 ### Proposed Payment and Refund mapping — not implementation-ready
 
-The eventual Prisma mapping must implement the complete Payment and Refund reconstruction requirements in proposed SPEC-027 §20.1 using the existing models, not a second Payment model. It must express a restrictive relation to the canonical Reservation ID and validate consistency with the Payment domain reference and immutable snapshot; no one-to-one or PaymentAttempt cardinality is implied. Existing required `Payment.bookingId` and legacy compatibility remain unresolved.
+The eventual Prisma mapping must implement the complete Payment and Refund reconstruction requirements in proposed, unapproved SPEC-027 v3.0.0 §20.1 using the existing models, not a second Payment model. It must express a restrictive relation to the canonical Reservation ID and validate consistency with the Payment domain reference and immutable snapshot; no one-to-one or PaymentAttempt cardinality is implied. Existing required `Payment.bookingId` and legacy compatibility remain unresolved.
 
-Existing Payment and Refund monetary `Decimal(19,4)` values must pass the exact-decimal and currency contract in proposed SPEC-027 §20.1 without conversion through JavaScript `number`. Range or scale violations must fail explicitly, without rounding. The required application representation is not yet approved. The current Refund model does not provide every required `RefundRecord` value and requires `refundedAt` even when the application record permits its absence; the precise changes and legacy mapping remain for owner approval.
+Existing Payment and Refund monetary `Decimal(19,4)` values must pass the exact-decimal and currency contract in proposed, unapproved SPEC-027 v3.0.0 §20.1 without conversion through JavaScript `number`. Range or scale violations must fail explicitly, without rounding. The required application representation is not yet approved. The current Refund model does not provide every required `RefundRecord` value and requires `refundedAt` even when the application record permits its absence; the precise changes and legacy mapping remain for owner approval.
 
 No Prisma field, constraint, snapshot layout, evidence storage or migration is defined or authorised here. SPEC-027 physical mapping and JSON definitions must be approved first, followed by corresponding SPEC-028 approval, including reference-data mapping, legacy compatibility and a reviewed migration and rollback plan.
 
@@ -949,7 +960,7 @@ These fields include concepts corresponding to:
 
 Those fields SHALL NOT automatically become the final Prisma architecture.
 
-SPEC-028 v2.1 requires Copilot to reconcile them against SPEC-027 v2.1.
+The approved SPEC-028 v2.1 baseline requires reconciliation against the approved SPEC-027 v2.1 baseline. Proposed SPEC-028 v3.0.0 is also reviewed against proposed SPEC-027 v3.0.0; neither proposed revision authorises implementation.
 
 If an existing field is no longer required because Reservation has its own canonical physical model, it SHALL be removed or migrated only as explicitly specified by the implementation specification derived from this document.
 
@@ -1090,10 +1101,10 @@ The exact file organisation SHALL follow the current repository's Prisma tooling
 
 # 43. Implementation Constraints
 
-Copilot SHALL:
+Following the required specification and implementation approvals, Copilot SHALL:
 
 - inspect the current `schema.prisma` before modification;
-- compare current Prisma models against SPEC-027 v2.1;
+- compare current Prisma models against the approved SPEC-027 v2.1 baseline and any subsequently approved revision applicable to the work;
 - preserve unrelated existing models;
 - modify only models required by this reconciliation;
 - preserve existing valid fields and relationships;
@@ -1116,7 +1127,7 @@ Copilot SHALL NOT:
 
 # 44. Decision-Gap Rule
 
-Implementation SHALL stop and report a decision gap if the current Prisma schema cannot implement SPEC-027 v2.1 without inventing:
+Implementation SHALL stop and report a decision gap if the current Prisma schema cannot implement the applicable approved SPEC-027 baseline or subsequently approved revision without inventing:
 
 - a new business entity;
 - a new aggregate boundary;
@@ -1165,9 +1176,11 @@ External supplier APIs SHALL NOT be called.
 
 # 47. Acceptance Criteria
 
-SPEC-028 v2.1 is ready for architect acceptance when:
+Proposed SPEC-028 v3.0.0 remains **Draft — Architect and specification-owner review required**. It is ready for architect acceptance only when the following criteria and outstanding owner/governance reviews are satisfied:
 
-- [ ] Prisma remains a faithful implementation of SPEC-027 v2.1.
+- [ ] The approved SPEC-027 v2.1 physical baseline remains distinguished from proposed SPEC-027 v3.0.0, which is not yet approved.
+- [ ] Proposed SPEC-028 v3.0.0 is consistent with the proposed SPEC-026 v3.0.0 and SPEC-027 v3.0.0 revisions, subject to their respective approvals.
+- [ ] Prisma remains a faithful implementation of the applicable approved SPEC-027 physical model.
 - [ ] PostgreSQL remains the datasource.
 - [ ] Prisma Client uses the established repository configuration.
 - [ ] UUID identity conventions are preserved.
@@ -1204,12 +1217,15 @@ SPEC-028 v2.1 is ready for architect acceptance when:
 | GOV-DEV-001 | Governing development process |
 | ARCH-000 | Architecture authority |
 | ADR-001 | Booking/Reservation/Supplier Booking semantics |
-| SPEC-026 v2.0 | Canonical logical model |
-| SPEC-027 v2.1 | Canonical physical model |
+| SPEC-026 v2.0 | Approved logical-model baseline |
+| SPEC-026 v3.0.0 | Proposed logical-model revision under review; not approved authority |
+| SPEC-027 v2.1 | Approved physical-model baseline |
+| SPEC-027 v3.0.0 | Proposed physical-model revision under review; not approved authority |
+| SPEC-028 v2.1 | Approved Prisma-model baseline |
 | APP-004 | Reservation capability |
 | APP-004.1 | Reservation Aggregate |
 | 3K-C | Canonical Reservation contract |
-| SPEC-029 | Repository persistence architecture |
+| SPEC-029 v3.0.0 | Proposed repository persistence revision under review; not approved authority |
 
 ---
 
@@ -1251,13 +1267,13 @@ The following remain unchanged unless explicitly required by SPEC-027:
 - existing Operations models;
 - existing Platform models.
 
-The historical v2.1 revision reconciled the Booking/Reservation/SupplierBooking persistence boundary; the Payment alignment above is a separate proposal.
+The historical v2.1 baseline retained the earlier Booking/Reservation/SupplierBooking reconciliation and added the initial-payment snapshot mapping; the Payment alignment above is a separate proposal.
 
 ---
 
 # 51. Downstream Dependency
 
-After SPEC-028 v2.1 approval:
+The historical follow-up after the approved SPEC-028 v2.1 baseline was:
 
 1. SPEC-029 — Repository & Persistence Architecture SHALL be reconciled.
 2. Repository ownership SHALL be aligned with Reservation as Aggregate Root.
@@ -1266,15 +1282,15 @@ After SPEC-028 v2.1 approval:
 5. The canonical Reservation persistence graph SHALL be defined.
 6. Only then may a revised Reservation persistence implementation specification be produced.
 
-No new Reservation persistence implementation SHALL be authorised before SPEC-029 is reconciled and approved.
+For proposed SPEC-028 v3.0.0, the relevant proposed SPEC-026, SPEC-027 and SPEC-029 revisions remain subject to owner and architecture review and approval. No new implementation is authorised by this draft; no new Reservation persistence implementation SHALL be authorised before SPEC-029 is reconciled and approved.
 
 ---
 
 # 52. Definition of Done
 
-SPEC-028 reconciliation is complete when:
+Proposed SPEC-028 v3.0.0 reconciliation remains under review and is complete only when applicable approvals and the following conditions are satisfied:
 
-- the Prisma model reflects SPEC-027 v2.1;
+- the Prisma model reflects the applicable approved SPEC-027 physical model, with the proposed v3.0.0 mapping implemented only after the required approvals;
 - the Booking/Reservation semantic collision is removed;
 - SupplierBooking is represented distinctly from Reservation;
 - the current B3L Prisma workaround is no longer treated as the architectural baseline;

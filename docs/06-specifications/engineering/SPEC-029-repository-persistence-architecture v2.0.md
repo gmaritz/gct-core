@@ -14,9 +14,10 @@
 | Governing Process | GOV-DEV-001-DEVELOPMENT-PROCESS.md |
 | Architectural Authority | ARCH-000 |
 | Semantic Decision | ADR-001 — Booking, Reservation and Supplier Booking Semantics |
-| Logical Model | SPEC-026 v2.0 baseline; proposed v3.0.0 |
-| Physical Model | SPEC-027 v2.1 baseline; proposed v3.0.0 |
-| Prisma Model | SPEC-028 v2.1 baseline; proposed v3.0.0 |
+| Project Structure | SPEC-001 v1.0 approved baseline; SPEC-001 v2.0.0 proposed revision under review |
+| Logical Model | SPEC-026 v2.0 approved baseline; SPEC-026 v3.0.0 proposed revision under review |
+| Physical Model | SPEC-027 v2.1 approved baseline; SPEC-027 v3.0.0 proposed revision under review |
+| Prisma Model | SPEC-028 v2.1 approved baseline; SPEC-028 v3.0.0 proposed revision under review |
 | Downstream | Reservation Persistence Implementation Specification |
 
 ---
@@ -25,16 +26,16 @@
 
 | Version | Date | Change | Status |
 |---|---|---|---|
-| 3.0.0 | 2026-11-19 | Proposed D04 Payment repository and D02/D03 persistence contract; D05 evidence separation. | Draft; approvals outstanding |
+| 3.0.0 | 2026-11-19 | Proposed D04 Payment repository and D02/D03 persistence contract; D05 evidence separation; baseline and proposed revision references clarified. | Draft; approvals outstanding |
 | 2.0 | Previous | Reservation repository architecture baseline. | Header stated Approved; footer stated Draft; governance confirmation outstanding |
 
-This working file retains its historical v2.0 filename. This proposed revision is not approved and does not supersede the existing baseline or authorise implementation. AR-003.4 D02–D05 approve directions subject to conditions, not this detailed contract; specification-owner and architecture-governance approvals remain outstanding.
+This working file retains its historical v2.0 filename. The historical SPEC-029 v2.0 baseline recorded Approved in its header and Draft in its footer; that discrepancy remains for governance confirmation. Proposed SPEC-029 v3.0.0 is under review, is not approved, does not supersede the existing baseline and does not authorise implementation. AR-003.4 D02–D05 approve directions subject to conditions, not this detailed contract; specification-owner and architecture-governance approvals remain outstanding.
 
 ---
 
 # 1. Purpose
 
-This specification defines the canonical repository and persistence architecture for GCT Core.
+The historical SPEC-029 v2.0 baseline defines the repository and persistence architecture for GCT Core. Proposed SPEC-029 v3.0.0 adds Payment persistence alignment and remains under review; it is not approved implementation authority.
 
 It establishes:
 
@@ -63,7 +64,7 @@ This specification is governed by:
 
 `GOV-DEV-001-DEVELOPMENT-PROCESS.md`
 
-The specification is the implementation contract for the repository and persistence layer.
+The historical SPEC-029 v2.0 baseline recorded Approved in document control, subject to the footer discrepancy noted above. Proposed SPEC-029 v3.0.0 is not an approved implementation contract for the repository and persistence layer.
 
 Implementation SHALL NOT begin until this specification has been reviewed and approved.
 
@@ -83,7 +84,7 @@ Any Copilot implementation prompt derived from this specification SHALL explicit
 
 and instruct Copilot to follow it as the governing development process.
 
-The specification format follows GOV-DEV-001: this entire document is supplied as one complete Markdown document in one copyable block, with no nested Markdown code blocks. :contentReference[oaicite:0]{index=0}
+The specification format follows GOV-DEV-001: this entire document is supplied as one complete Markdown document in one copyable block, with no nested Markdown code blocks.
 
 ---
 
@@ -92,11 +93,13 @@ The specification format follows GOV-DEV-001: this entire document is supplied a
 Repository implementation SHALL follow this authority order:
 
 1. ADR-001
-2. SPEC-026 v2.0
-3. SPEC-027 v2.1 baseline
-4. SPEC-028 v2.1 baseline
+2. SPEC-026 v2.0 — approved logical-model baseline
+3. SPEC-027 v2.1 — approved physical-model baseline
+4. SPEC-028 v2.1 — approved Prisma-model baseline
 5. Accepted application contracts
 6. Existing repository conventions where they do not conflict with the above
+
+SPEC-001 v1.0 remains the approved project-structure baseline. Proposed SPEC-001 v2.0.0 and proposed SPEC-026, SPEC-027 and SPEC-028 v3.0.0 are under review and are not approved implementation authorities. Unless explicitly identified as proposed, references to those specifications in this draft refer to their approved baselines above. Implementation must follow the approved revision applicable to the work.
 
 Repository code SHALL NOT redefine:
 
@@ -178,7 +181,7 @@ The domain layer SHALL have no dependency on:
 - database models;
 - database-specific errors.
 
-**Proposed D04 exception:** the existing Payment Aggregate and its narrow, persistence-neutral `PaymentRepository` contract remain in Application; Infrastructure implements that contract and Application services depend on it. Domain must not import Application. This Payment-specific dependency direction reconciles the proposed SPEC-001 exception; it does not move Payment or create a second Aggregate. Existing Reservation repository ownership is unchanged.
+**Proposed D04 exception:** the existing Payment Aggregate and its narrow, persistence-neutral `PaymentRepository` contract remain in Application; Infrastructure implements that contract and Application services depend on it. Domain must not import Application. This Payment-specific dependency direction reconciles the exception in proposed, unapproved SPEC-001 v2.0.0; it does not move Payment or create a second Aggregate. Existing Reservation repository ownership is unchanged.
 
 ---
 
@@ -203,7 +206,7 @@ They SHALL NOT expose:
 
 ## 7.1 Proposed PaymentRepository contract — D02–D05
 
-The repository persists and reconstructs the complete canonical Payment, including its owned Refund records, in one Payment-local consistency boundary. It validates the explicit Reservation association against the domain reference and immutable snapshot; it does not load or mutate the Reservation Aggregate. Reconstruction uses the approved SPEC-027/028 mappings and exact-money contract, not fabricated stage records or incomplete legacy defaults. Read-by-identity returns the complete Aggregate and a persistence-neutral revision, not a partial success; missing, invalid and unmappable records must be distinguishable and surfaced.
+The repository persists and reconstructs the complete canonical Payment, including its owned Refund records, in one Payment-local consistency boundary. It validates the explicit Reservation association against the domain reference and immutable snapshot; it does not load or mutate the Reservation Aggregate. Reconstruction is subject to approval of the applicable SPEC-027/028 mappings and exact-money contract; proposed SPEC-027 and SPEC-028 v3.0.0 remain under review and are not approved authority. Reconstruction must not use fabricated stage records or incomplete legacy defaults. Read-by-identity returns the complete Aggregate and a persistence-neutral revision, not a partial success; missing, invalid and unmappable records must be distinguishable and surfaced.
 
 Creation must detect identity or business-reference conflicts rather than overwrite existing state. A conditional save supplies the revision read with the Aggregate; the entire Payment-owned write, including Refund changes, succeeds atomically only if the persisted revision still matches. Success returns a new revision; a stale revision produces an explicit conflict and no partial writes, while an absent record and persistence failure are not reported as success. Callers must reload and re-evaluate after a conflict. The revision is repository concurrency state, not the Aggregate metadata version.
 
@@ -1033,7 +1036,7 @@ After implementation, Copilot SHALL run:
 
 The full regression requirement follows GOV-DEV-001. Existing unrelated lint warnings SHALL NOT trigger unrelated remediation.
 
-The objective is to establish correctness of the current iteration, not to create an additional governance process. :contentReference[oaicite:1]{index=1}
+The objective is to establish correctness of the current iteration, not to create an additional governance process.
 
 ---
 
@@ -1047,7 +1050,7 @@ During implementation:
 - persistent test data SHALL NOT be created outside the approved test strategy;
 - schema changes SHALL remain within the approved iteration.
 
-GOV-DEV-001 specifically prohibits database migrations or production database changes unless required by the current specification. :contentReference[oaicite:2]{index=2}
+GOV-DEV-001 specifically prohibits database migrations or production database changes unless required by the current specification.
 
 ---
 
@@ -1056,7 +1059,7 @@ GOV-DEV-001 specifically prohibits database migrations or production database ch
 Copilot SHALL:
 
 - inspect the current repository before modification;
-- compare repository implementation against SPEC-026, SPEC-027 and SPEC-028;
+- compare repository implementation against the approved SPEC-026, SPEC-027 and SPEC-028 baselines and any subsequently approved revisions applicable to the work;
 - preserve accepted Reservation application behaviour;
 - implement only the current iteration;
 - keep Prisma isolated to infrastructure;
@@ -1077,7 +1080,7 @@ Copilot SHALL NOT:
 - refactor unrelated repositories;
 - perform unrelated technical-debt remediation.
 
-This follows the scope-discipline requirements of GOV-DEV-001. :contentReference[oaicite:3]{index=3}
+This follows the scope-discipline requirements of GOV-DEV-001.
 
 ---
 
@@ -1105,7 +1108,7 @@ Copilot SHALL NOT invent the missing architecture.
 
 # 56. Acceptance Criteria
 
-SPEC-029 v2.0 is ready for architect approval when:
+Proposed SPEC-029 v3.0.0 remains **Draft — Architect and specification-owner review required**. It is ready for architect approval only when the following criteria and outstanding owner/governance reviews are satisfied:
 
 - [ ] Repository interfaces remain persistence-neutral.
 - [ ] Aggregate Roots define repository boundaries.
@@ -1143,10 +1146,13 @@ SPEC-029 v2.0 is ready for architect approval when:
 | GOV-DEV-001 | Governing development process |
 | ARCH-000 | Architecture authority |
 | ADR-001 | Booking/Reservation/Supplier Booking semantics |
-| SPEC-026 v2.0 | Canonical logical model |
-| SPEC-027 v2.1 | Canonical physical model baseline |
-| SPEC-028 v2.1 | Canonical Prisma model baseline |
+| SPEC-001 v1.0 | Approved project-structure baseline |
+| SPEC-001 v2.0.0 | Proposed project-structure revision under review; not approved authority |
+| SPEC-026 v2.0 | Approved logical-model baseline; historical header stated Approved and footer stated Draft; governance confirmation outstanding |
+| SPEC-027 v2.1 | Approved physical-model baseline |
+| SPEC-028 v2.1 | Approved Prisma-model baseline |
 | SPEC-026–028 proposed v3.0.0 | Payment alignment under review; not approved authority |
+| SPEC-029 v2.0 | Historical repository baseline; Approved header and Draft footer require governance confirmation |
 | APP-004.1 | Reservation Aggregate |
 | 3K-C | Canonical Reservation contract |
 
@@ -1191,11 +1197,11 @@ This specification reconciles persistence architecture without restarting GCT Co
 
 # 60. Next Implementation Specification
 
-After SPEC-029 v2.0 approval, the next artifact SHALL be a focused Reservation persistence implementation specification.
+The historical SPEC-029 v2.0 baseline identified a focused Reservation persistence implementation specification as the next artifact. Following review and approval of proposed SPEC-029 v3.0.0 and its applicable dependencies, the next artifact SHALL be a focused Reservation persistence implementation specification. This draft does not authorise implementation.
 
 That implementation specification SHALL define only the concrete changes required to:
 
-- align the Reservation Prisma model with SPEC-028;
+- align the Reservation Prisma model with the applicable approved SPEC-028 revision;
 - align ReservationRepository with the canonical Reservation Aggregate;
 - implement ReservationPersistenceContext where required;
 - implement complete Reservation round-trip persistence;
@@ -1218,7 +1224,7 @@ It SHALL NOT expand into unrelated:
 
 # 61. Definition of Done
 
-The Repository & Persistence Architecture iteration is ready for implementation when:
+Proposed SPEC-029 v3.0.0 remains under review. The Repository & Persistence Architecture iteration is ready for implementation only when applicable approvals and the following conditions are satisfied:
 
 - Reservation has one canonical repository boundary;
 - Reservation persistence is defined as Aggregate persistence;
@@ -1244,4 +1250,4 @@ After implementation, the iteration is complete only when the Copilot report has
 
 **Status:** Draft — Architect and specification-owner review required
 
-**Next:** Reservation Persistence Implementation Specification
+**Next:** Reservation Persistence Implementation Specification, following required approvals
